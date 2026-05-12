@@ -1,6 +1,6 @@
 # Changelog
 
-## v31.5.0-dev — Sprint 142–145 — Phases 2–5 (Extraction guards + Conversion guards + Self-Healing v3.5 + Self-Healing v3.6)
+## v31.5.0-dev — Sprint 142–146 — Phases 2–6 (Extraction guards + Conversion guards + Self-Healing v3.5/v3.6 + Cross-artifact validator)
 
 Continues the Zero-Error roadmap with extraction hardening, conversion
 guards active in the pipeline, and 10 new model-side self-healers.
@@ -46,6 +46,23 @@ Added 10 healers in `self_healing_report.py` (report total: 11 → 21 healers):
 
 - Added `tests/test_self_healing_report_phase5.py` (31 tests).
 - Full suite: 7,770 passed, 0 failed.
+
+### Phase 6 — Cross-artifact validator
+
+New `powerbi_import/cross_validator.py` bridging TMDL model ↔ PBIR report:
+
+| Check | Category | Severity |
+|-------|----------|----------|
+| Visual references non-existent table | visual | error |
+| Visual references non-existent column/measure | visual | error |
+| Relationship references missing table/column | relationship | error |
+| RLS role references missing table | rls | error |
+| Measure never used in any visual | orphan | warning |
+
+- `cross_validate(model, report_state)` → `CrossValidationResult`
+- `CrossIssue` dataclass with category/severity/message/location
+- Added `tests/test_cross_validator.py` (27 tests).
+- Full suite: 7,797 passed, 0 failed.
 
 ### New module: `tableau_export/safe_xml.py`
 
