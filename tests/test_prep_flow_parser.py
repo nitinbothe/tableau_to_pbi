@@ -181,6 +181,9 @@ class TestGetNodeType(unittest.TestCase):
         node = {'nodeType': ''}
         self.assertEqual(_get_node_type(node), '')
 
+    def test_none_node_is_safe(self):
+        self.assertEqual(_get_node_type(None), '')
+
 
 # ═══════════════════════════════════════════════════════════════════
 # Topological sort
@@ -218,6 +221,15 @@ class TestTopologicalSort(unittest.TestCase):
     def test_empty_graph(self):
         result = _topological_sort({})
         self.assertEqual(result, [])
+
+    def test_malformed_nodes_are_ignored(self):
+        nodes = {
+            'a': None,
+            'b': {'nextNodes': [{'nextNodeId': 'c'}]},
+            'c': {'nextNodes': []},
+        }
+        result = _topological_sort(nodes)
+        self.assertIn('b', result)
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -714,6 +726,34 @@ class TestParseFlowEndToEnd(unittest.TestCase):
             ds = result[0]
             self.assertIn('m_query_override', ds)
             self.assertTrue(ds['m_query_override'])  # Should have M query
+        finally:
+            os.unlink(path)
+
+    def test_malformed_flow_structure_is_safe(self):
+        flow = {
+            'nodes': {
+                'bad': None,
+                'n1': _input_node(next_ids=['n2']),
+                'n2': _output_node(),
+            },
+            'connections': None,
+        }
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.tfl', delete=False,
+                                         encoding='utf-8') as f:
+            json.dump(flow, f)
+            path = f.name
+
+        try:
+            _old = sys.stdout
+            sys.stdout = io.TextIOWrapper(io.BytesIO(), encoding='utf-8')
+            try:
+                result = parse_prep_flow(path)
+            finally:
+                sys.stdout = _old
+
+            self.assertIsInstance(result, list)
+            self.assertGreaterEqual(len(result), 1)
         finally:
             os.unlink(path)
 

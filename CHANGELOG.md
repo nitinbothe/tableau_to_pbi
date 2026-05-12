@@ -41,6 +41,11 @@ accessors and wiring them into core extractor paths.
     instead of raising.
   - `tests/test_datasource_extractor.py` now covers None/malformed datasource
     and metadata-map helper fallback behavior.
+- Extended Tableau Prep flow parser resilience and tests:
+  - `tableau_export/prep_flow_parser.py` now normalizes malformed flow,
+    node, and edge payloads in graph traversal and datasource collection.
+  - `tests/test_prep_flow_parser.py` now covers malformed graph structures,
+    `None` nodes, and malformed `.tfl` flow dictionaries.
 - Extraction regression suite remains green.
 
 ## v31.4.0 — Sprint 141 — Phase 1 of Zero-Error Roadmap (Pre-flight Rejection)

@@ -204,6 +204,7 @@ def _get_node_type(node):
     e.g. '.v2018_3_3.SuperTransform' → 'SuperTransform'
          '.v1.LoadCsv' → 'LoadCsv'
     """
+    node = _as_dict(node)
     node_type = node.get('nodeType', '')
     parts = node_type.rsplit('.', 1)
     return parts[-1] if parts else node_type
@@ -216,17 +217,20 @@ def _topological_sort(nodes):
     Returns:
         list of node IDs in execution order (inputs first, outputs last)
     """
+    nodes = _as_dict(nodes)
     # Build adjacency: node_id → [next_node_ids]
     graph = {}
     in_degree = {}
 
     for nid, node in nodes.items():
+        node = _as_dict(node)
         if nid not in graph:
             graph[nid] = []
         if nid not in in_degree:
             in_degree[nid] = 0
 
-        for edge in node.get('nextNodes', []):
+        for edge in _as_list(node.get('nextNodes', [])):
+            edge = _as_dict(edge)
             next_id = edge.get('nextNodeId', '')
             if next_id:
                 graph[nid].append(next_id)
@@ -251,12 +255,25 @@ def _topological_sort(nodes):
 
 def _find_upstream_nodes(nodes, node_id):
     """Find all node IDs that have nextNodes pointing to node_id."""
+    nodes = _as_dict(nodes)
     upstream = []
     for nid, node in nodes.items():
-        for edge in node.get('nextNodes', []):
+        node = _as_dict(node)
+        for edge in _as_list(node.get('nextNodes', [])):
+            edge = _as_dict(edge)
             if edge.get('nextNodeId') == node_id:
                 upstream.append(nid)
     return upstream
+
+
+def _as_dict(value):
+    """Return *value* when it is a dict, otherwise an empty dict."""
+    return value if isinstance(value, dict) else {}
+
+
+def _as_list(value):
+    """Return *value* when it is a list, otherwise an empty list."""
+    return value if isinstance(value, list) else []
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -623,9 +640,13 @@ def _convert_action_to_m_step(action_type, action, counter):
 
 def _parse_aggregate_node(node):
     """Convert an Aggregate node to an m_transform_aggregate step."""
-    group_fields = [f.get('name', '') for f in node.get('groupByFields', [])]
+    node = _as_dict(node)
+    group_fields = [f.get('name', '') for f in _as_list(node.get('groupByFields', []))
+                    if isinstance(f, dict)]
     agg_fields = []
-    for af in node.get('aggregateFields', []):
+    for af in _as_list(node.get('aggregateFields', [])):
+        if not isinstance(af, dict):
+            continue
         agg = af.get('aggregation', 'SUM').upper()
         agg_fields.append({
             'name': af.get('newColumnName', af.get('name', '')),
@@ -664,15 +685,16 @@ def _parse_join_node(node, right_table_name, right_fields):
     Returns:
         list of (step_name, step_expression) tuples (join + expand)
     """
+    node = _as_dict(node)
     join_type = _PREP_JOIN_MAP.get(node.get('joinType', 'inner'), 'inner')
-    conditions = node.get('joinConditions', [])
+    conditions = _as_list(node.get('joinConditions', []))
 
-    left_keys = [c.get('leftColumn', '') for c in conditions]
-    right_keys = [c.get('rightColumn', '') for c in conditions]
+    left_keys = [c.get('leftColumn', '') for c in conditions if isinstance(c, dict)]
+    right_keys = [c.get('rightColumn', '') for c in conditions if isinstance(c, dict)]
 
     # Fields to expand from right table
-    expand_fields = [f.get('name', '') for f in right_fields
-                     if f.get('name', '') not in right_keys]
+    expand_fields = [f.get('name', '') for f in _as_list(right_fields)
+                     if isinstance(f, dict) and f.get('name', '') not in right_keys]
 
     if left_keys and right_keys:
         # Use cleaned M table reference
@@ -701,11 +723,13 @@ def _parse_union_node(node, upstream_table_names):
 
 def _parse_pivot_node(node):
     """Convert a Pivot node to an M step (unpivot or pivot)."""
+    node = _as_dict(node)
     pivot_type = node.get('pivotType', '')
 
     if pivot_type == 'columnsToRows':
         # Unpivot
-        pivot_fields = [f.get('name', '') for f in node.get('pivotFields', [])]
+        pivot_fields = [f.get('name', '') for f in _as_list(node.get('pivotFields', []))
+                        if isinstance(f, dict)]
         values_name = node.get('pivotValuesName', 'Value')
         names_name = node.get('pivotNamesName', 'Attribute')
         if pivot_fields:
@@ -713,8 +737,8 @@ def _parse_pivot_node(node):
 
     elif pivot_type == 'rowsToColumns':
         # Pivot
-        key_field = node.get('pivotKeyField', {}).get('name', '')
-        value_field = node.get('pivotValueField', {}).get('name', '')
+        key_field = _as_dict(node.get('pivotKeyField', {})).get('name', '')
+        value_field = _as_dict(node.get('pivotValueField', {})).get('name', '')
         agg = node.get('aggregation', 'SUM').lower()
         if key_field and value_field:
             return m_transform_pivot(key_field, value_field, agg)
@@ -746,8 +770,9 @@ def parse_prep_flow(filepath):
         - calculations: []
     """
     flow = read_prep_flow(filepath)
-    nodes = flow.get('nodes', {})
-    connections = flow.get('connections', {})
+    flow = _as_dict(flow)
+    nodes = _as_dict(flow.get('nodes', {}))
+    connections = _as_dict(flow.get('connections', {}))
 
     if not nodes:
         print("  ⚠ No nodes found in Prep flow")
@@ -771,7 +796,9 @@ def parse_prep_flow(filepath):
 
 def _process_prep_node(nid, nodes, connections, node_results, secondary_branch_ids):
     """Process a single Prep flow node (input/transform/output) and store result in node_results."""
-    node = nodes.get(nid, {})
+    nodes = _as_dict(nodes)
+    connections = _as_dict(connections)
+    node = _as_dict(nodes.get(nid, {}))
     base_type = node.get('baseType', '')
     sem_type = _get_node_type(node)
     node_name = node.get('name', nid[:8])
@@ -801,6 +828,8 @@ def _process_input_node(nid, node, connections, node_results, node_name):
     For Hyper connections, attempts to read actual schema/data via
     ``hyper_reader`` to produce a richer M expression.
     """
+    node = _as_dict(node)
+    connections = _as_dict(connections)
     connection, table = _parse_input_node(node, connections)
     conn_type = connection.get('type', '')
 
@@ -811,8 +840,8 @@ def _process_input_node(nid, node, connections, node_results, node_name):
         if filename:
             try:
                 from hyper_reader import read_hyper
-                result = read_hyper(filename, max_rows=20)
-                hyper_tables = result.get('tables', [])
+                result = _as_dict(read_hyper(filename, max_rows=20))
+                hyper_tables = _as_list(result.get('tables', []))
                 if hyper_tables:
                     m_query = generate_m_from_hyper(
                         hyper_tables, table.get('name'))
@@ -827,7 +856,7 @@ def _process_input_node(nid, node, connections, node_results, node_name):
         'table': table,
         'name': node_name,
         'm_query': m_query,
-        'fields': node.get('fields', []),
+        'fields': _as_list(node.get('fields', [])),
     }
     print(f"    ✓ Input: {node_name} ({connection.get('type', '?')})")
 
@@ -835,6 +864,9 @@ def _process_input_node(nid, node, connections, node_results, node_name):
 def _process_transform_node(nid, node, nodes, upstream_ids, sem_type,
                             node_results, secondary_branch_ids, node_name):
     """Dispatch a transform node to its specific handler based on semantic type."""
+    node = _as_dict(node)
+    nodes = _as_dict(nodes)
+    upstream_ids = _as_list(upstream_ids)
 
     if sem_type in ('SuperTransform',):
         # Clean step — chain onto upstream M query
@@ -1030,6 +1062,9 @@ def _process_transform_node(nid, node, nodes, upstream_ids, sem_type,
 
 def _collect_prep_datasources(sorted_ids, nodes, node_results, secondary_branch_ids):
     """Collect processed node results into datasource definitions for the PBI pipeline."""
+    nodes = _as_dict(nodes)
+    node_results = _as_dict(node_results)
+    secondary_branch_ids = set(secondary_branch_ids or [])
     datasources = []
 
     # First, emit secondary branch nodes (join right-tables, union extras)
@@ -1040,7 +1075,9 @@ def _collect_prep_datasources(sorted_ids, nodes, node_results, secondary_branch_
             raw_name = result.get('name', 'SecondaryTable')
             table_name = _clean_m_table_ref(raw_name)
             columns = []
-            for f in result.get('fields', []):
+            for f in _as_list(result.get('fields', [])):
+                if not isinstance(f, dict):
+                    continue
                 columns.append({
                     'name': f.get('name', ''),
                     'datatype': f.get('type', 'string'),
@@ -1071,7 +1108,9 @@ def _collect_prep_datasources(sorted_ids, nodes, node_results, secondary_branch_
             ds_name = result.get('name', 'PrepOutput')
             table_name = ds_name.replace(' ', '_')
             columns = []
-            for f in result.get('fields', []):
+            for f in _as_list(result.get('fields', [])):
+                if not isinstance(f, dict):
+                    continue
                 columns.append({
                     'name': f.get('name', ''),
                     'datatype': f.get('type', 'string'),
@@ -1098,7 +1137,7 @@ def _collect_prep_datasources(sorted_ids, nodes, node_results, secondary_branch_
     # If no output nodes, use all leaf nodes (nodes with no outgoing edges)
     if not datasources:
         for nid in sorted_ids:
-            node = nodes.get(nid, {})
+            node = _as_dict(nodes.get(nid, {}))
             if not node.get('nextNodes') and nid in node_results:
                 result = node_results[nid]
                 ds_name = result.get('name', 'PrepOutput')
@@ -1109,7 +1148,8 @@ def _collect_prep_datasources(sorted_ids, nodes, node_results, secondary_branch_
                     'tables': [{
                         'name': table_name,
                         'columns': [{'name': f.get('name', ''), 'datatype': f.get('type', 'string')}
-                                    for f in result.get('fields', [])],
+                                    for f in _as_list(result.get('fields', []))
+                                    if isinstance(f, dict)],
                     }],
                     'connection': result.get('connection', {}),
                     'connection_map': {},
