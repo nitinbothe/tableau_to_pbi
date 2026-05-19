@@ -1449,7 +1449,8 @@ def _heal_m_step_name_collision(model, recovery=None) -> int:
             if seen.get(s, 0) >= 1:
                 # Rename second+ occurrences
                 idx = seen[s] + 1
-                new_name = f'{s.rstrip("\"")}_{idx}'
+                stripped = s.rstrip('"')
+                new_name = f'{stripped}_{idx}'
                 if s.startswith('#"'):
                     new_name = s[:-1] + f'_{idx}"'
                 # Replace first occurrence after current position only.
