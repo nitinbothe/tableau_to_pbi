@@ -406,9 +406,9 @@ All schema URLs and theme identifiers are defined as constants in `pbip_generato
 - Compare Tableau visuals vs Power BI
 - Refer to `docs/FAQ.md` for frequently asked questions
 
-## Agent Architecture — 12-Agent Specialization Model
+## Agent Architecture — 14-Agent Specialization Model
 
-This project uses a **12-agent specialization model** with scoped domain knowledge and file ownership. Four specialist agents (@dax, @wiring, @semantic, @visual) provide deep expertise, while @converter and @generator remain as coordination layers.
+This project uses a **14-agent specialization model** with scoped domain knowledge and file ownership. Four specialist agents (@dax, @wiring, @semantic, @visual) provide deep expertise, @converter and @generator remain as coordination layers, and @tableau handles Tableau Server/Cloud interaction.
 
 See `docs/AGENTS.md` for the full architecture diagram, data flow, and handoff protocol.
 
@@ -417,7 +417,8 @@ See `docs/AGENTS.md` for the full architecture diagram, data flow, and handoff p
 | Agent | Scope | Key Files |
 |-------|-------|-----------|
 | **@orchestrator** | Pipeline, CLI, batch, wizard | `migrate.py`, `import_to_powerbi.py`, `wizard.py`, `progress.py`, `api_server.py` |
-| **@extractor** | Tableau XML parsing, Hyper, Prep, Server API | `tableau_export/*.py` |
+| **@extractor** | Tableau XML parsing (.twb/.twbx), Hyper files, Prep flow conversion | `extract_tableau_data.py`, `datasource_extractor.py`, `hyper_reader.py`, `pulse_extractor.py`, `prep_flow_parser.py` |
+| **@tableau** | Tableau Server/Cloud REST API, JWT auth, site discovery, permissions, metadata lineage, Prep flow analysis | `server_client.py`, `prep_flow_analyzer.py` |
 | **@dax** | DAX formula correctness, conversion (180+), optimization, aggregation context | `dax_converter.py`, `dax_optimizer.py` + DAX blocks in `tmdl_generator.py` |
 | **@wiring** | DAX↔M bridge, classification, M generation (43 transforms), M step injection | `m_query_builder.py`, `calc_column_utils.py` + M functions in `tmdl_generator.py` |
 | **@semantic** | TMDL model, relationships, Calendar, RLS, hierarchies, parameters | `tmdl_generator.py` (structural), `fabric_semantic_model_generator.py` |
@@ -428,7 +429,7 @@ See `docs/AGENTS.md` for the full architecture diagram, data flow, and handoff p
 | **@merger** | Shared semantic model, fingerprint matching | `shared_model.py`, `merge_config.py` |
 | **@deployer** | Fabric/PBI deployment, auth, gateway | `deploy/*.py`, `gateway_config.py`, `telemetry.py` |
 | **@reviewer** | Artifact quality review, preceptorship loop, coaching feedback | `preceptor.py` |
-| **@tester** | Tests (7,072), coverage, regression | `tests/*.py` |
+| **@tester** | Tests (8,512), coverage, regression | `tests/*.py` |
 
 ### Rules
 
@@ -443,4 +444,4 @@ See `docs/AGENTS.md` for the full architecture diagram, data flow, and handoff p
 
 All agent files live in `.github/agents/`:
 - `shared.instructions.md` — base rules all agents inherit
-- `{name}.agent.md` — per-agent specialization (13 files: orchestrator, extractor, dax, wiring, semantic, visual, converter, generator, assessor, merger, deployer, reviewer, tester)
+- `{name}.agent.md` — per-agent specialization (14 files: orchestrator, extractor, tableau, dax, wiring, semantic, visual, converter, generator, assessor, merger, deployer, reviewer, tester)

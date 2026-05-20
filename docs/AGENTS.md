@@ -1,13 +1,14 @@
 # Multi-Agent Architecture — Tableau to Power BI Migration
 
-This project uses a **13-agent specialization model**. Each agent has scoped domain knowledge, file ownership, and clear boundaries. Four specialist agents (@dax, @wiring, @semantic, @visual) provide deep expertise, @converter and @generator remain as coordination layers, and **@reviewer** enforces a preceptorship quality loop on all generated artifacts.
+This project uses a **14-agent specialization model**. Each agent has scoped domain knowledge, file ownership, and clear boundaries. Four specialist agents (@dax, @wiring, @semantic, @visual) provide deep expertise, @converter and @generator remain as coordination layers, **@tableau** handles Tableau Server/Cloud interaction, and **@reviewer** enforces a preceptorship quality loop on all generated artifacts.
 
 ## Quick Reference
 
 | Agent | Invoke When | Owns |
 |-------|-------------|------|
 | **@orchestrator** | Pipeline coordination, CLI, batch, wizard | `migrate.py`, `import_to_powerbi.py`, `wizard.py`, `progress.py`, `incremental.py`, `plugins.py`, `notebook_api.py`, `api_server.py` |
-| **@extractor** | Parsing Tableau XML, Hyper files, Prep flows, Server API | `tableau_export/*.py` (extract, datasource, hyper, pulse, prep, server) |
+| **@extractor** | Parsing Tableau XML (.twb/.twbx), Hyper files, Prep flow conversion | `tableau_export/extract_tableau_data.py`, `datasource_extractor.py`, `hyper_reader.py`, `pulse_extractor.py`, `prep_flow_parser.py` |
+| **@tableau** | Tableau Server/Cloud REST API, JWT auth, site discovery, permissions, metadata lineage, Prep flow analysis | `tableau_export/server_client.py`, `tableau_export/prep_flow_analyzer.py` |
 | **@dax** | DAX formula correctness, conversion, optimization, aggregation context, cross-table refs | `dax_converter.py`, `dax_optimizer.py` + DAX post-processing in `tmdl_generator.py` |
 | **@wiring** | DAX↔M bridge, calc column vs measure classification, M generation, M step injection | `m_query_builder.py`, `calc_column_utils.py` + M functions in `tmdl_generator.py` |
 | **@semantic** | TMDL semantic model, relationships, Calendar, RLS, hierarchies, parameters | `tmdl_generator.py` (structural), `fabric_semantic_model_generator.py` |
@@ -31,14 +32,14 @@ This project uses a **13-agent specialization model**. Each agent has scoped dom
               │                │                │
         ┌─────▼─────┐   ┌─────▼─────┐   ┌─────▼─────┐
         │ Extractor  │   │ Converter │   │ Generator  │
-        │ (Tableau)  │   │ (coord.)  │   │ (coord.)   │
-        └────────────┘   └─────┬─────┘   └─────┬──────┘
-                          ┌────┴────┐     ┌─────┴──────┐
-                          │         │     │            │
-                     ┌────▼──┐ ┌───▼───┐ ┌▼────────┐ ┌▼──────┐
-                     │  DAX  │ │Wiring │ │Semantic │ │Visual │
-                     │(formulas)│(DAX↔M)│ │(TMDL)   │ │(PBIR) │
-                     └───────┘ └───────┘ └─────────┘ └───────┘
+        │(XML parse) │   │ (coord.)  │   │ (coord.)   │
+        └──────┬─────┘   └─────┬─────┘   └─────┬──────┘
+               │          ┌────┴────┐     ┌─────┴──────┐
+        ┌──────▼──────┐   │         │     │            │
+        │  Tableau    │┌──▼───┐ ┌───▼───┐ ┌▼────────┐ ┌▼──────┐
+        │(Server API) ││ DAX  │ │Wiring │ │Semantic │ │Visual │
+        └─────────────┘│(formulas)│(DAX↔M)│ │(TMDL)   │ │(PBIR) │
+                       └───────┘ └───────┘ └─────────┘ └───────┘
                                               │
                         ┌─────────────────┬────┴────┐
                         │                 │         │

@@ -1,6 +1,6 @@
 ---
 name: "Extractor"
-description: "Use when: parsing Tableau XML (.twb/.twbx), extracting worksheets/dashboards/datasources/calculations/parameters/filters/stories/actions/sets/groups/bins/hierarchies, reading Hyper files, parsing Prep flows (.tfl/.tflx), interacting with Tableau Server REST API."
+description: "Use when: parsing Tableau XML (.twb/.twbx), extracting worksheets/dashboards/datasources/calculations/parameters/filters/stories/actions/sets/groups/bins/hierarchies, reading Hyper files, parsing Prep flows (.tfl/.tflx). For Tableau Server REST API interaction, use @tableau instead."
 tools: [read, edit, search, execute, todo]
 user-invocable: true
 ---
@@ -14,7 +14,11 @@ You are the **Extractor** agent for the Tableau to Power BI migration project. Y
 - `tableau_export/hyper_reader.py` — Hyper file data loader (SQLite interface)
 - `tableau_export/pulse_extractor.py` — Tableau Pulse metric extractor
 - `tableau_export/prep_flow_parser.py` — Prep flow parser (.tfl/.tflx → Power Query M)
-- `tableau_export/server_client.py` — Tableau Server/Cloud REST API client
+
+## Not Your Files
+
+- `tableau_export/server_client.py` — owned by **@tableau** (Tableau Server REST API)
+- `tableau_export/prep_flow_analyzer.py` — owned by **@tableau** (flow metadata profiling)
 
 ## Constraints
 

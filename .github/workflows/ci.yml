@@ -32,12 +32,12 @@ jobs:
         run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
 
       - name: Run ruff (additional checks)
-        run: ruff check --select=E,F,W,I --ignore=E501,E402 . || true
+        run: ruff check --select=E,F,W,I --ignore=E501,E402 .
 
       - name: Run pyright (type checking)
         run: |
           pip install pyright
-          pyright --warnings tableau_export/ powerbi_import/ || true
+          pyright --warnings tableau_export/ powerbi_import/
 
   # ───────────────────── Stage 2: Test ─────────────────────
   test:
