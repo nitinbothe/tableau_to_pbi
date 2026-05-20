@@ -2000,6 +2000,27 @@ def _add_migration_args(parser):
     )
 
     parser.add_argument(
+        '--pdf',
+        action='store_true',
+        default=False,
+        help='Generate a print-optimized HTML (.pdf.html) alongside assessment reports'
+    )
+
+    parser.add_argument(
+        '--pptx',
+        action='store_true',
+        default=False,
+        help='Generate a PPTX executive summary alongside assessment reports'
+    )
+
+    parser.add_argument(
+        '--report-package',
+        action='store_true',
+        default=False,
+        help='Generate a ZIP package with HTML, print-ready PDF, PPTX, JSON, and CSV reports'
+    )
+
+    parser.add_argument(
         '--hyper-rows',
         metavar='N',
         type=int,
@@ -4309,6 +4330,58 @@ def _run_assessment_mode(args, results):
         assess_path = os.path.join(out_dir, f'assessment_{source_basename}.json')
         save_assessment_report(report, assess_path)
         print(f"\n  Assessment saved to: {assess_path}")
+
+        # ── Report export formats (Sprint 175) ────────────────────
+        do_pdf = getattr(args, 'pdf', False)
+        do_pptx = getattr(args, 'pptx', False)
+        do_package = getattr(args, 'report_package', False)
+
+        html_content = None
+        if do_pdf or do_package:
+            # Generate interactive HTML for PDF rendering / packaging
+            try:
+                from powerbi_import.server_assessment import generate_single_assessment_html
+                html_content = generate_single_assessment_html(report)
+            except (ImportError, AttributeError):
+                # Fallback: build minimal HTML from report data
+                from powerbi_import.html_template import html_open, html_close, stat_grid, stat_card, section_open, section_close, data_table, badge
+                html_content = html_open(f"Assessment — {report.workbook_name}", subtitle="Pre-Migration Readiness")
+                cards = [
+                    stat_card(report.total_checks, "Total Checks"),
+                    stat_card(report.total_pass, "Passed", accent="success"),
+                    stat_card(report.total_warn, "Warnings", accent="warn"),
+                    stat_card(report.total_fail, "Failures", accent="fail"),
+                ]
+                html_content += stat_grid(cards)
+                for cat in report.categories:
+                    html_content += section_open(cat.name.replace(' ', '_'), cat.name, icon="📋")
+                    rows = []
+                    for ck in cat.checks:
+                        rows.append([badge(ck.severity), ck.name, ck.detail, ck.recommendation])
+                    html_content += data_table(["Status", "Check", "Detail", "Recommendation"], rows)
+                    html_content += section_close()
+                html_content += html_close()
+
+        if do_pdf:
+            from powerbi_import.pdf_renderer import render_print_html, save_print_html
+            if html_content:
+                pdf_path = os.path.join(out_dir, f'assessment_{source_basename}.pdf.html')
+                print_html = render_print_html(html_content, title=f"{report.workbook_name} Assessment")
+                save_print_html(print_html, pdf_path)
+                print(f"  Print-ready PDF: {pdf_path}")
+
+        if do_pptx:
+            from powerbi_import.pptx_report import generate_pptx_report
+            pptx_path = os.path.join(out_dir, f'assessment_{source_basename}.pptx')
+            generate_pptx_report(report.to_dict(), pptx_path)
+            print(f"  PPTX summary:    {pptx_path}")
+
+        if do_package:
+            from powerbi_import.report_packager import generate_report_package
+            if html_content:
+                pkg_path = os.path.join(out_dir, f'assessment_{source_basename}_package.zip')
+                generate_report_package(report, html_content, pkg_path)
+                print(f"  Report package:  {pkg_path}")
 
         # Strategy recommendation
         has_prep = bool(args.prep and results.get('prep'))

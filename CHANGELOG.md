@@ -1,5 +1,31 @@
 # Changelog
 
+## v38.0.0 — Sprints 175–176 — Report Packaging & REST API v2
+
+### Sprint 175 — PDF/PPTX Report Export
+- **powerbi_import/pdf_renderer.py**: Print-optimized HTML renderer
+  - `render_print_html()` — transforms interactive HTML reports into print-ready versions (CSS injection, section expansion, tab visibility, print banner with "Save as PDF" button)
+  - `save_print_html()` — saves print-optimized HTML to `.pdf.html` file
+  - Handles both template-structured and bare HTML (fallback injection paths)
+- **powerbi_import/pptx_report.py**: Executive summary PPTX generator (pure stdlib — xml.etree + zipfile)
+  - `generate_pptx_report()` — produces 5-slide PPTX: Title, Scope, Readiness table, Top risks, Recommendations
+  - Office Open XML generation with PBI theme colors, score-based conditional formatting
+- **powerbi_import/report_packager.py**: Migration report ZIP packager
+  - `generate_report_package()` — bundles assessment_report.html, assessment_report.pdf.html, executive_summary.pptx, assessment_data.json, fidelity_checks.csv, README.txt
+- **powerbi_import/html_template.py**: Enhanced `@media print` CSS block (A4 page setup, color-adjust, expanded sections, page breaks, hidden interactive elements)
+- **migrate.py**: 3 new CLI flags: `--pdf`, `--pptx`, `--report-package` (wired into assessment mode)
+
+### Sprint 176 — REST API v2
+- **powerbi_import/api_server.py**: API v2 enhancements
+  - `GET /openapi.json` — OpenAPI 3.0.3 specification with all endpoints documented
+  - `--api-key` flag — Bearer token authentication (`Authorization: Bearer <key>`), public endpoints exempted
+  - `GET /jobs` — pagination (`page`, `per_page`) and status filtering (`status=completed|failed|running`)
+  - `POST /migrate` — `webhook_url` query parameter for completion callbacks with HMAC-SHA256 signature
+  - `POST /migrate/batch` — ZIP upload of multiple workbooks, creates batch with individual jobs
+  - `GET /batch/{id}` — batch progress tracking with per-job status details
+- **tests/test_report_packaging.py**: 34 tests — PDF renderer, PPTX report, report packager, CSV builder, README builder
+- **tests/test_api_v2.py**: 27 tests — OpenAPI spec, API key auth, pagination/filtering, webhook delivery, batch jobs
+
 ## v37.1.0 — Bulk Assessment Implementation
 
 ### `--bulk-assess` — Standalone Portfolio Assessment

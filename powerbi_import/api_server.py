@@ -1,23 +1,30 @@
 """REST API server for Tableau-to-Power BI migration.
 
 Sprint 110: Lightweight HTTP wrapper around the migration pipeline.
+Sprint 176: API v2 — OpenAPI spec, pagination, webhooks, API key auth, batch.
 
 Endpoints:
     POST /migrate          Upload .twb/.twbx/.tds/.tdsx → returns job ID
+    POST /migrate/batch    Upload multiple files as ZIP → returns batch ID
     GET  /status/{id}      Check migration job status
     GET  /download/{id}    Download generated .pbip project as ZIP
     GET  /health           Health check
+    GET  /jobs             List jobs (paginated, filterable)
+    GET  /batch/{id}       Check batch migration status
+    GET  /openapi.json     OpenAPI 3.0 specification
 
 Uses Python stdlib ``http.server`` — zero external dependencies.
-Optional: ``pip install fastapi uvicorn`` for production-grade server.
 
 Usage:
     python -m powerbi_import.api_server --port 8000
     python -m powerbi_import.api_server --host 0.0.0.0 --port 8080
+    python -m powerbi_import.api_server --api-key MY_SECRET_KEY
 """
 
 import argparse
 import collections
+import hashlib
+import hmac
 import io
 import json
 import logging
@@ -53,6 +60,16 @@ _RATE_LIMIT_MAX = 10  # max jobs per IP per window
 _RATE_LIMIT_WINDOW = 60  # seconds
 _rate_tracker = {}  # ip -> deque of timestamps
 _rate_lock = threading.Lock()
+
+# Sprint 176: API key authentication (set via --api-key)
+_API_KEY: str | None = None
+
+# Sprint 176: Batch job store
+_batches = {}  # batch_id -> {status, created, job_ids, completed, failed, total}
+_batch_lock = threading.Lock()
+
+# Sprint 176: Webhook signing secret (derived from API key)
+_WEBHOOK_SECRET: str | None = None
 
 
 def _purge_stale_jobs():
@@ -159,6 +176,197 @@ def _run_migration(job_id, input_path, options=None):
         except OSError:
             pass
 
+    # Sprint 176: Fire webhook if configured
+    webhook_url = (options or {}).get('webhook_url')
+    if webhook_url:
+        _fire_webhook(job_id, webhook_url)
+
+    # Sprint 176: Update batch status if this job belongs to a batch
+    batch_id = (options or {}).get('batch_id')
+    if batch_id:
+        _update_batch_progress(batch_id, job_id)
+
+
+# ── Sprint 176: Webhook delivery ─────────────────────────────────────────────
+
+def _fire_webhook(job_id: str, url: str) -> None:
+    """POST job result to the configured webhook URL with HMAC signature."""
+    job = _get_job(job_id)
+    if not job:
+        return
+    payload = json.dumps({
+        'event': 'migration.completed' if job['status'] == 'completed' else 'migration.failed',
+        'job_id': job_id,
+        'status': job['status'],
+        'error': job['error'],
+        'timestamp': time.time(),
+    }).encode('utf-8')
+
+    # HMAC-SHA256 signature
+    secret = (_WEBHOOK_SECRET or 'unsigned').encode('utf-8')
+    signature = hmac.new(secret, payload, hashlib.sha256).hexdigest()
+
+    try:
+        import urllib.request
+        req = urllib.request.Request(
+            url, data=payload,
+            headers={
+                'Content-Type': 'application/json',
+                'X-Signature-SHA256': signature,
+                'X-Job-ID': job_id,
+            },
+            method='POST',
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            logger.info("Webhook delivered to %s — HTTP %s", url, resp.status)
+    except Exception as exc:
+        logger.warning("Webhook delivery to %s failed: %s", url, exc)
+
+
+def _update_batch_progress(batch_id: str, job_id: str) -> None:
+    """Update batch progress when a child job completes."""
+    job = _get_job(job_id)
+    if not job:
+        return
+    with _batch_lock:
+        batch = _batches.get(batch_id)
+        if not batch:
+            return
+        if job['status'] == 'completed':
+            batch['completed'] += 1
+        elif job['status'] == 'failed':
+            batch['failed'] += 1
+        done = batch['completed'] + batch['failed']
+        if done >= batch['total']:
+            batch['status'] = 'completed'
+
+
+# ── Sprint 176: OpenAPI specification ─────────────────────────────────────────
+
+def _build_openapi_spec() -> dict:
+    """Return an OpenAPI 3.0 spec dict."""
+    return {
+        'openapi': '3.0.3',
+        'info': {
+            'title': 'Tableau to Power BI Migration API',
+            'version': _get_version(),
+            'description': 'REST API for automated Tableau-to-Power BI migration.',
+        },
+        'paths': {
+            '/health': {
+                'get': {
+                    'summary': 'Health check',
+                    'responses': {'200': {'description': 'API status and version'}},
+                },
+            },
+            '/migrate': {
+                'post': {
+                    'summary': 'Submit a migration job',
+                    'description': 'Upload a .twb/.twbx file via multipart/form-data or JSON body.',
+                    'parameters': [
+                        {'name': 'webhook_url', 'in': 'query', 'schema': {'type': 'string'},
+                         'description': 'URL to POST job result on completion'},
+                    ],
+                    'requestBody': {
+                        'content': {
+                            'multipart/form-data': {
+                                'schema': {
+                                    'type': 'object',
+                                    'properties': {
+                                        'file': {'type': 'string', 'format': 'binary'},
+                                        'calendar_start': {'type': 'integer'},
+                                        'calendar_end': {'type': 'integer'},
+                                        'culture': {'type': 'string'},
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    'responses': {
+                        '200': {'description': 'Job created'},
+                        '400': {'description': 'Bad request'},
+                        '401': {'description': 'Unauthorized'},
+                        '413': {'description': 'File too large'},
+                        '429': {'description': 'Rate limited'},
+                    },
+                },
+            },
+            '/migrate/batch': {
+                'post': {
+                    'summary': 'Submit batch migration (ZIP of workbooks)',
+                    'requestBody': {
+                        'content': {
+                            'multipart/form-data': {
+                                'schema': {
+                                    'type': 'object',
+                                    'properties': {
+                                        'file': {'type': 'string', 'format': 'binary'},
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    'responses': {
+                        '200': {'description': 'Batch created'},
+                        '400': {'description': 'No valid workbooks in ZIP'},
+                        '401': {'description': 'Unauthorized'},
+                    },
+                },
+            },
+            '/status/{id}': {
+                'get': {
+                    'summary': 'Get job status',
+                    'parameters': [{'name': 'id', 'in': 'path', 'required': True,
+                                    'schema': {'type': 'string'}}],
+                    'responses': {
+                        '200': {'description': 'Job status'},
+                        '404': {'description': 'Job not found'},
+                    },
+                },
+            },
+            '/download/{id}': {
+                'get': {
+                    'summary': 'Download migration output as ZIP',
+                    'parameters': [{'name': 'id', 'in': 'path', 'required': True,
+                                    'schema': {'type': 'string'}}],
+                    'responses': {
+                        '200': {'description': 'ZIP file download'},
+                        '400': {'description': 'Job not completed'},
+                        '404': {'description': 'Job not found'},
+                    },
+                },
+            },
+            '/jobs': {
+                'get': {
+                    'summary': 'List jobs with pagination and filtering',
+                    'parameters': [
+                        {'name': 'status', 'in': 'query', 'schema': {'type': 'string'}},
+                        {'name': 'page', 'in': 'query', 'schema': {'type': 'integer', 'default': 1}},
+                        {'name': 'per_page', 'in': 'query', 'schema': {'type': 'integer', 'default': 20}},
+                    ],
+                    'responses': {'200': {'description': 'Paginated job list'}},
+                },
+            },
+            '/batch/{id}': {
+                'get': {
+                    'summary': 'Get batch migration status',
+                    'parameters': [{'name': 'id', 'in': 'path', 'required': True,
+                                    'schema': {'type': 'string'}}],
+                    'responses': {
+                        '200': {'description': 'Batch status'},
+                        '404': {'description': 'Batch not found'},
+                    },
+                },
+            },
+            '/openapi.json': {
+                'get': {
+                    'summary': 'OpenAPI specification',
+                    'responses': {'200': {'description': 'OpenAPI 3.0 JSON spec'}},
+                },
+            },
+        },
+    }
+
 
 # ── HTTP Handler ──────────────────────────────────────────────────────────────
 
@@ -180,12 +388,38 @@ class MigrationHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         return parsed.path.rstrip('/')
 
+    def _get_query_params(self):
+        """Parse query string parameters."""
+        parsed = urlparse(self.path)
+        return parse_qs(parsed.query)
+
+    def _check_auth(self) -> bool:
+        """Validate API key if configured. Returns True if authorized."""
+        if not _API_KEY:
+            return True  # No key configured → open access
+        auth_header = self.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:].strip()
+            return hmac.compare_digest(token, _API_KEY)
+        return False
+
     def do_GET(self):
         path = self._get_path()
 
+        # Public endpoints (no auth required)
         # GET /health
         if path == '/health':
             self._send_json({'status': 'ok', 'version': _get_version()})
+            return
+
+        # GET /openapi.json — Sprint 176
+        if path == '/openapi.json':
+            self._send_json(_build_openapi_spec())
+            return
+
+        # All other endpoints require auth
+        if not self._check_auth():
+            self._send_error(401, 'Unauthorized — provide Authorization: Bearer <api-key>')
             return
 
         # GET /metrics — Sprint 131.4 OpenMetrics scrape endpoint
@@ -262,20 +496,80 @@ class MigrationHandler(BaseHTTPRequestHandler):
             self.wfile.write(zip_bytes)
             return
 
-        # GET /jobs
+        # GET /jobs — Sprint 176: pagination & filtering
         if path == '/jobs':
+            params = self._get_query_params()
+            status_filter = params.get('status', [None])[0]
+            try:
+                page = max(1, int(params.get('page', ['1'])[0]))
+            except (ValueError, IndexError):
+                page = 1
+            try:
+                per_page = min(100, max(1, int(params.get('per_page', ['20'])[0])))
+            except (ValueError, IndexError):
+                per_page = 20
+
             with _lock:
-                jobs_list = [
+                all_jobs = [
                     {'job_id': jid, 'status': j['status'], 'created': j['created']}
                     for jid, j in _jobs.items()
                 ]
-            self._send_json({'jobs': jobs_list})
+            # Filter
+            if status_filter:
+                all_jobs = [j for j in all_jobs if j['status'] == status_filter]
+            # Sort by created descending
+            all_jobs.sort(key=lambda j: j['created'], reverse=True)
+            total = len(all_jobs)
+            total_pages = max(1, (total + per_page - 1) // per_page)
+            start = (page - 1) * per_page
+            page_jobs = all_jobs[start:start + per_page]
+
+            self._send_json({
+                'jobs': page_jobs,
+                'page': page,
+                'per_page': per_page,
+                'total': total,
+                'total_pages': total_pages,
+            })
+            return
+
+        # GET /batch/{id} — Sprint 176
+        if path.startswith('/batch/'):
+            batch_id = path.split('/batch/')[-1]
+            with _batch_lock:
+                batch = _batches.get(batch_id)
+            if not batch:
+                self._send_error(404, f'Batch {batch_id} not found')
+                return
+            # Collect per-job status
+            job_statuses = []
+            for jid in batch.get('job_ids', []):
+                job = _get_job(jid)
+                if job:
+                    job_statuses.append({
+                        'job_id': jid,
+                        'status': job['status'],
+                        'error': job['error'],
+                    })
+            self._send_json({
+                'batch_id': batch_id,
+                'status': batch['status'],
+                'total': batch['total'],
+                'completed': batch['completed'],
+                'failed': batch['failed'],
+                'jobs': job_statuses,
+            })
             return
 
         self._send_error(404, 'Not found')
 
     def do_POST(self):
         path = self._get_path()
+
+        # Auth check for POST endpoints
+        if not self._check_auth():
+            self._send_error(401, 'Unauthorized — provide Authorization: Bearer <api-key>')
+            return
 
         # POST /migrate
         if path == '/migrate':
@@ -362,6 +656,16 @@ class MigrationHandler(BaseHTTPRequestHandler):
                 'model_mode': model_mode,
             }
 
+            # Sprint 176: Webhook URL for completion notification
+            webhook_url = params.get('webhook_url', [None])[0]
+            if webhook_url:
+                # Basic URL validation
+                if not webhook_url.startswith(('http://', 'https://')):
+                    self._send_error(400, 'webhook_url must start with http:// or https://')
+                    os.unlink(tmp.name)
+                    return
+                options['webhook_url'] = webhook_url
+
             # Rate limiting
             client_ip = self.client_address[0] if self.client_address else 'unknown'
             if not _check_rate_limit(client_ip):
@@ -390,6 +694,109 @@ class MigrationHandler(BaseHTTPRequestHandler):
                 'job_id': job_id,
                 'status': 'queued',
                 'filename': filename,
+            }, status=202)
+            return
+
+        # POST /migrate/batch — Sprint 176
+        if path == '/migrate/batch':
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length > MAX_UPLOAD_SIZE:
+                self._send_error(413, 'File too large (max 500 MB)')
+                return
+            if content_length == 0:
+                self._send_error(400, 'No file uploaded')
+                return
+
+            body = self.rfile.read(content_length)
+            content_type = self.headers.get('Content-Type', '')
+
+            # Accept multipart with a ZIP file
+            file_data = body
+            if 'multipart/form-data' in content_type:
+                parts = content_type.split('boundary=')
+                if len(parts) < 2:
+                    self._send_error(400, 'Invalid multipart boundary')
+                    return
+                boundary = parts[1].strip().encode()
+                parsed = _parse_multipart(body, boundary)
+                if not parsed:
+                    self._send_error(400, 'No file found in multipart data')
+                    return
+                _, file_data = parsed
+
+            # Expect a ZIP containing workbooks
+            try:
+                zf = zipfile.ZipFile(io.BytesIO(file_data))
+            except zipfile.BadZipFile:
+                self._send_error(400, 'Uploaded file is not a valid ZIP archive')
+                return
+
+            # Extract valid workbook files
+            valid_ext = ('.twb', '.twbx', '.tds', '.tdsx')
+            workbook_names = [
+                n for n in zf.namelist()
+                if os.path.splitext(n)[1].lower() in valid_ext
+                and not n.startswith('__MACOSX')
+                and not os.path.basename(n).startswith('.')
+            ]
+            if not workbook_names:
+                self._send_error(400, 'No valid workbooks (.twb/.twbx) found in ZIP')
+                zf.close()
+                return
+
+            # Rate limit
+            client_ip = self.client_address[0] if self.client_address else 'unknown'
+            if not _check_rate_limit(client_ip):
+                self._send_error(429, 'Too many requests. Please try again later.')
+                zf.close()
+                return
+
+            # Parse options from query string
+            parsed_url = urlparse(self.path)
+            params = parse_qs(parsed_url.query)
+            webhook_url = params.get('webhook_url', [None])[0]
+
+            # Create batch
+            batch_id = uuid.uuid4().hex[:12]
+            job_ids = []
+
+            for wb_name in workbook_names:
+                ext = os.path.splitext(wb_name)[1].lower()
+                tmp = tempfile.NamedTemporaryFile(
+                    suffix=ext, prefix='batch_', delete=False
+                )
+                tmp.write(zf.read(wb_name))
+                tmp.close()
+
+                jid = _new_job(tmp.name)
+                job_ids.append(jid)
+                options = {'batch_id': batch_id}
+                if webhook_url:
+                    options['webhook_url'] = webhook_url
+                thread = threading.Thread(
+                    target=_run_migration,
+                    args=(jid, tmp.name, options),
+                    daemon=True,
+                )
+                thread.start()
+
+            zf.close()
+
+            with _batch_lock:
+                _batches[batch_id] = {
+                    'status': 'running',
+                    'created': time.time(),
+                    'job_ids': job_ids,
+                    'completed': 0,
+                    'failed': 0,
+                    'total': len(job_ids),
+                }
+
+            self._send_json({
+                'batch_id': batch_id,
+                'status': 'running',
+                'total': len(job_ids),
+                'job_ids': job_ids,
             }, status=202)
             return
 
@@ -456,15 +863,25 @@ def _get_version():
 
 # ── Server entry point ────────────────────────────────────────────────────────
 
-def run_server(host='127.0.0.1', port=8000):
+def run_server(host='127.0.0.1', port=8000, api_key=None):
     """Start the migration API server."""
+    global _API_KEY, _WEBHOOK_SECRET
+    if api_key:
+        _API_KEY = api_key
+        _WEBHOOK_SECRET = hashlib.sha256(api_key.encode()).hexdigest()[:32]
+
     server = HTTPServer((host, port), MigrationHandler)
     print(f"Migration API server running on http://{host}:{port}")
-    print(f"  POST /migrate     Upload .twb/.twbx/.tds/.tdsx for migration")
-    print(f"  GET  /status/{{id}} Check job status")
-    print(f"  GET  /download/{{id}} Download result as ZIP")
-    print(f"  GET  /health      Health check")
-    print(f"  GET  /jobs        List all jobs")
+    print(f"  POST /migrate          Upload .twb/.twbx/.tds/.tdsx for migration")
+    print(f"  POST /migrate/batch    Upload ZIP of workbooks for batch migration")
+    print(f"  GET  /status/{{id}}      Check job status")
+    print(f"  GET  /download/{{id}}    Download result as ZIP")
+    print(f"  GET  /batch/{{id}}       Check batch migration status")
+    print(f"  GET  /health           Health check")
+    print(f"  GET  /jobs             List all jobs (paginated)")
+    print(f"  GET  /openapi.json     OpenAPI 3.0 specification")
+    if _API_KEY:
+        print(f"  Auth: Bearer token required (--api-key set)")
     print()
     try:
         server.serve_forever()
@@ -479,8 +896,10 @@ def main():
                         help='Bind address (default: 127.0.0.1)')
     parser.add_argument('--port', type=int, default=8000,
                         help='Port number (default: 8000)')
+    parser.add_argument('--api-key', default=None,
+                        help='API key for Bearer token authentication')
     args = parser.parse_args()
-    run_server(args.host, args.port)
+    run_server(args.host, args.port, api_key=args.api_key)
 
 
 if __name__ == '__main__':

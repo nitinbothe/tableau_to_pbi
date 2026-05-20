@@ -667,14 +667,29 @@ def get_report_css() -> str:
 
     /* ── Print ───────────────────────────────────────────────── */
     @media print {
-        .report-header { background: #0078d4 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .section-body { max-height: none !important; opacity: 1 !important; }
-        .section-header { cursor: default; }
+        @page { size: A4 portrait; margin: 18mm 15mm; }
+        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        body { background: #fff; font-size: 10pt; line-height: 1.45; }
+        .report-header { background: #0078d4 !important; padding: 20px 24px 16px; }
+        .container { padding: 0 8px 20px; }
+        .section-body { max-height: none !important; opacity: 1 !important; overflow: visible !important; }
+        .section-body.collapsed { max-height: none !important; opacity: 1 !important; }
+        .section-header { cursor: default; pointer-events: none; }
         .toggle-arrow { display: none; }
+        .theme-toggle { display: none !important; }
+        .table-search { display: none; }
+        .tab-bar { display: none; }
+        .tab-content { display: block !important; }
         .stat-card { break-inside: avoid; }
         .card { break-inside: avoid; }
-        .table-search { display: none; }
-        body { background: #fff; }
+        .table-container { break-inside: avoid; }
+        .chart-card { break-inside: avoid; }
+        .donut-container { break-inside: avoid; }
+        .bar-chart { break-inside: avoid; }
+        thead th { background: #0078d4 !important; color: #fff !important; font-size: 0.78em; }
+        tbody td { font-size: 0.8em; padding: 5px 8px; }
+        .badge { border: 1px solid currentColor; }
+        .report-footer { page-break-before: avoid; margin-top: 20px; }
     }
 
     /* ── Responsive ──────────────────────────────────────────── */
