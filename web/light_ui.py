@@ -42,7 +42,7 @@ class LightMigrationUI:
         self.mode_var = tk.StringVar(value="batch")
         self.preset_var = tk.StringVar(value="Migrate")
         self.source_var = tk.StringVar(value="")
-        self.output_var = tk.StringVar(value=str(self.repo_root / "artifacts" / "light_ui_output"))
+        self.output_var = tk.StringVar(value=str(self.repo_root))
         self.verbose_var = tk.BooleanVar(value=True)
         self.assess_only_var = tk.BooleanVar(value=False)
         self.global_assess_var = tk.BooleanVar(value=False)
@@ -135,13 +135,13 @@ class LightMigrationUI:
         verbose = data.get("verbose")
         notify = data.get("notify")
         auto_open = data.get("auto_open_report")
-        compact = data.get("compact_mode")
-        kpi_only = data.get("kpi_only")
 
         if isinstance(source, str):
             self.source_var.set(source)
         if isinstance(output, str) and output.strip():
             self.output_var.set(output)
+        else:
+            self.output_var.set(str(self.repo_root))
         if preset in {"Assess", "Migrate", "Lineage"}:
             self.preset_var.set(preset)
         if isinstance(verbose, bool):
@@ -150,10 +150,6 @@ class LightMigrationUI:
             self.notify_var.set(notify)
         if isinstance(auto_open, bool):
             self.auto_open_report_var.set(auto_open)
-        if isinstance(compact, bool):
-            self._compact_mode = compact
-        if isinstance(kpi_only, bool):
-            self._kpi_only = kpi_only
 
     def _save_settings(self) -> None:
         data = {
@@ -163,8 +159,6 @@ class LightMigrationUI:
             "verbose": self.verbose_var.get(),
             "notify": self.notify_var.get(),
             "auto_open_report": self.auto_open_report_var.get(),
-            "compact_mode": self._compact_mode,
-            "kpi_only": self._kpi_only,
         }
         try:
             self.settings_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
@@ -342,14 +336,6 @@ class LightMigrationUI:
         tk.Label(opts_row, text="Options", width=14, anchor="w", bg=self.ui["surface"], fg=self.ui["muted"]).pack(side=tk.LEFT)
         tk.Checkbutton(opts_row, text="Verbose output", variable=self.verbose_var, bg=self.ui["surface"], activebackground=self.ui["surface"]).pack(side=tk.LEFT)
         tk.Checkbutton(opts_row, text="Notify when done", variable=self.notify_var, bg=self.ui["surface"], activebackground=self.ui["surface"]).pack(side=tk.LEFT, padx=(10, 0))
-        self.compact_state_label = tk.Label(opts_row, text="Compact: OFF", fg=self.ui["muted"], bg=self.ui["surface"])
-        self.compact_state_label.pack(side=tk.RIGHT, padx=(8, 0))
-        self.compact_btn = tk.Button(opts_row, text="Compact Mode", width=14, command=self._toggle_compact_mode, relief="flat", bd=0, bg=self.ui["chip_bg"], activebackground=self.ui["chip_hover"])
-        self.compact_btn.pack(side=tk.RIGHT, padx=(8, 0))
-        self.kpi_only_btn = tk.Button(opts_row, text="KPI Only View", width=14, command=self._toggle_kpi_only, relief="flat", bd=0, bg=self.ui["chip_bg"], activebackground=self.ui["chip_hover"])
-        self.kpi_only_btn.pack(side=tk.RIGHT)
-        self._bind_hover(self.compact_btn, self.ui["chip_bg"], self.ui["chip_hover"])
-        self._bind_hover(self.kpi_only_btn, self.ui["chip_bg"], self.ui["chip_hover"])
 
         mode_opts_row = tk.Frame(setup_card, bg=self.ui["surface"])
         self.assess_cb = tk.Checkbutton(
@@ -562,10 +548,6 @@ class LightMigrationUI:
         self.mode_var.trace_add("write", lambda *_: self._update_option_states())
         self._update_option_states()
         self._apply_preset()
-        if self._compact_mode:
-            self._toggle_compact_mode()
-        if self._kpi_only:
-            self._toggle_kpi_only()
 
     def _set_task(self, task: str) -> None:
         self.preset_var.set(task)
@@ -750,9 +732,23 @@ class LightMigrationUI:
             self._last_dashboard = dash_match.group(1).strip()
             self._last_summary_csv = os.path.splitext(self._last_dashboard)[0] + "_summary.csv"
 
+        html_report_match = re.search(r"HTML report:\s*(.+\.html)", text)
+        if html_report_match:
+            self._last_dashboard = html_report_match.group(1).strip()
+            if not self._last_summary_csv:
+                candidate_summary = os.path.join(
+                    os.path.dirname(self._last_dashboard),
+                    "global_assessment_summary.csv",
+                )
+                self._last_summary_csv = candidate_summary
+
         comp_match = re.search(r"Comparison report:\s*(.+\.html)", text)
         if comp_match:
             self._last_comparison = comp_match.group(1).strip()
+
+        assess_summary_match = re.search(r"Assessment summary CSV:\s*(.+\.csv)", text)
+        if assess_summary_match:
+            self._last_summary_csv = assess_summary_match.group(1).strip()
 
         pbip_match = re.search(r"\[OK\]\s+Power BI Project created:\s*(.+)", text)
         if pbip_match and not self._last_output_dir:

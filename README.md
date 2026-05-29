@@ -60,7 +60,6 @@ Built with Tkinter (standard library), this UI is intended for non-technical use
 - choose output folder
 - run migration and follow logs live
 - pick one task from: Assess, Migrate, Lineage
-- use KPI-only view for a clean summary-focused screen
 - auto-open HTML report when migration completes (optional toggle)
 - open generated HTML report/comparison and summary CSV in one click
 

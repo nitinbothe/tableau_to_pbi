@@ -4060,6 +4060,104 @@ def run_global_assessment_mode(args):
         save_global_assessment_json(result, output_path=json_path)
         print(f"  JSON report: {json_path}")
 
+        # Generate KPI summary CSVs aligned with dashboard conventions.
+        try:
+            from generate_report import _build_report_summary_rows, _write_summary_csv
+
+            def _norm_name(value):
+                text = str(value or '').strip()
+                return text.strip('[]').strip().lower()
+
+            def _estimate_table_count(ds_list):
+                total = 0
+                for ds in ds_list:
+                    tables = ds.get('tables', []) or []
+                    if tables:
+                        total += len(tables)
+                    else:
+                        total += 1
+                return total
+
+            migration_metadata = {}
+            for wb_name, converted in zip(workbook_names, all_converted):
+                datasources = converted.get('datasources', []) or []
+                worksheets = converted.get('worksheets', []) or []
+                calculations = converted.get('calculations', []) or []
+
+                calc_names = {
+                    _norm_name(c.get('name', ''))
+                    for c in calculations
+                    if _norm_name(c.get('name', ''))
+                }
+                calc_caption_names = {
+                    _norm_name(c.get('caption', ''))
+                    for c in calculations
+                    if _norm_name(c.get('caption', ''))
+                }
+
+                datasource_measure_names = set()
+                for ds in datasources:
+                    for table in ds.get('tables', []) or []:
+                        for col in table.get('columns', []) or []:
+                            if str(col.get('role', '')).strip().lower() == 'measure':
+                                col_name = _norm_name(col.get('name', ''))
+                                if col_name:
+                                    datasource_measure_names.add(col_name)
+
+                visual_details = []
+                for ws in worksheets:
+                    fields = ws.get('fields', []) or []
+                    measures = set()
+                    dax_measures = set()
+                    for fld in fields:
+                        name = _norm_name(fld.get('name', ''))
+                        if not name:
+                            continue
+                        is_measure_like = (
+                            bool(fld.get('aggregation'))
+                            or fld.get('shelf') == 'measure_value'
+                            or name in datasource_measure_names
+                            or name in calc_names
+                            or name in calc_caption_names
+                        )
+                        if is_measure_like:
+                            measures.add(str(fld.get('name', '')).strip())
+                        if name in calc_names or name in calc_caption_names:
+                            dax_measures.add(str(fld.get('name', '')).strip())
+
+                    visual_details.append({
+                        'pbi_visual': ws.get('chart_type') or ws.get('original_mark_class') or 'table',
+                        'measures': sorted(measures),
+                        'dax_measures': sorted(dax_measures),
+                    })
+
+                migration_metadata[wb_name] = {
+                    'objects_converted': {
+                        'datasources': len(datasources),
+                    },
+                    'tmdl_stats': {
+                        'tables': _estimate_table_count(datasources),
+                        'measures': len(calc_names),
+                    },
+                    'generated_output': {
+                        'visuals': len(visual_details),
+                    },
+                    'dax_measure_names': sorted(calc_names),
+                    'visual_details': visual_details,
+                }
+
+            summary_rows = _build_report_summary_rows({}, migration_metadata)
+
+            summary_paths = [
+                os.path.join(out, 'global_assessment_summary.csv'),
+                os.path.join(out, 'MIGRATION_DASHBOARD_summary.csv'),
+            ]
+            for summary_path in summary_paths:
+                _write_summary_csv(summary_path, summary_rows)
+                print(f"📊 Assessment summary CSV: {summary_path}")
+        except Exception as csv_exc:
+            logger.warning("Global assessment summary CSV generation failed: %s", csv_exc)
+
         return ExitCode.SUCCESS
 
     except Exception as e:
@@ -4486,6 +4584,139 @@ def _run_assessment_mode(args, results):
         has_prep = bool(args.prep and results.get('prep'))
         rec = recommend_strategy(extracted, prep_flow=has_prep)
         print_recommendation(rec)
+
+        # Generate migration-compatible summary CSV for UI KPI parity.
+        try:
+            from generate_report import _build_report_summary_rows, _write_summary_csv
+
+            worksheets = extracted.get('worksheets', []) or []
+            calculations = extracted.get('calculations', []) or []
+            datasources = extracted.get('datasources', []) or []
+            def _norm_name(value):
+                text = str(value or '').strip()
+                return text.strip('[]').strip().lower()
+
+            calc_names = {
+                _norm_name(c.get('name', ''))
+                for c in calculations
+                if _norm_name(c.get('name', ''))
+            }
+            calc_caption_names = {
+                _norm_name(c.get('caption', ''))
+                for c in calculations
+                if _norm_name(c.get('caption', ''))
+            }
+            datasource_measure_names = set()
+            for ds in datasources:
+                for table in ds.get('tables', []) or []:
+                    for col in table.get('columns', []) or []:
+                        if str(col.get('role', '')).strip().lower() == 'measure':
+                            col_name = _norm_name(col.get('name', ''))
+                            if col_name:
+                                datasource_measure_names.add(col_name)
+
+            def _estimate_table_count(ds_list):
+                total = 0
+                for ds in ds_list:
+                    tables = ds.get('tables', []) or []
+                    if tables:
+                        total += len(tables)
+                    else:
+                        total += 1
+                return total
+
+            visual_details = []
+            for ws in worksheets:
+                fields = ws.get('fields', []) or []
+                measures = set()
+                dax_measures = set()
+                for fld in fields:
+                    name = _norm_name(fld.get('name', ''))
+                    if not name:
+                        continue
+                    is_measure_like = (
+                        bool(fld.get('aggregation'))
+                        or fld.get('shelf') == 'measure_value'
+                        or name in datasource_measure_names
+                        or name in calc_names
+                        or name in calc_caption_names
+                    )
+                    if is_measure_like:
+                        measures.add(str(fld.get('name', '')).strip())
+                    if name in calc_names or name in calc_caption_names:
+                        dax_measures.add(str(fld.get('name', '')).strip())
+
+                visual_details.append({
+                    'pbi_visual': ws.get('chart_type') or ws.get('original_mark_class') or 'table',
+                    'measures': sorted(measures),
+                    'dax_measures': sorted(dax_measures),
+                })
+
+            synthetic_meta = {
+                source_basename: {
+                    'objects_converted': {
+                        'datasources': len(datasources),
+                    },
+                    'tmdl_stats': {
+                        'tables': _estimate_table_count(datasources),
+                        'measures': len(calc_names),
+                    },
+                    'generated_output': {
+                        'visuals': len(visual_details),
+                    },
+                    'dax_measure_names': sorted(calc_names),
+                    'visual_details': visual_details,
+                }
+            }
+
+            summary_rows = _build_report_summary_rows({}, synthetic_meta)
+            summary_csv_path = os.path.join(out_dir, f'MIGRATION_DASHBOARD_{source_basename}_summary.csv')
+            _write_summary_csv(summary_csv_path, summary_rows)
+            print(f"\n📊 Assessment summary CSV: {summary_csv_path}")
+
+            # Also emit the legacy dashboard summary name so it sits beside
+            # MIGRATION_DASHBOARD.html in the same folder when users expect it.
+            legacy_summary_csv_path = os.path.join(out_dir, 'MIGRATION_DASHBOARD_summary.csv')
+            _write_summary_csv(legacy_summary_csv_path, summary_rows)
+            print(f"📊 Assessment summary CSV (dashboard name): {legacy_summary_csv_path}")
+
+            global_assessment_summary_csv_path = os.path.join(out_dir, 'global_assessment_summary.csv')
+            _write_summary_csv(global_assessment_summary_csv_path, summary_rows)
+            print(
+                "📊 Assessment summary CSV (global assessment name): "
+                f"{global_assessment_summary_csv_path}"
+            )
+
+            # Also place a copy next to the saved assessment report bundle folder.
+            if os.path.isdir(assess_path):
+                nested_summary_csv_path = os.path.join(
+                    assess_path,
+                    f'MIGRATION_DASHBOARD_{source_basename}_summary.csv',
+                )
+                _write_summary_csv(nested_summary_csv_path, summary_rows)
+                print(f"📊 Assessment summary CSV (assessment folder): {nested_summary_csv_path}")
+
+                nested_legacy_summary_csv_path = os.path.join(
+                    assess_path,
+                    'MIGRATION_DASHBOARD_summary.csv',
+                )
+                _write_summary_csv(nested_legacy_summary_csv_path, summary_rows)
+                print(
+                    "📊 Assessment summary CSV (assessment folder, dashboard name): "
+                    f"{nested_legacy_summary_csv_path}"
+                )
+
+                nested_global_assessment_summary_csv_path = os.path.join(
+                    assess_path,
+                    'global_assessment_summary.csv',
+                )
+                _write_summary_csv(nested_global_assessment_summary_csv_path, summary_rows)
+                print(
+                    "📊 Assessment summary CSV (assessment folder, global assessment name): "
+                    f"{nested_global_assessment_summary_csv_path}"
+                )
+        except Exception as csv_exc:
+            logger.warning("Assessment summary CSV generation failed: %s", csv_exc)
 
         print("\n✓ Assessment complete (no generation performed)")
         return ExitCode.SUCCESS
