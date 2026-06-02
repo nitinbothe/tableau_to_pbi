@@ -1630,6 +1630,42 @@ class TestPBIDesktopValidation(unittest.TestCase):
             f"Unexpected unknown refs: {issues}",
         )
 
+    def test_validate_semantic_references_ignores_annotation_blocks(self):
+        """Multiline annotation payloads should not be parsed as DAX references."""
+        proj = self._create_model({
+            'Orders': (
+                "table Orders\n"
+                "\tcolumn Id\n"
+                "\tcolumn Amount\n"
+                "\tmeasure 'Total' = SUM('Orders'[Amount])\n"
+                "\tannotation MigrationNote = ```\n"
+                "\tDAX preview: SUM('GhostTable'[GhostColumn])\n"
+                "\t```\n"
+            ),
+        })
+        sm_dir = os.path.join(proj, 'Test.SemanticModel')
+        issues = ArtifactValidator.validate_semantic_references(sm_dir)
+        self.assertFalse(
+            any('GhostTable' in i or 'GhostColumn' in i for i in issues),
+            f"Annotation block references should be ignored: {issues}",
+        )
+
+    def test_validate_semantic_references_is_case_insensitive(self):
+        """DAX refs should resolve regardless of table/column letter casing."""
+        proj = self._create_model({
+            'Orders': (
+                "table Orders\n"
+                "\tcolumn [Observation Id]\n"
+                "\tmeasure [Good] = SUM('orders'[observation id])\n"
+            ),
+        })
+        sm_dir = os.path.join(proj, 'Test.SemanticModel')
+        issues = ArtifactValidator.validate_semantic_references(sm_dir)
+        self.assertFalse(
+            any('Unknown table reference' in i or 'Unknown column/measure' in i for i in issues),
+            f"Case-insensitive refs should resolve: {issues}",
+        )
+
     def test_validate_lookupvalue_ambiguity_flags_non_key(self):
         """LOOKUPVALUE on non-unique column is flagged."""
         proj = self._create_model(

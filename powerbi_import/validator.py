@@ -651,7 +651,7 @@ class ArtifactValidator:
     )
     # Regex to extract DAX column/measure references: 'Table'[Column]
     # Handles escaped apostrophes ('') inside table names.
-    _RE_DAX_REF = re.compile(r"'((?:[^']|'')+)'\[([^\]]+)\]")
+    _RE_DAX_REF = re.compile(r"'((?:[^'\r\n]|'')+)'\[([^\]\r\n]+)\]")
 
     # Pre-compiled patterns for validate_tmdl_dax hot loop
     _RE_TMDL_COL_DEF = re.compile(r"^\s*column\s+'?([^'=]+?)'?\s*$")
@@ -750,6 +750,25 @@ class ArtifactValidator:
         known_cols = symbols['columns']
         known_measures = symbols['measures']
         warnings_list = []
+        seen_warnings = set()
+
+        def _norm_ref_name(name):
+            ref = (name or '').strip()
+            if ref.startswith('[') and ref.endswith(']') and len(ref) >= 2:
+                ref = ref[1:-1].strip()
+            # DAX escapes a literal ']' inside bracketed identifiers as ']]'.
+            ref = ref.replace(']]', ']')
+            return cls._unescape_tmdl_name(ref)
+
+        # DAX identifiers are case-insensitive.
+        known_tables_lc = {t.lower(): t for t in known_tables}
+        all_fields_lc = {
+            t: {
+                f.lower(): f
+                for f in (known_cols.get(t, set()) | known_measures.get(t, set()))
+            }
+            for t in known_tables
+        }
 
         sm_path = Path(sm_dir)
         def_dir = sm_path / 'definition'
@@ -773,30 +792,47 @@ class ArtifactValidator:
                 continue
             basename = tmdl_file.name
 
-            # Strip annotation lines — they contain original Tableau
-            # formulas and truncated DAX previews that cause false
-            # positives (unclosed brackets from truncation).
+            # Strip annotation blocks and descriptive text that may contain
+            # source snippets; these are metadata, not executable DAX.
             content_lines = []
+            in_annotation_block = False
             for ln in raw_content.splitlines():
                 stripped_ln = ln.strip()
-                if stripped_ln.startswith('annotation '):
+
+                if in_annotation_block:
+                    if '```' in stripped_ln and stripped_ln.count('```') % 2 == 1:
+                        in_annotation_block = False
                     continue
+
+                if stripped_ln.startswith('annotation '):
+                    if '```' in stripped_ln and stripped_ln.count('```') % 2 == 1:
+                        in_annotation_block = True
+                    continue
+
+                if stripped_ln.startswith('description:'):
+                    continue
+
                 content_lines.append(ln)
             content = '\n'.join(content_lines)
 
             for match in cls._RE_DAX_REF.finditer(content):
-                table_ref = cls._unescape_tmdl_name(match.group(1))
-                col_ref = match.group(2)
-                if table_ref not in known_tables:
-                    warnings_list.append(
-                        f'Unknown table reference \'{table_ref}\' in {basename}'
-                    )
+                table_ref = _norm_ref_name(match.group(1))
+                col_ref = _norm_ref_name(match.group(2))
+
+                table_key = table_ref.lower()
+                canonical_table = known_tables_lc.get(table_key)
+                if canonical_table is None:
+                    msg = f'Unknown table reference \'{table_ref}\' in {basename}'
+                    if msg not in seen_warnings:
+                        warnings_list.append(msg)
+                        seen_warnings.add(msg)
                 else:
-                    all_fields = known_cols.get(table_ref, set()) | known_measures.get(table_ref, set())
-                    if col_ref not in all_fields:
-                        warnings_list.append(
-                            f'Unknown column/measure [{col_ref}] in table \'{table_ref}\' ({basename})'
-                        )
+                    table_fields_lc = all_fields_lc.get(canonical_table, {})
+                    if col_ref.lower() not in table_fields_lc:
+                        msg = f'Unknown column/measure [{col_ref}] in table \'{canonical_table}\' ({basename})'
+                        if msg not in seen_warnings:
+                            warnings_list.append(msg)
+                            seen_warnings.add(msg)
 
         return warnings_list
 

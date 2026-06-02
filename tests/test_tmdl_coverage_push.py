@@ -1012,6 +1012,59 @@ class TestCreateRlsRoles(unittest.TestCase):
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 
+    def test_user_filter_missing_column_falls_back_to_true(self):
+        """Missing user-filter column should not generate invalid RLS references."""
+        datasources = [{
+            'name': 'DS1',
+            'tables': [{'name': 'Sales', 'columns': [
+                {'name': 'Email'}, {'name': 'Amount'},
+            ]}],
+            'calculations': [],
+            'connection': {'class': 'sqlserver', 'server': 'srv', 'dbname': 'db'},
+        }]
+        user_filters = [{
+            'type': 'user_filter',
+            'name': 'BadEmailFilter',
+            'column': 'CustomerEmail',
+            'user_mappings': [],
+        }]
+        tmp = tempfile.mkdtemp()
+        try:
+            generate_tmdl(datasources, 'test', {'user_filters': user_filters}, tmp)
+            roles_path = os.path.join(tmp, 'definition', 'roles.tmdl')
+            if os.path.exists(roles_path):
+                content = open(roles_path, encoding='utf-8').read()
+                self.assertIn('filterExpression = TRUE()', content)
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_calculated_security_missing_column_falls_back_to_true(self):
+        """Calculated security with unknown refs should degrade safely."""
+        datasources = [{
+            'name': 'DS1',
+            'tables': [{'name': 'Sales', 'columns': [
+                {'name': 'Region'}, {'name': 'Amount'},
+            ]}],
+            'calculations': [],
+            'connection': {'class': 'sqlserver', 'server': 'srv', 'dbname': 'db'},
+        }]
+        user_filters = [{
+            'type': 'calculated_security',
+            'name': 'Region Match',
+            'formula': '[RegionManager] = FULLNAME()',
+            'functions_used': ['FULLNAME'],
+            'ismemberof_groups': [],
+        }]
+        tmp = tempfile.mkdtemp()
+        try:
+            generate_tmdl(datasources, 'test', {'user_filters': user_filters}, tmp)
+            roles_path = os.path.join(tmp, 'definition', 'roles.tmdl')
+            if os.path.exists(roles_path):
+                content = open(roles_path, encoding='utf-8').read()
+                self.assertIn('filterExpression = TRUE()', content)
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
 
 # ═══════════════════════════════════════════════════════════════════════
 #  18. _unique_role_name — special chars and counter (L2563, L2568-2571)

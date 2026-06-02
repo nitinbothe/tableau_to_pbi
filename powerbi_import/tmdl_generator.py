@@ -4734,6 +4734,56 @@ def _create_rls_roles(model, user_filters, main_table_name, column_table_map):
     roles = []
     role_names = set()
 
+    model_tables = model.get('model', {}).get('tables', [])
+    table_name_map = {
+        (t.get('name') or '').lower(): (t.get('name') or '')
+        for t in model_tables
+        if t.get('name')
+    }
+
+    def _build_table_column_index():
+        idx = {}
+        for t in model_tables:
+            tname = t.get('name') or ''
+            if not tname:
+                continue
+            cols = set()
+            for c in t.get('columns', []) or []:
+                cname = (c.get('name') or '').strip()
+                if cname:
+                    cols.add(cname.lower())
+                src = (c.get('sourceColumn') or '').strip()
+                if src:
+                    cols.add(src.lower())
+            idx[tname] = cols
+        return idx
+
+    table_cols_index = _build_table_column_index()
+
+    def _missing_refs_in_expr(expr, default_table):
+        missing = []
+        pattern = re.compile(r"(?:'((?:[^']|'')+)')?\[([^\]\r\n]+)\]")
+        for m in pattern.finditer(expr or ''):
+            raw_table = m.group(1)
+            ref_col = (m.group(2) or '').strip().replace(']]', ']')
+            if not ref_col:
+                continue
+
+            if raw_table:
+                ref_table = raw_table.replace("''", "'")
+                ref_table = table_name_map.get(ref_table.lower(), ref_table)
+            else:
+                ref_table = default_table
+
+            known_cols = table_cols_index.get(ref_table)
+            if known_cols is None or ref_col.lower() not in known_cols:
+                missing.append((ref_table, ref_col))
+        return missing
+
+    def _table_has_column(table_name, column_name):
+        known_cols = table_cols_index.get(table_name, set())
+        return (column_name or '').strip().lower() in known_cols
+
     for uf in user_filters:
         uf_type = uf.get('type', '')
 
@@ -4772,6 +4822,14 @@ def _create_rls_roles(model, user_filters, main_table_name, column_table_map):
                 else:
                     filter_dax = 'FALSE()'
 
+                fallback_note = ''
+                if not _table_has_column(table_name, col_clean):
+                    filter_dax = 'TRUE()'
+                    fallback_note = (
+                        f" RLS expression referenced missing column '{col_clean}' "
+                        f"on table '{table_name}'; filter was downgraded to TRUE()."
+                    )
+
                 role_name = _unique_role_name(filter_name, role_names)
                 role_names.add(role_name)
 
@@ -4788,12 +4846,20 @@ def _create_rls_roles(model, user_filters, main_table_name, column_table_map):
                         f"Migrated from Tableau user filter '{filter_name}'. "
                         f"Each user is mapped to their allowed {col_clean} values inline. "
                         f"Consider creating a security table for dynamic RLS."
+                        f"{fallback_note}"
                     ),
                     "_user_mappings": user_mappings
                 })
 
             elif column:
                 filter_dax = f"[{col_clean}] = USERPRINCIPALNAME()"
+                fallback_note = ''
+                if not _table_has_column(table_name, col_clean):
+                    filter_dax = 'TRUE()'
+                    fallback_note = (
+                        f" RLS expression referenced missing column '{col_clean}' "
+                        f"on table '{table_name}'; filter was downgraded to TRUE()."
+                    )
                 role_name = _unique_role_name(filter_name, role_names)
                 role_names.add(role_name)
 
@@ -4805,7 +4871,11 @@ def _create_rls_roles(model, user_filters, main_table_name, column_table_map):
                             "name": table_name,
                             "filterExpression": filter_dax
                         }
-                    ]
+                    ],
+                    "_migration_note": (
+                        f"Migrated from Tableau user filter '{filter_name}' "
+                        f"without explicit user mappings.{fallback_note}"
+                    )
                 })
 
         elif uf_type == 'calculated_security':
@@ -4863,6 +4933,18 @@ def _create_rls_roles(model, user_filters, main_table_name, column_table_map):
                         perm_table = ref_table
                         dax_filter = dax_filter.replace(f"'{ref_table}'[", "[")
 
+                fallback_note = ''
+                missing_refs = _missing_refs_in_expr(dax_filter, perm_table)
+                if missing_refs:
+                    dax_filter = 'TRUE()'
+                    missing_desc = ', '.join(
+                        f"{tbl}[{col}]" for tbl, col in missing_refs[:6]
+                    )
+                    fallback_note = (
+                        " Converted RLS filter referenced missing columns "
+                        f"({missing_desc}); filter was downgraded to TRUE()."
+                    )
+
                 roles.append({
                     "name": role_name,
                     "modelPermission": "read",
@@ -4875,6 +4957,7 @@ def _create_rls_roles(model, user_filters, main_table_name, column_table_map):
                     "_migration_note": (
                         f"Migrated from Tableau calculated security '{calc_name}'. "
                         f"Original formula: {formula}"
+                        f"{fallback_note}"
                     )
                 })
 
