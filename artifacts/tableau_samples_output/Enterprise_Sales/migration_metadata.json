@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-13T17:40:22.517595",
+  "generated_at": "2026-06-09T09:32:56.830324",
   "source": "Tableau Migration",
   "report_name": "Enterprise_Sales",
   "objects_converted": {
@@ -29,10 +29,45 @@
   },
   "tmdl_stats": {
     "tables": 5,
-    "measures": 23,
-    "columns": 39,
+    "measures": 33,
+    "columns": 44,
     "relationships": 2
   },
+  "dax_measure_names": [
+    "AOV Completed",
+    "Customer Tier",
+    "Date Range Start",
+    "Gross Revenue",
+    "Gross Revenue Formatted",
+    "Is My Account",
+    "Moving Avg Revenue",
+    "Moving Avg Revenue Formatted",
+    "Net Revenue",
+    "Net Revenue Formatted",
+    "Previous Year",
+    "Profit",
+    "Profit Formatted",
+    "Profit Margin %",
+    "Regional Channel Revenue",
+    "Regional Channel Revenue Formatted",
+    "Revenue Excl Category",
+    "Revenue Excl Category Formatted",
+    "Revenue Rank",
+    "Revenue Rank Formatted",
+    "Revenue StdDev",
+    "Revenue per Customer",
+    "Revenue per Customer Formatted",
+    "Running Total Revenue",
+    "Target Margin",
+    "Top N",
+    "Total Discount",
+    "Total Discount Formatted",
+    "Unique Customers",
+    "YTD Revenue",
+    "YTD Revenue Formatted",
+    "Year Over Year %",
+    "Year To Date"
+  ],
   "visual_type_mappings": {
     "Executive KPIs": "Automatic",
     "Revenue by Region": "Automatic",
@@ -51,6 +86,7 @@
         "Calc_Profit",
         "Calc_UniqueCustomers"
       ],
+      "dax_measures": [],
       "field_count": 3
     },
     {
@@ -65,6 +101,7 @@
         "Calc_NetRevenue",
         "Calc_NetRevenue"
       ],
+      "dax_measures": [],
       "field_count": 4
     },
     {
@@ -74,8 +111,13 @@
       "dimensions": [
         "order_date"
       ],
-      "measures": [],
-      "field_count": 1
+      "measures": [
+        "Calc_NetRevenue",
+        "Calc_Profit",
+        "Calc_MovAvgRev"
+      ],
+      "dax_measures": [],
+      "field_count": 4
     },
     {
       "worksheet": "Customer Analysis",
@@ -89,6 +131,7 @@
         "Calc_ProfitMargin",
         "Calc_UniqueCustomers"
       ],
+      "dax_measures": [],
       "field_count": 4
     },
     {
@@ -100,6 +143,7 @@
         "Calc_NetRevenue",
         "Calc_NetRevenue"
       ],
+      "dax_measures": [],
       "field_count": 2
     }
   ],

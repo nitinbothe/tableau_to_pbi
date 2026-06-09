@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-13T17:41:21.427745",
+  "generated_at": "2026-06-09T09:33:35.169666",
   "source": "Tableau Migration",
   "report_name": "Manufacturing_IoT",
   "objects_converted": {
@@ -29,10 +29,28 @@
   },
   "tmdl_stats": {
     "tables": 5,
-    "measures": 14,
+    "measures": 16,
     "columns": 50,
     "relationships": 5
   },
+  "dax_measure_names": [
+    "Alert Threshold",
+    "Avg by Sensor Machine",
+    "Dense Rank",
+    "Dense Rank Formatted",
+    "Median Value",
+    "P95 Value",
+    "Running Avg Value",
+    "Running Count",
+    "Running Max Value",
+    "Running Min Value",
+    "Time Granularity",
+    "Unique Rank",
+    "Value Variance",
+    "Value Variance Pop",
+    "Window Total",
+    "Window Total Formatted"
+  ],
   "visual_type_mappings": {
     "Sensor Monitor": "Automatic",
     "Machine Health": "Automatic",
@@ -53,6 +71,7 @@
       "measures": [
         "value"
       ],
+      "dax_measures": [],
       "field_count": 3
     },
     {
@@ -67,6 +86,7 @@
         "value",
         "quality_score"
       ],
+      "dax_measures": [],
       "field_count": 4
     },
     {
@@ -81,6 +101,7 @@
         "maint_cost",
         "maint_cost"
       ],
+      "dax_measures": [],
       "field_count": 4
     },
     {
@@ -94,6 +115,7 @@
       "measures": [
         "value"
       ],
+      "dax_measures": [],
       "field_count": 3
     },
     {
@@ -108,6 +130,7 @@
         "Calc_VibY",
         "Calc_EnergyIdx"
       ],
+      "dax_measures": [],
       "field_count": 4
     },
     {
@@ -121,6 +144,7 @@
         "Calc_WinTotal",
         "Calc_DenseRank"
       ],
+      "dax_measures": [],
       "field_count": 3
     }
   ],

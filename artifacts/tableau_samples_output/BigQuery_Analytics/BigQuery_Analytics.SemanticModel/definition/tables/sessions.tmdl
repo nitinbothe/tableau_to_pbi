@@ -1,49 +1,69 @@
 table sessions
-	lineageTag: a7a47a67-a2e1-4e68-99fb-d4d54e37d253
+	lineageTag: b3107be9-c9c2-452e-8818-11e952423a3d
 
 	measure 'Total Sessions' = COUNT('sessions'[session_id])
 		displayFolder: Measures
-		lineageTag: 88f8de3c-68e9-4c85-b58e-a81bcddc456d
+		lineageTag: fa6632c1-60e3-4694-8f13-71c3bd559d9a
 		annotation Copilot_Description = Migrated from Tableau: COUNT([session_id]) | DAX: COUNT('sessions'[session_id])
 
 	measure 'Unique Visitors' = DISTINCTCOUNT('sessions'[user_id])
 		displayFolder: Measures
-		lineageTag: 01c47933-fe73-470c-922a-f6b6ab72e7df
+		lineageTag: 7847b35e-1823-4992-8295-499b0c6226dc
 		annotation Copilot_Description = Migrated from Tableau: COUNTD([user_id]) | DAX: DISTINCTCOUNT('sessions'[user_id])
 
 	measure 'Conversion Rate' = SUMX('sessions', IF('sessions'[converted], 1, 0)) / COUNT('sessions'[session_id])
 		formatString: #,0.00
 		displayFolder: Measures
-		lineageTag: 7843836c-1ba9-43cc-9666-b190d4d56e3c
+		lineageTag: bcbac310-5dcd-475d-8268-98575683c4da
 		annotation Copilot_Description = Migrated from Tableau: SUM(IF [converted] THEN 1 ELSE 0 END) / COUNT([session_id]) | DAX: SUMX('sessions', IF('sessions'[converted], 1, 0)) / COUNT('sessions'[session_id])
 
 	measure 'Avg Session Duration' = AVERAGE('sessions'[session_duration])
 		formatString: #,0.00
 		displayFolder: Measures
-		lineageTag: 355fab85-2371-4fb6-acba-c2efcf4a2a12
+		lineageTag: 732df50c-c339-4c0c-83f6-6044eb1640a2
 		annotation Copilot_Description = Migrated from Tableau: AVG([session_duration]) | DAX: AVERAGE('sessions'[session_duration])
 
 	measure 'Total Revenue' = SUM('sessions'[revenue])
 		formatString: #,0.00
 		displayFolder: Measures
-		lineageTag: 13ea1251-e7cd-40ff-9eaf-1a0103938aff
+		lineageTag: e17ca05f-f074-4888-9bec-7af23db6ea89
 		annotation Copilot_Description = Migrated from Tableau: SUM([revenue]) | DAX: SUM('sessions'[revenue])
 
 	measure 'Revenue per Session' = SUM('sessions'[revenue]) / COUNT('sessions'[session_id])
 		formatString: #,0.00
 		displayFolder: Measures
-		lineageTag: eee158cc-f8bf-4f5d-8f47-de5cbfab5f06
+		lineageTag: 710d578b-d21f-4427-9fad-19f9a12c5f47
 		annotation Copilot_Description = Migrated from Tableau: SUM([revenue]) / COUNT([session_id]) | DAX: SUM('sessions'[revenue]) / COUNT('sessions'[session_id])
 
 	measure 'Revenue by Channel' = CALCULATE(SUM('sessions'[revenue]), ALLEXCEPT('sessions', 'sessions'[channel]))
 		formatString: #,0.00
 		displayFolder: Measures
-		lineageTag: e7ccb66f-1b58-45cc-a3f4-923df53b8f55
+		lineageTag: a2e4515a-0ac5-40d6-8e38-c06abd053fa7
 		annotation Copilot_Description = Migrated from Tableau: {FIXED [channel] : SUM([revenue])} | DAX: CALCULATE(SUM('sessions'[revenue]), ALLEXCEPT('sessions', 'sessions'[channel]))
+
+	measure 'Conversion Rate Formatted' = VAR _val = [Conversion Rate] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+		displayFolder: Formatted
+		lineageTag: e7d23773-e357-4587-9d5b-9f64d4f1d7a3
+		annotation Copilot_Description = Dynamic numeric abbreviation for Conversion Rate (K/M/B)
+
+	measure 'Total Revenue Formatted' = VAR _val = [Total Revenue] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+		displayFolder: Formatted
+		lineageTag: 475c17b3-cf4a-4690-b433-b1c558d8743d
+		annotation Copilot_Description = Dynamic numeric abbreviation for Total Revenue (K/M/B)
+
+	measure 'Revenue per Session Formatted' = VAR _val = [Revenue per Session] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+		displayFolder: Formatted
+		lineageTag: ab47af4e-3a64-45f7-8bb2-0d34c9d08380
+		annotation Copilot_Description = Dynamic numeric abbreviation for Revenue per Session (K/M/B)
+
+	measure 'Revenue by Channel Formatted' = VAR _val = [Revenue by Channel] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+		displayFolder: Formatted
+		lineageTag: 9cefdef3-31e6-4827-97a6-337b9c5efa07
+		annotation Copilot_Description = Dynamic numeric abbreviation for Revenue by Channel (K/M/B)
 
 	column session_id
 		dataType: string
-		lineageTag: d156e8d6-8e44-4e1a-92a7-c0e0a379c275
+		lineageTag: d36a4a86-d76e-47c8-a5d0-0f800ab938fd
 		summarizeBy: none
 		sourceColumn: session_id
 		annotation Copilot_Hidden = true
@@ -53,7 +73,7 @@ table sessions
 	column session_date
 		dataType: dateTime
 		formatString: General Date
-		lineageTag: 7ebd716b-f024-4df8-b908-ecc0d25b155a
+		lineageTag: ef98a2c6-9da2-4386-99ed-6180cb8eaf63
 		summarizeBy: none
 		sourceColumn: session_date
 
@@ -61,7 +81,7 @@ table sessions
 
 	column user_id
 		dataType: string
-		lineageTag: 9873a938-25cb-4d40-9f30-b1f4089db92a
+		lineageTag: 00493d40-e6bf-45ca-ae49-f78f0937fd4f
 		summarizeBy: none
 		sourceColumn: user_id
 		annotation Copilot_Hidden = true
@@ -70,7 +90,7 @@ table sessions
 
 	column channel
 		dataType: string
-		lineageTag: 883f7f76-0e28-46d7-b869-eb0df476ecd1
+		lineageTag: 040176e1-f883-4971-b15f-9462fd0b8750
 		summarizeBy: none
 		sourceColumn: channel
 
@@ -78,7 +98,7 @@ table sessions
 
 	column device_type
 		dataType: string
-		lineageTag: 6fece4ab-fa78-4ca6-a8ba-3644718f7cf1
+		lineageTag: 9599f714-dd9d-40ce-9ed0-4b38d1e0d1c7
 		summarizeBy: none
 		sourceColumn: device_type
 
@@ -86,7 +106,7 @@ table sessions
 
 	column country
 		dataType: string
-		lineageTag: fbb21abc-203c-461c-bb52-156d34ea7818
+		lineageTag: 524e4ef2-b163-4a6d-8c3b-be886f31f53c
 		summarizeBy: none
 		sourceColumn: country
 		dataCategory: Country
@@ -95,7 +115,7 @@ table sessions
 
 	column page_views
 		dataType: int64
-		lineageTag: aa662c21-9d64-4e09-8b52-f4db57e69e33
+		lineageTag: 1147db6a-2bd3-4ef3-8ef9-a327c4f5d8c8
 		summarizeBy: sum
 		sourceColumn: page_views
 
@@ -104,7 +124,7 @@ table sessions
 	column session_duration
 		dataType: double
 		formatString: #,0.00
-		lineageTag: 2222518b-0bd4-4427-95ab-000cf9c6ce8b
+		lineageTag: 690ce7c3-40aa-478e-bc2c-9d54a2ec00e1
 		summarizeBy: sum
 		sourceColumn: session_duration
 
@@ -112,7 +132,7 @@ table sessions
 
 	column converted
 		dataType: boolean
-		lineageTag: 15004ead-98a7-4c6a-bff3-6afb7d007d49
+		lineageTag: 3dc4590b-0249-41d0-9a99-f107bd358b4f
 		summarizeBy: none
 		sourceColumn: converted
 
@@ -121,7 +141,7 @@ table sessions
 	column revenue
 		dataType: double
 		formatString: #,0.00
-		lineageTag: 2731fefd-749b-4f87-9406-408bedffc442
+		lineageTag: 20230b0a-02e2-4277-966d-1e777416a4e6
 		summarizeBy: sum
 		sourceColumn: revenue
 
@@ -129,7 +149,7 @@ table sessions
 
 	column 'Channel Category'
 		dataType: string
-		lineageTag: 45a8b30d-88b0-462b-8be7-5b0d613e9b35
+		lineageTag: 1b4bd451-2992-4556-8fe6-2210525510e0
 		summarizeBy: none
 		sourceColumn: 'Channel Category'
 
@@ -137,7 +157,7 @@ table sessions
 
 	column 'Engagement Level'
 		dataType: string
-		lineageTag: b0d4d2b1-3b93-4242-bef7-0c9c468e43cc
+		lineageTag: a920e3d4-bf8b-47e1-9696-cd3940e9600e
 		summarizeBy: none
 		sourceColumn: 'Engagement Level'
 
@@ -145,16 +165,26 @@ table sessions
 
 	column 'Days Since Signup' = DATEDIFF(CALCULATE(SELECTEDVALUE(users[signup_date])), TODAY(), DAY)
 		dataType: int64
-		lineageTag: 19cf7602-c880-4abb-9410-b12e2ee2e346
+		lineageTag: 20318e92-17ac-4f23-bb11-56466303a3e1
 		summarizeBy: none
 
 		annotation SummarizationSetBy = Automatic
 
-	partition 'sessions-a0d86cbc-f57a-4ccd-a78e-16da0a078413' = m
+	column signup_date
+		dataType: string
+		lineageTag: 5f59b253-eaa5-4d3f-be08-d5c448f3d2a4
+		summarizeBy: none
+		sourceColumn: signup_date
+		isHidden
+		annotation MigrationNote = Self-heal: placeholder column created to satisfy missing reference [signup_date] in calculated column 'Days Since Signup'.
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'sessions-43b9af6c-95d6-4b5d-9f94-ecdd4abe5d48' = m
 		mode: import
 		source =
 				let
-				    // Source Google BigQuery: my-analytics-project.web_data
+				    
 				    Source = try
 				
 				        let
@@ -176,5 +206,5 @@ table sessions
 				    Result
 
 	annotation PBI_ResultType = Table
-	annotation Copilot_TableDescription = Contains 13 columns and 7 measures: session_id, session_date, user_id, channel, device_type, country, page_views, session_duration, ... (13 columns total).
+	annotation Copilot_TableDescription = Contains 14 columns and 11 measures: session_id, session_date, user_id, channel, device_type, country, page_views, session_duration, ... (14 columns total).
 

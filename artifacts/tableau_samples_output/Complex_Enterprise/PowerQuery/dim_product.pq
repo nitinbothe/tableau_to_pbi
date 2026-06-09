@@ -1,5 +1,5 @@
 let
-    // Source Snowflake: analytics.snowflakecomputing.com
+
     Source = try
 
         let

@@ -89,6 +89,48 @@
       "pbi_type": "measure"
     },
     {
+      "tableau_calculation": "Budget Deal Correlation Formatted",
+      "pbi_table": "Campaigns",
+      "pbi_object": "Budget Deal Correlation Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Spend Engagement Covar Formatted",
+      "pbi_table": "Campaigns",
+      "pbi_object": "Spend Engagement Covar Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Campaign ROI Formatted",
+      "pbi_table": "Campaigns",
+      "pbi_object": "Campaign ROI Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Cost Per Lead Formatted",
+      "pbi_table": "Campaigns",
+      "pbi_object": "Cost Per Lead Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Window Best ROI Formatted",
+      "pbi_table": "Campaigns",
+      "pbi_object": "Window Best ROI Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Window Worst ROI Formatted",
+      "pbi_table": "Campaigns",
+      "pbi_object": "Window Worst ROI Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Conversion Rate Formatted",
+      "pbi_table": "Campaigns",
+      "pbi_object": "Conversion Rate Formatted",
+      "pbi_type": "measure"
+    },
+    {
       "tableau_calculation": "Year To Date",
       "pbi_table": "Calendar",
       "pbi_object": "Year To Date",

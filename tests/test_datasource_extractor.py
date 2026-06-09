@@ -30,6 +30,8 @@ from datasource_extractor import (
   _extract_col_type_map,
     _parse_connection_class,
     _build_connection_map,
+    _rename_sqlproxy_tables,
+    _sanitize_caption_for_table_name,
     extract_connection_details,
     extract_datasource,
     extract_tables_with_columns,
@@ -672,6 +674,122 @@ class TestExtractDatasource(unittest.TestCase):
         self.assertEqual(ds['tables'], [])
         self.assertEqual(ds['calculations'], [])
         self.assertEqual(ds['relationships'], [])
+
+
+class TestRenameSqlproxyTables(unittest.TestCase):
+    """Verify that published-datasource (sqlproxy) tables are renamed to the
+    user-facing caption rather than leaking the internal Tableau class token.
+    """
+
+    def test_sanitize_strips_brackets_and_whitespace(self):
+        self.assertEqual(_sanitize_caption_for_table_name('  [My DS]  '), 'My DS')
+        self.assertEqual(_sanitize_caption_for_table_name('Plain Name'), 'Plain Name')
+        self.assertEqual(_sanitize_caption_for_table_name(''), '')
+        self.assertEqual(_sanitize_caption_for_table_name(None), '')
+
+    def test_renames_sqlproxy_to_caption(self):
+        ds = {
+            'name': 'sqlproxy.103ekax0erob871al9eyl0bq5wh0',
+            'caption': 'EDH_OBSERVATION_UC80 (2)',
+            'tables': [{'name': 'sqlproxy', 'columns': []}],
+            'relationships': [],
+            'calculations': [],
+        }
+        _rename_sqlproxy_tables(ds)
+        self.assertEqual(ds['tables'][0]['name'], 'EDH_OBSERVATION_UC80 (2)')
+
+    def test_propagates_rename_to_relationships(self):
+        ds = {
+            'name': 'sqlproxy.abc',
+            'caption': 'My Published DS',
+            'tables': [{'name': 'sqlproxy', 'columns': []}],
+            'relationships': [
+                {'left': {'table': 'sqlproxy', 'column': 'Id'},
+                 'right': {'table': 'Other', 'column': 'Id'}},
+            ],
+            'calculations': [],
+        }
+        _rename_sqlproxy_tables(ds)
+        self.assertEqual(ds['relationships'][0]['left']['table'], 'My Published DS')
+        self.assertEqual(ds['relationships'][0]['right']['table'], 'Other')
+
+    def test_propagates_rename_to_calc_column_table(self):
+        ds = {
+            'name': 'sqlproxy.abc',
+            'caption': 'Sales',
+            'tables': [{'name': 'sqlproxy', 'columns': []}],
+            'relationships': [],
+            'calculations': [
+                {'name': '[Profit]', 'column_table': 'sqlproxy'},
+                {'name': '[Other]', 'column_table': 'NotMatched'},
+            ],
+        }
+        _rename_sqlproxy_tables(ds)
+        self.assertEqual(ds['calculations'][0]['column_table'], 'Sales')
+        self.assertEqual(ds['calculations'][1]['column_table'], 'NotMatched')
+
+    def test_fallback_when_caption_missing(self):
+        ds = {
+            'name': 'sqlproxy.abc123',
+            'caption': '',
+            'tables': [{'name': 'sqlproxy', 'columns': []}],
+            'relationships': [],
+            'calculations': [],
+        }
+        _rename_sqlproxy_tables(ds)
+        # Falls back to dropping the 'sqlproxy.' prefix
+        self.assertEqual(ds['tables'][0]['name'], 'abc123')
+
+    def test_fallback_when_caption_equals_name(self):
+        ds = {
+            'name': 'federated.xyz789',
+            'caption': 'federated.xyz789',
+            'tables': [{'name': 'sqlproxy', 'columns': []}],
+            'relationships': [],
+            'calculations': [],
+        }
+        _rename_sqlproxy_tables(ds)
+        self.assertEqual(ds['tables'][0]['name'], 'xyz789')
+
+    def test_does_not_rename_non_sqlproxy_tables(self):
+        ds = {
+            'name': 'sqlserver.db',
+            'caption': 'My DB',
+            'tables': [
+                {'name': 'Orders', 'columns': []},
+                {'name': 'Customers', 'columns': []},
+            ],
+            'relationships': [],
+            'calculations': [],
+        }
+        _rename_sqlproxy_tables(ds)
+        names = [t['name'] for t in ds['tables']]
+        self.assertEqual(names, ['Orders', 'Customers'])
+
+    def test_empty_datasource_is_safe(self):
+        # No tables, no crash
+        ds = {'name': 'x', 'caption': 'y', 'tables': []}
+        _rename_sqlproxy_tables(ds)
+        self.assertEqual(ds['tables'], [])
+
+    def test_extract_datasource_integration(self):
+        # End-to-end: a published-datasource XML snippet should yield a
+        # table named after the caption rather than 'sqlproxy'.
+        xml = '''
+        <datasource name="sqlproxy.abc" caption="My Published DS">
+          <connection class="sqlproxy" server="tableau.company.com" dbname="ds-id" />
+          <relation type="table" name="sqlproxy">
+            <columns>
+              <column name="Id" datatype="integer" ordinal="0" />
+            </columns>
+          </relation>
+        </datasource>
+        '''
+        ds_elem = ET.fromstring(xml)
+        ds = extract_datasource(ds_elem)
+        table_names = [t['name'] for t in ds['tables']]
+        self.assertNotIn('sqlproxy', table_names)
+        self.assertIn('My Published DS', table_names)
 
 
 class TestDatasourceGuardHelpers(unittest.TestCase):

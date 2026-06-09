@@ -1,5 +1,5 @@
 let
-    // Source Google BigQuery: my-analytics-project.web_data
+
     Source = try
 
         let

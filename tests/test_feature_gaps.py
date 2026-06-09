@@ -758,12 +758,13 @@ class TestConditionalFormatting(unittest.TestCase):
         }
         objects = gen._build_visual_objects('Heat', ws_data, 'matrix')
         dp = objects.get('dataPoint', [{}])[0]
-        rules = dp.get('rules', [])
-        self.assertTrue(len(rules) >= 1)
-        gradient = rules[0].get('gradient', {})
-        self.assertIn('min', gradient)
-        self.assertIn('max', gradient)
-        self.assertNotIn('mid', gradient)
+        # PBIR v4.0 ``dataPoint`` items only allow ``{properties, selector}``;
+        # gradient ``rules`` blocks are rejected by the renderer, so the
+        # two-color path falls back to a static solid fill using the first
+        # palette colour (same contract as ``test_three_color_gradient``).
+        self.assertNotIn('rules', dp)
+        fill = dp.get('properties', {}).get('fill', {})
+        self.assertIn('solid', fill)
 
     def test_three_color_gradient(self):
         gen = _make_generator()
@@ -782,9 +783,11 @@ class TestConditionalFormatting(unittest.TestCase):
         }
         objects = gen._build_visual_objects('Heat3', ws_data, 'matrix')
         dp = objects.get('dataPoint', [{}])[0]
-        rules = dp.get('rules', [])
-        gradient = rules[0].get('gradient', {})
-        self.assertIn('mid', gradient)
+        # PBIR v4.0 does not support 'rules' in dataPoint items
+        self.assertNotIn('rules', dp)
+        # Static fill uses the first palette color
+        fill = dp.get('properties', {}).get('fill', {})
+        self.assertIn('solid', fill)
 
 
 # ═══════════════════════════════════════════════════════════════════

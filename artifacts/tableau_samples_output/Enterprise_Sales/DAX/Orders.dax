@@ -55,3 +55,33 @@ SUM('Customers'[customer_email]) = USERPRINCIPALNAME()
 Date Range Start =
 DATE(2024, 1, 1)
 
+Gross Revenue Formatted =
+VAR _val = [Gross Revenue] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+
+Net Revenue Formatted =
+VAR _val = [Net Revenue] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+
+Total Discount Formatted =
+VAR _val = [Total Discount] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+
+Profit Formatted =
+VAR _val = [Profit] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+
+Revenue per Customer Formatted =
+VAR _val = [Revenue per Customer] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+
+Regional Channel Revenue Formatted =
+VAR _val = [Regional Channel Revenue] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+
+Revenue Excl Category Formatted =
+VAR _val = [Revenue Excl Category] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+
+Moving Avg Revenue Formatted =
+VAR _val = [Moving Avg Revenue] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+
+Revenue Rank Formatted =
+VAR _val = [Revenue Rank] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "0"))))
+
+YTD Revenue Formatted =
+VAR _val = [YTD Revenue] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+

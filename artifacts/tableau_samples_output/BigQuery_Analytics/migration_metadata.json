@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-13T17:39:22.924625",
+  "generated_at": "2026-06-09T09:32:22.135727",
   "source": "Tableau Migration",
   "report_name": "BigQuery_Analytics",
   "objects_converted": {
@@ -29,10 +29,26 @@
   },
   "tmdl_stats": {
     "tables": 3,
-    "measures": 10,
-    "columns": 27,
+    "measures": 14,
+    "columns": 28,
     "relationships": 2
   },
+  "dax_measure_names": [
+    "Avg Session Duration",
+    "Conversion Rate",
+    "Conversion Rate Formatted",
+    "Previous Year",
+    "Revenue by Channel",
+    "Revenue by Channel Formatted",
+    "Revenue per Session",
+    "Revenue per Session Formatted",
+    "Total Revenue",
+    "Total Revenue Formatted",
+    "Total Sessions",
+    "Unique Visitors",
+    "Year Over Year %",
+    "Year To Date"
+  ],
   "visual_type_mappings": {
     "Sessions by Channel": "Automatic",
     "Revenue Trend": "Automatic",
@@ -51,6 +67,7 @@
       "measures": [
         "Total_Sessions"
       ],
+      "dax_measures": [],
       "field_count": 3
     },
     {
@@ -63,6 +80,7 @@
       "measures": [
         "Total_Revenue"
       ],
+      "dax_measures": [],
       "field_count": 2
     },
     {
@@ -75,6 +93,7 @@
       "measures": [
         "Conversion_Rate"
       ],
+      "dax_measures": [],
       "field_count": 2
     },
     {
@@ -88,6 +107,7 @@
       "measures": [
         "Unique_Visitors"
       ],
+      "dax_measures": [],
       "field_count": 3
     }
   ],

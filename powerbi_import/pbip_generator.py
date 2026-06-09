@@ -99,7 +99,7 @@ def _L(v):
     return {"expr": {"Literal": {"Value": v}}}
 
 
-def _pbi_literal(v):
+def _pbi_literal(v, column_type=None):
     """Convert a filter value to a PBI literal string.
 
     PBI PBIR filter JSON uses different formats for different types:
@@ -110,9 +110,51 @@ def _pbi_literal(v):
     Without this, boolean filter values like ``true``/``false`` are
     wrapped as strings ``'true'``/``'false'`` causing a type mismatch
     with boolean columns (``Broken_Filters`` error in PBI Desktop).
+
+    Tableau XML stores filter values wrapped in double-quotes
+    (e.g. ``"EC"``, ``"false"``, ``"123"``).  These must be stripped
+    before type detection so that ``"false"`` is recognised as boolean
+    and ``"EC"`` becomes the string literal ``'EC'`` (not ``'"EC"'``).
+
+    ``column_type`` (optional, lowercased semantic-model dataType) forces
+    the literal format to match the column's declared type.  This is
+    critical for string columns that happen to hold digit-only values
+    (e.g. ``Theme = "1"..."7"``): without the hint, ``_pbi_literal('1')``
+    returns the unquoted integer literal ``'1'`` which causes PBI's
+    ``SQExprValidationVisitor.visitIn`` to crash with
+    ``e.accept is not a function`` due to the type mismatch.
     """
     v_str = str(v)
+    # Strip Tableau's outer double-quotes from values
+    if v_str.startswith('"') and v_str.endswith('"') and len(v_str) >= 2:
+        v_str = v_str[1:-1]
     v_lower = v_str.lower().strip()
+
+    # Type-aware formatting (column type takes precedence over auto-detection)
+    if column_type:
+        ct = column_type.lower()
+        if ct == 'string':
+            # Always wrap as quoted string for string columns, even if the
+            # value looks like a number or boolean.  Otherwise PBI's visitIn
+            # crashes on the column-vs-literal type mismatch.
+            return f"'{v_str}'"
+        if ct == 'boolean':
+            if v_lower in ('true', 'vrai', '1'):
+                return 'true'
+            if v_lower in ('false', 'faux', '0'):
+                return 'false'
+            # Unknown boolean value — fall through to default detection
+        elif ct in ('int64', 'integer', 'double', 'decimal', 'currency', 'number'):
+            try:
+                float(v_str)
+                return v_str
+            except (ValueError, TypeError):
+                # Numeric column but value is non-numeric — wrap as string
+                # to avoid crashing the visitor (PBI will report a type
+                # mismatch warning but won't crash).
+                return f"'{v_str}'"
+
+    # Auto-detect (no column type hint, or unknown type)
     # Boolean
     if v_lower in ('true', 'false', 'vrai', 'faux'):
         return v_lower.replace('vrai', 'true').replace('faux', 'false')
@@ -393,6 +435,8 @@ class PowerBIProjectGenerator:
             # has role='measure' in Tableau but is a column in the BIM model.
             self._actual_bim_measure_names = stats.get('actual_bim_measures', set())
             self._actual_bim_symbols = stats.get('actual_bim_symbols', set())
+            self._actual_bim_column_types = stats.get('actual_bim_column_types', {})
+            self._actual_bim_measure_types = stats.get('actual_bim_measure_types', {})
 
             # Store table rename map for multi-datasource entity resolution.
             # When multiple datasources share the same table name, the TMDL
@@ -696,7 +740,13 @@ class PowerBIProjectGenerator:
             _write_json(os.path.join(visual_dir, 'visual.json'), container, ensure_ascii=False)
             return
 
-        visual_type = ws_data.get('chart_type', 'clusteredBarChart') if ws_data else 'clusteredBarChart'
+        # Defensive normalization: convert raw Tableau mark names like
+        # ``'bar'`` to valid PBI visualTypes (``'clusteredBarChart'``).
+        # The extractor *should* already produce valid types, but this
+        # guards against future regressions and external JSON inputs.
+        from visual_generator import resolve_visual_type as _rvt
+        _raw_ct = ws_data.get('chart_type') if ws_data else None
+        visual_type = _rvt(_raw_ct) if _raw_ct else 'clusteredBarChart'
 
         # Check for custom visual GUID (higher-fidelity AppSource visual)
         guid_info = None
@@ -889,8 +939,9 @@ class PowerBIProjectGenerator:
         visual_objects = self._build_visual_objects(ws_name, ws_data, visual_type)
         visual_json["visual"]["objects"] = visual_objects
 
-        # Visual filters
-        if ws_data and ws_data.get('filters'):
+        # Visual filters — only emit if the visual has a query (From clause)
+        # otherwise Source alias refs in Where conditions can't resolve → Broken_Filters
+        if ws_data and ws_data.get('filters') and "query" in visual_json.get("visual", {}):
             visual_filters = self._create_visual_filters(ws_data['filters'])
             if visual_filters:
                 visual_json["filterConfig"] = {"filters": visual_filters}
@@ -2310,7 +2361,9 @@ class PowerBIProjectGenerator:
             visual_id = uuid.uuid4().hex[:20]
             visual_dir = os.path.join(visuals_dir, visual_id)
 
-            visual_type = ws.get('chart_type', 'clusteredBarChart')
+            from visual_generator import resolve_visual_type as _rvt
+            _raw_ct = ws.get('chart_type')
+            visual_type = _rvt(_raw_ct) if _raw_ct else 'clusteredBarChart'
             ws_name = ws.get('name', f'Visual {idx+1}')
 
             # Check for custom visual GUID
@@ -2631,6 +2684,32 @@ class PowerBIProjectGenerator:
                     self._measure_names.add(raw_name)
                     if caption:
                         self._measure_names.add(caption)
+
+        # Phase 4c: Reconcile measure placements against actual BIM model.
+        # Phase 4b puts every calculation on `measures_table` (the main table),
+        # but the TMDL generator places each measure on whatever table its
+        # source columns live on.  When the two disagree, visual field lookups
+        # fail and the visual renders empty.  Use _actual_bim_symbols to fix
+        # the field map so resolved (entity, prop) actually exists in the BIM.
+        _bim_sym = getattr(self, '_actual_bim_symbols', None) or set()
+        if _bim_sym:
+            # Build {prop_name: entity} from BIM symbols.  When the same prop
+            # exists on multiple tables we prefer the entity that already
+            # contains many measures (heuristic: first match wins, but skip
+            # Calendar/parameter tables which shouldn't host migrated calcs).
+            bim_by_prop = {}
+            for entity, prop in _bim_sym:
+                if entity in ('Calendar',):
+                    continue
+                bim_by_prop.setdefault(prop, entity)
+            # Fix _field_map entries whose resolved tuple is missing from BIM.
+            for key, (entity, prop) in list(self._field_map.items()):
+                if (entity, prop) in _bim_sym:
+                    continue
+                # Try caption-based lookup
+                target = bim_by_prop.get(prop)
+                if target and (target, prop) in _bim_sym:
+                    self._field_map[key] = (target, prop)
         
         # Also gather measure names from top-level calculations
         for calc in converted_objects.get('calculations', []):
@@ -2861,14 +2940,29 @@ class PowerBIProjectGenerator:
             # Deduplicate: same field from different shelves
             if clean in seen_names:
                 continue
-            # Skip fields that don't exist in the semantic model (e.g.
-            # string-literal KPI params skipped by the TMDL generator).
-            if _bim_props:
+            # Skip fields that don't exist in the semantic model — validate
+            # by (entity, property) pair for precision. Use _resolve_field_entity
+            # as the ultimate check since that's what determines the final
+            # Entity/Property emitted in the visual JSON.
+            if _bim_sym:
+                resolved_entity = None
                 resolved_prop = clean
                 if hasattr(self, '_field_map') and clean in self._field_map:
-                    resolved_prop = self._field_map[clean][1]
-                if resolved_prop not in _bim_props:
-                    continue
+                    resolved_entity, resolved_prop = self._field_map[clean]
+                if resolved_entity:
+                    # Validate (entity, prop) pair exists in model
+                    if (resolved_entity, resolved_prop) not in _bim_sym:
+                        # Try stripped variant (trailing space edge cases)
+                        if (resolved_entity, resolved_prop.strip()) not in _bim_sym:
+                            continue
+                else:
+                    # No mapping found — resolve via _resolve_field_entity
+                    # to get the actual entity/prop that will be emitted.
+                    ds = f.get('datasource', '')
+                    re_entity, re_prop = self._resolve_field_entity(clean, datasource=ds)
+                    if (re_entity, re_prop) not in _bim_sym:
+                        if (re_entity, re_prop.strip()) not in _bim_sym:
+                            continue
             seen_names.add(clean)
             cleaned_fields.append({**f, 'name': clean})
 
@@ -2913,7 +3007,9 @@ class PowerBIProjectGenerator:
         all_dims = axis_dims + color_dims
         all_meas = axis_meas + size_fields
 
-        visual_type = ws_data.get('chart_type', 'clusteredBarChart')
+        from visual_generator import resolve_visual_type as _rvt
+        _raw_ct = ws_data.get('chart_type')
+        visual_type = _rvt(_raw_ct) if _raw_ct else 'clusteredBarChart'
         query_state = {}
 
         # â”€â”€ Per-visual-type role assignment â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -3200,6 +3296,20 @@ class PowerBIProjectGenerator:
             }
             ws_data['_override_visual_type'] = 'tableEx'
 
+        # Post-process: remove None entries from projections (fields that
+        # failed _bim_sym validation in _make_projection_entry) and drop
+        # empty roles to prevent PBI Desktop "deleted columns" errors.
+        roles_to_remove = []
+        for role_name, role_val in query_state.items():
+            if isinstance(role_val, dict) and 'projections' in role_val:
+                role_val['projections'] = [
+                    p for p in role_val['projections'] if p is not None
+                ]
+                if not role_val['projections']:
+                    roles_to_remove.append(role_name)
+        for r in roles_to_remove:
+            del query_state[r]
+
         return {"queryState": query_state} if query_state else None
     
     def _make_projection(self, field):
@@ -3271,6 +3381,13 @@ class PowerBIProjectGenerator:
                     "Function": agg_func
                 }
             }
+
+        # Final validation against semantic model
+        _bim_sym = getattr(self, '_actual_bim_symbols', None) or set()
+        if _bim_sym and (entity, prop) not in _bim_sym:
+            if (entity, prop.strip()) not in _bim_sym:
+                return None
+            prop = prop.strip()
 
         return {
             "field": field_ref,
@@ -3368,6 +3485,21 @@ class PowerBIProjectGenerator:
                     "Property": prop
                 }
             }
+
+        # Final validation: skip field if (entity, prop) doesn't exist in
+        # the semantic model — prevents PBI Desktop "deleted columns" errors.
+        _bim_sym = getattr(self, '_actual_bim_symbols', None) or set()
+        if _bim_sym and (entity, prop) not in _bim_sym:
+            if (entity, prop.strip()) not in _bim_sym:
+                return None
+            prop = prop.strip()
+            # Update prop in field_ref (nested dict mutation)
+            for wrapper in ('Column', 'Measure'):
+                if wrapper in field_ref:
+                    field_ref[wrapper]['Property'] = prop
+                    break
+            if 'Aggregation' in field_ref:
+                field_ref['Aggregation']['Expression']['Column']['Property'] = prop
 
         return {
             "field": field_ref,
@@ -3563,7 +3695,17 @@ class PowerBIProjectGenerator:
             
             # Resolve Entity via _field_map (parameters = measures on main table)
             entity, prop = self._resolve_field_entity(param_name)
-            
+
+            # Look up column data type for type-aware literal formatting.
+            # Parameters resolve to a measure on the parameter table, so also
+            # fall back to measure-type lookup when no column match is found.
+            _bim_col_types = getattr(self, '_actual_bim_column_types', {}) or {}
+            _bim_meas_types = getattr(self, '_actual_bim_measure_types', {}) or {}
+            _p_col_type = (_bim_col_types.get((entity, prop))
+                           or _bim_col_types.get((entity, prop.strip()))
+                           or _bim_meas_types.get((entity, prop))
+                           or _bim_meas_types.get((entity, prop.strip())))
+
             filter_obj = {
                 "name": f"Filter_{uuid.uuid4().hex[:12]}",
                 "type": "Categorical",
@@ -3580,7 +3722,7 @@ class PowerBIProjectGenerator:
                         "Condition": {
                             "In": {
                                 "Expressions": [{"Column": {"Expression": {"SourceRef": {"Source": "p"}}, "Property": prop}}],
-                                "Values": [[{"Literal": {"Value": _pbi_literal(current_value)}}]]
+                                "Values": [[{"Literal": {"Value": _pbi_literal(current_value, _p_col_type)}}]]
                             }
                         }
                     }]
@@ -3688,10 +3830,37 @@ class PowerBIProjectGenerator:
             ds_ref = f.get('datasource', '')
             entity, prop = self._resolve_field_entity(clean_field, datasource=ds_ref)
 
+            # Skip filter if the resolved (entity, prop) pair doesn't exist
+            # in the semantic model — prevents PBI Desktop "deleted columns" errors.
+            _bim_sym = getattr(self, '_actual_bim_symbols', None) or set()
+            if _bim_sym and (entity, prop) not in _bim_sym:
+                # Also try with stripped trailing/leading whitespace
+                if (entity, prop.strip()) in _bim_sym:
+                    prop = prop.strip()
+                else:
+                    continue
+
             # Determine if the field is a measure (requires Measure wrapper, not Column)
             _bim_measures = getattr(self, '_bim_measure_names', set())
             _is_measure = prop in _bim_measures
             _field_kind = "Measure" if _is_measure else "Column"
+
+            # Look up column data type so filter literals can be formatted
+            # to match the column's declared type.  Without this, PBI's
+            # SQExprValidationVisitor.visitIn crashes with
+            # ``e.accept is not a function`` when a string column receives
+            # unquoted numeric literals (e.g. Theme="1" emitted as integer 1).
+            # The same type-mismatch risk applies to measure-targeted filters
+            # (especially parameter measures that return strings like "true").
+            _col_type = None
+            if not _is_measure:
+                _bim_col_types = getattr(self, '_actual_bim_column_types', {}) or {}
+                _col_type = (_bim_col_types.get((entity, prop))
+                             or _bim_col_types.get((entity, prop.strip())))
+            else:
+                _bim_meas_types = getattr(self, '_actual_bim_measure_types', {}) or {}
+                _col_type = (_bim_meas_types.get((entity, prop))
+                             or _bim_meas_types.get((entity, prop.strip())))
             
             filter_type = f.get('type', 'categorical')
             filter_mode = f.get('filter_mode', '')
@@ -3787,11 +3956,100 @@ class PowerBIProjectGenerator:
                 # Categorical filter
                 values = f.get('values', [])
                 is_exclude = f.get('exclude', False)
-                
+
+                # Filter out Tableau's null placeholder ('%null%').  Including
+                # it as a string literal in an In expression triggers PBI's
+                # visitIn type-mismatch crash for non-string columns and is
+                # semantically incorrect (it is a placeholder, not a real
+                # category value).  PBI handles nulls implicitly so dropping
+                # the value is safe.
+                def _is_null_placeholder(v):
+                    s = str(v).strip()
+                    if s.startswith('"') and s.endswith('"') and len(s) >= 2:
+                        s = s[1:-1]
+                    return s == '%null%'
+                values = [v for v in values if not _is_null_placeholder(v)]
+
                 # Skip categorical filters with no values (empty Where breaks PBI)
                 if not values:
                     continue
-                
+
+                # Measures require Advanced type with Comparison conditions —
+                # PBI cannot apply Categorical/In filters on measures.
+                if _is_measure:
+                    pbi_filter = {
+                        "name": f"Filter_{uuid.uuid4().hex[:12]}",
+                        "type": "Advanced",
+                        "field": {
+                            "Measure": {
+                                "Expression": {"SourceRef": {"Entity": entity}},
+                                "Property": prop
+                            }
+                        },
+                        "filter": {
+                            "Version": 2,
+                            "From": [{"Name": "t", "Entity": entity, "Type": 0}],
+                            "Where": []
+                        }
+                    }
+                    # Convert categorical values to Comparison (Equal) conditions
+                    comparisons = []
+                    for v in values:
+                        comparisons.append({
+                            "Condition": {
+                                "Comparison": {
+                                    "ComparisonKind": 0,  # Equal
+                                    "Left": {"Measure": {"Expression": {"SourceRef": {"Source": "t"}}, "Property": prop}},
+                                    "Right": {"Literal": {"Value": _pbi_literal(v, _col_type)}}
+                                }
+                            }
+                        })
+                    if is_exclude:
+                        # Negate: wrap each comparison in Not
+                        comparisons = [{"Condition": {"Not": {"Expression": c["Condition"]}}} for c in comparisons]
+                    pbi_filter["filter"]["Where"] = comparisons
+                    visual_filters.append(pbi_filter)
+                    continue
+
+                # Check if all values resolve to boolean literals —
+                # PBI's SQExprValidationVisitor.visitIn crashes on boolean
+                # literals inside In expressions.  Use Advanced/Comparison instead.
+                pbi_literals = [_pbi_literal(v, _col_type) for v in values]
+                all_boolean = all(lit in ('true', 'false') for lit in pbi_literals)
+
+                if all_boolean:
+                    pbi_filter = {
+                        "name": f"Filter_{uuid.uuid4().hex[:12]}",
+                        "type": "Advanced",
+                        "field": {
+                            _field_kind: {
+                                "Expression": {"SourceRef": {"Entity": entity}},
+                                "Property": prop
+                            }
+                        },
+                        "filter": {
+                            "Version": 2,
+                            "From": [{"Name": "t", "Entity": entity, "Type": 0}],
+                            "Where": []
+                        }
+                    }
+                    comparisons = []
+                    for lit in pbi_literals:
+                        comparisons.append({
+                            "Condition": {
+                                "Comparison": {
+                                    "ComparisonKind": 0,
+                                    "Left": {_field_kind: {"Expression": {"SourceRef": {"Source": "t"}}, "Property": prop}},
+                                    "Right": {"Literal": {"Value": lit}}
+                                }
+                            }
+                        })
+                    if is_exclude:
+                        comparisons = [{"Condition": {"Not": {"Expression": c["Condition"]}}} for c in comparisons]
+                    pbi_filter["filter"]["Where"] = comparisons
+                    visual_filters.append(pbi_filter)
+                    continue
+
                 pbi_filter = {
                     "name": f"Filter_{uuid.uuid4().hex[:12]}",
                     "type": "Categorical",
@@ -3811,7 +4069,7 @@ class PowerBIProjectGenerator:
                 condition = {
                     "In": {
                         "Expressions": [{_field_kind: {"Expression": {"SourceRef": {"Source": "t"}}, "Property": prop}}],
-                        "Values": [[{"Literal": {"Value": _pbi_literal(v)}}] for v in values]
+                        "Values": [[{"Literal": {"Value": _pbi_literal(v, _col_type)}}] for v in values]
                     }
                 }
                 if is_exclude:
@@ -4182,32 +4440,17 @@ class PowerBIProjectGenerator:
             # Data-driven color scale
             palette_colors = color_enc.get('palette_colors', [])
             if len(palette_colors) >= 2:
-                # Generate proper PBI gradient rule with min/max/mid colors
-                gradient_rule = {
+                # Generate PBI gradient — PBIR v4.0 objects/dataPoint items
+                # only allow {properties, selector}; gradient rules are not
+                # supported in the visual container schema 2.5.0.
+                # Emit the min color as static fill for the visual.
+                objects["dataPoint"] = [{
                     "properties": {
                         "fill": {
                             "solid": {"color": _L(f"'{palette_colors[0]}'")}
                         }
-                    },
-                    "rules": [{
-                        "inputRole": "Y",
-                        "gradient": {
-                            "min": {
-                                "color": _L(f"'{palette_colors[0]}'")
-                            },
-                            "max": {
-                                "color": _L(f"'{palette_colors[-1]}'")
-                            }
-                        }
-                    }]
-                }
-                # Add midpoint color if 3+ colors
-                if len(palette_colors) >= 3:
-                    mid_color = palette_colors[len(palette_colors) // 2]
-                    gradient_rule["rules"][0]["gradient"]["mid"] = {
-                        "color": _L(f"'{mid_color}'")
                     }
-                objects["dataPoint"] = [gradient_rule]
+                }]
             elif len(palette_colors) == 1:
                 objects["dataPoint"] = [{
                     "properties": {
@@ -4524,7 +4767,7 @@ class PowerBIProjectGenerator:
             title: Display title for the slicer. Defaults to field_name.
         """
         clean_field = field_name.replace('[', '').replace(']', '')
-        clean_table = table_name.replace("'", "''") if table_name else getattr(self, '_main_table', 'Table')
+        clean_table = table_name if table_name else getattr(self, '_main_table', 'Table')
         
         # Map extended modes to PBI mode strings
         pbi_mode = slicer_mode
@@ -4577,22 +4820,32 @@ class PowerBIProjectGenerator:
         }
         
         # Add query binding (PBIR queryState format with RoleProjection)
+        # Only emit if the (entity, prop) pair exists in the semantic model.
+        _bim_sym = getattr(self, '_actual_bim_symbols', None) or set()
         if clean_field and clean_table:
-            slicer["visual"]["query"] = {
-                "queryState": {
-                    "Values": {
-                        "projections": [{
-                            "field": {
-                                "Column": {
-                                    "Expression": {"SourceRef": {"Entity": clean_table}},
-                                    "Property": clean_field
-                                }
-                            },
-                            "queryRef": f"{clean_table}.{clean_field}"
-                        }]
+            # Validate field exists in model
+            emit_query = True
+            if _bim_sym and (clean_table, clean_field) not in _bim_sym:
+                if (clean_table, clean_field.strip()) in _bim_sym:
+                    clean_field = clean_field.strip()
+                else:
+                    emit_query = False
+            if emit_query:
+                slicer["visual"]["query"] = {
+                    "queryState": {
+                        "Values": {
+                            "projections": [{
+                                "field": {
+                                    "Column": {
+                                        "Expression": {"SourceRef": {"Entity": clean_table}},
+                                        "Property": clean_field
+                                    }
+                                },
+                                "queryRef": f"{clean_table}.{clean_field}"
+                            }]
+                        }
                     }
                 }
-            }
         
         return slicer
     

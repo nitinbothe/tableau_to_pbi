@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-13T17:42:11.048061",
+  "generated_at": "2026-06-09T09:34:08.874985",
   "source": "Tableau Migration",
   "report_name": "Superstore_Sales",
   "objects_converted": {
@@ -29,10 +29,22 @@
   },
   "tmdl_stats": {
     "tables": 4,
-    "measures": 7,
+    "measures": 10,
     "columns": 33,
     "relationships": 2
   },
+  "dax_measure_names": [
+    "Number of Orders",
+    "Previous Year",
+    "Profit Ratio",
+    "Profit Ratio Formatted",
+    "Total Profit",
+    "Total Profit Formatted",
+    "Total Sales",
+    "Total Sales Formatted",
+    "Year Over Year %",
+    "Year To Date"
+  ],
   "visual_type_mappings": {
     "Sales by Region": "Automatic",
     "Profit by Category": "Automatic",
@@ -51,6 +63,7 @@
         "Calculation_1",
         "Calculation_1"
       ],
+      "dax_measures": [],
       "field_count": 4
     },
     {
@@ -65,6 +78,7 @@
         "Calculation_2",
         "Calculation_2"
       ],
+      "dax_measures": [],
       "field_count": 4
     },
     {
@@ -77,6 +91,7 @@
       "measures": [
         "Calculation_1"
       ],
+      "dax_measures": [],
       "field_count": 2
     }
   ],

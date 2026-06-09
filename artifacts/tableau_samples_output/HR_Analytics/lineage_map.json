@@ -31,6 +31,12 @@
       "pbi_type": "measure"
     },
     {
+      "tableau_calculation": "Total Compensation Formatted",
+      "pbi_table": "Employees",
+      "pbi_object": "Total Compensation Formatted",
+      "pbi_type": "measure"
+    },
+    {
       "tableau_calculation": "Year To Date",
       "pbi_table": "Calendar",
       "pbi_object": "Year To Date",

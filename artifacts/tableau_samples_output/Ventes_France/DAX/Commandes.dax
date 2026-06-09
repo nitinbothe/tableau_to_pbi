@@ -12,7 +12,6 @@ SUMX('Produits', IF(LOOKUPVALUE(Commandes[statut], Commandes[produit_id], Produi
 
 Taux de Marge (%) =
 IF(ISBLANK([Marge Brute] / [Chiffre d"Affaires Net]), 0, [Marge Brute] / [Chiffre d"Affaires Net])
-isHidden
 
 Montant Remises =
 SUMX('Commandes', 'Commandes'[quantite] * 'Commandes'[prix_unitaire] * 'Commandes'[remise])
@@ -43,7 +42,6 @@ Cumul Mobile CA =
 
 Moyenne Mobile 3M =
 CALCULATE(SUMX('Commandes', 'Commandes'[quantite] * 'Commandes'[prix_unitaire]), WINDOW(-2, REL, 0, REL, ORDERBY(SUM('Commandes'[commande_id]), ASC)), ALL('Commandes')) /* WINDOW.AVG: frame SUM('Commandes'[-2,0]) */
-isHidden
 
 Classement CA =
 RANKX(ALL('Commandes'), SUMX('Commandes', 'Commandes'[quantite] * 'Commandes'[prix_unitaire]))
@@ -53,4 +51,34 @@ CALCULATE(SUMX('Commandes', IF(YEAR('Commandes'[date_commande]) = YEAR(TODAY()),
 
 Période d''Analyse =
 "Année"
+
+Chiffre d''Affaires Brut Formatted =
+VAR _val = [Chiffre d'Affaires Brut] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+
+Chiffre d''Affaires Net Formatted =
+VAR _val = [Chiffre d'Affaires Net] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+
+Marge Brute Formatted =
+VAR _val = [Marge Brute] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+
+Montant Remises Formatted =
+VAR _val = [Montant Remises] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+
+CA par Client Formatted =
+VAR _val = [CA par Client] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+
+CA Régional par Catégorie Formatted =
+VAR _val = [CA Régional par Catégorie] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+
+CA hors Produit Formatted =
+VAR _val = [CA hors Produit] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+
+Moyenne Mobile 3M Formatted =
+VAR _val = [Moyenne Mobile 3M] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+
+Classement CA Formatted =
+VAR _val = [Classement CA] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "0"))))
+
+CA Année en Cours Formatted =
+VAR _val = [CA Année en Cours] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
 

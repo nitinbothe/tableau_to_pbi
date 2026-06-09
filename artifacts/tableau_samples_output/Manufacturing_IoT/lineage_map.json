@@ -106,6 +106,18 @@
       "pbi_type": "measure"
     },
     {
+      "tableau_calculation": "Dense Rank Formatted",
+      "pbi_table": "Sensors",
+      "pbi_object": "Dense Rank Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Window Total Formatted",
+      "pbi_table": "Sensors",
+      "pbi_object": "Window Total Formatted",
+      "pbi_type": "measure"
+    },
+    {
       "tableau_calculation": "Alert Threshold",
       "pbi_table": "Alert Threshold",
       "pbi_object": "Alert Threshold",

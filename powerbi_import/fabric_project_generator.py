@@ -28,7 +28,32 @@ def _json_default(obj):
     """JSON serializer for objects not serializable by default json code."""
     if isinstance(obj, set):
         return list(obj)
+    if isinstance(obj, tuple):
+        return list(obj)
     raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+
+
+def _sanitize_for_json(value):
+    """Recursively coerce ``value`` so ``json.dump`` accepts it.
+
+    Handles tuple dict keys (rewritten as ``"a::b"``), sets, tuples, and
+    nested dicts produced by the TMDL generator (e.g. ``actual_bim_column_types``
+    is keyed by ``(table, column)`` tuples).
+    """
+    if isinstance(value, dict):
+        out = {}
+        for k, v in value.items():
+            if isinstance(k, tuple):
+                k = "::".join(str(p) for p in k)
+            elif not isinstance(k, (str, int, float, bool)) and k is not None:
+                k = str(k)
+            out[k] = _sanitize_for_json(v)
+        return out
+    if isinstance(value, (set, tuple)):
+        return [_sanitize_for_json(x) for x in value]
+    if isinstance(value, list):
+        return [_sanitize_for_json(x) for x in value]
+    return value
 
 
 class FabricProjectGenerator:
@@ -117,7 +142,7 @@ class FabricProjectGenerator:
         # Write project metadata
         meta_path = os.path.join(project_dir, 'fabric_project_metadata.json')
         with open(meta_path, 'w', encoding='utf-8') as f:
-            json.dump(results, f, indent=2, default=_json_default)
+            json.dump(_sanitize_for_json(results), f, indent=2, default=_json_default)
 
         print(f"\n  [OK] Fabric project created: {project_dir}")
         return results

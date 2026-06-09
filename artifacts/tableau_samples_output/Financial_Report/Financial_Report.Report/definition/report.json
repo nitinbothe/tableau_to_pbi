@@ -31,7 +31,7 @@
   "filterConfig": {
     "filters": [
       {
-        "name": "Filter_3182e0c7812f",
+        "name": "Filter_c421503e265c",
         "type": "Advanced",
         "field": {
           "Column": {
@@ -56,28 +56,6 @@
             {
               "Condition": {
                 "Comparison": {
-                  "ComparisonKind": 2,
-                  "Left": {
-                    "Column": {
-                      "Expression": {
-                        "SourceRef": {
-                          "Source": "t"
-                        }
-                      },
-                      "Property": "amount"
-                    }
-                  },
-                  "Right": {
-                    "Literal": {
-                      "Value": "''"
-                    }
-                  }
-                }
-              }
-            },
-            {
-              "Condition": {
-                "Comparison": {
                   "ComparisonKind": 3,
                   "Left": {
                     "Column": {
@@ -91,7 +69,7 @@
                   },
                   "Right": {
                     "Literal": {
-                      "Value": "'10'"
+                      "Value": "10L"
                     }
                   }
                 }

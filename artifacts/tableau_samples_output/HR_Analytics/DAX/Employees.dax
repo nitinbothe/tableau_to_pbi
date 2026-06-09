@@ -10,3 +10,6 @@ COUNT('Employees'[EmployeeID])
 Total Compensation =
 SUM('Employees'[Salary]) * 1.25
 
+Total Compensation Formatted =
+VAR _val = [Total Compensation] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+

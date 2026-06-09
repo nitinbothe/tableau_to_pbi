@@ -220,28 +220,52 @@ class TestSlicerVisualJSON(unittest.TestCase):
         mode_val = s['visual']['objects']['data'][0]['properties']['mode']
         self.assertIn('List', str(mode_val))
 
-    def test_between_mode_has_numeric_input(self):
-        s = self._slicer('Between')
-        self.assertIn('numericInputStyle', s['visual']['objects'])
+    def test_between_mode_sets_mode_property(self):
+        """Between mode emits ``mode='Between'``.
 
-    def test_basic_relative_date_config(self):
+        Note: ``numericInputStyle`` is intentionally *not* emitted because
+        extra slicer blocks can trigger client-side rendering errors in
+        some Power BI Desktop versions (see ``_create_slicer_visual``).
+        """
+        s = self._slicer('Between')
+        mode_val = s['visual']['objects']['data'][0]['properties']['mode']
+        self.assertIn('Between', str(mode_val))
+        self.assertNotIn('numericInputStyle', s['visual']['objects'])
+
+    def test_basic_mode_sets_mode_property(self):
+        """Basic mode (relative date) emits ``mode='Basic'``.
+
+        Note: ``relativeDate`` config block is intentionally *not* emitted
+        for PBIR cross-version compatibility (see ``_create_slicer_visual``).
+        """
         s = self._slicer('Basic')
-        self.assertIn('relativeDate', s['visual']['objects'])
+        mode_val = s['visual']['objects']['data'][0]['properties']['mode']
+        self.assertIn('Basic', str(mode_val))
+        self.assertNotIn('relativeDate', s['visual']['objects'])
 
     def test_date_mode_maps_to_basic(self):
         s = self._slicer('Date')
         mode_val = s['visual']['objects']['data'][0]['properties']['mode']
         self.assertIn('Basic', str(mode_val))
 
-    def test_search_mode_has_search_enabled(self):
-        s = self._slicer('Search')
-        self.assertIn('search', s['visual']['objects'])
-        search_prop = s['visual']['objects']['search'][0]['properties']
-        self.assertIn('enabled', search_prop)
+    def test_search_mode_maps_to_dropdown(self):
+        """Search mode collapses to ``mode='Dropdown'``.
 
-    def test_search_mode_has_selection(self):
+        Note: ``search`` config block is intentionally *not* emitted for
+        PBIR cross-version compatibility (see ``_create_slicer_visual``).
+        """
         s = self._slicer('Search')
-        self.assertIn('selection', s['visual']['objects'])
+        mode_val = s['visual']['objects']['data'][0]['properties']['mode']
+        self.assertIn('Dropdown', str(mode_val))
+        self.assertNotIn('search', s['visual']['objects'])
+
+    def test_search_mode_no_selection_block(self):
+        """Search mode does not emit a ``selection`` block.
+
+        Same PBIR compatibility rationale as ``test_search_mode_maps_to_dropdown``.
+        """
+        s = self._slicer('Search')
+        self.assertNotIn('selection', s['visual']['objects'])
 
     def test_query_binding(self):
         s = self._slicer('Dropdown')

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-13T17:41:56.537286",
+  "generated_at": "2026-06-09T09:33:58.682742",
   "source": "Tableau Migration",
   "report_name": "Security_Test",
   "objects_converted": {
@@ -29,10 +29,22 @@
   },
   "tmdl_stats": {
     "tables": 3,
-    "measures": 8,
+    "measures": 10,
     "columns": 17,
     "relationships": 1
   },
+  "dax_measure_names": [
+    "Is Current User",
+    "Manager Access",
+    "Previous Year",
+    "Profit Ratio",
+    "Profit Ratio Formatted",
+    "Region Match",
+    "Total Sales",
+    "Total Sales Formatted",
+    "Year Over Year %",
+    "Year To Date"
+  ],
   "visual_type_mappings": {
     "Sales Overview": "Automatic",
     "Profit Analysis": "Automatic"
@@ -41,18 +53,28 @@
     {
       "worksheet": "Sales Overview",
       "tableau_mark": "Automatic",
-      "pbi_visual": "bar",
-      "dimensions": [],
-      "measures": [],
-      "field_count": 0
+      "pbi_visual": "clusteredBarChart",
+      "dimensions": [
+        "Region"
+      ],
+      "measures": [
+        "Sales"
+      ],
+      "dax_measures": [],
+      "field_count": 2
     },
     {
       "worksheet": "Profit Analysis",
       "tableau_mark": "Automatic",
-      "pbi_visual": "bar",
-      "dimensions": [],
-      "measures": [],
-      "field_count": 0
+      "pbi_visual": "clusteredBarChart",
+      "dimensions": [
+        "Category"
+      ],
+      "measures": [
+        "Profit"
+      ],
+      "dax_measures": [],
+      "field_count": 2
     }
   ],
   "approximations": []

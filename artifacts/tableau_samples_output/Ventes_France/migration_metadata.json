@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-13T17:42:40.895628",
+  "generated_at": "2026-06-09T09:34:25.502230",
   "source": "Tableau Migration",
   "report_name": "Ventes_France",
   "objects_converted": {
@@ -29,10 +29,41 @@
   },
   "tmdl_stats": {
     "tables": 6,
-    "measures": 19,
-    "columns": 45,
+    "measures": 29,
+    "columns": 50,
     "relationships": 3
   },
+  "dax_measure_names": [
+    "CA Ann\u00e9e en Cours",
+    "CA Ann\u00e9e en Cours Formatted",
+    "CA R\u00e9gional par Cat\u00e9gorie",
+    "CA R\u00e9gional par Cat\u00e9gorie Formatted",
+    "CA hors Produit",
+    "CA hors Produit Formatted",
+    "CA par Client",
+    "CA par Client Formatted",
+    "Chiffre d'Affaires Brut",
+    "Chiffre d'Affaires Brut Formatted",
+    "Chiffre d'Affaires Net",
+    "Chiffre d'Affaires Net Formatted",
+    "Classement CA",
+    "Classement CA Formatted",
+    "Classification Client",
+    "Clients Uniques",
+    "Cumul Mobile CA",
+    "Marge Brute",
+    "Marge Brute Formatted",
+    "Montant Remises",
+    "Montant Remises Formatted",
+    "Moyenne Mobile 3M",
+    "Moyenne Mobile 3M Formatted",
+    "Nombre de Commandes",
+    "Objectif Marge",
+    "Panier Moyen",
+    "P\u00e9riode d'Analyse",
+    "Taux de Marge (%)",
+    "Top N Produits"
+  ],
   "visual_type_mappings": {
     "Indicateurs Cl\u00e9s": "Automatic",
     "CA par R\u00e9gion": "Automatic",
@@ -51,6 +82,7 @@
         "Calc_CA_Net",
         "Calc_Marge"
       ],
+      "dax_measures": [],
       "field_count": 2
     },
     {
@@ -65,6 +97,7 @@
         "Calc_CA_Net",
         "Calc_CA_Net"
       ],
+      "dax_measures": [],
       "field_count": 4
     },
     {
@@ -77,6 +110,7 @@
       "measures": [
         "Calc_CA_Net"
       ],
+      "dax_measures": [],
       "field_count": 2
     },
     {
@@ -91,6 +125,7 @@
         "Calc_CA_Brut",
         "Calc_CA_Brut"
       ],
+      "dax_measures": [],
       "field_count": 4
     },
     {
@@ -104,6 +139,7 @@
         "Calc_CA_Net",
         "Calc_CA_Net"
       ],
+      "dax_measures": [],
       "field_count": 3
     },
     {
@@ -116,6 +152,7 @@
       "measures": [
         "Calc_NbCommandes"
       ],
+      "dax_measures": [],
       "field_count": 2
     }
   ],

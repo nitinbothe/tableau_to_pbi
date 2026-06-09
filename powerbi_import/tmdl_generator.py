@@ -415,6 +415,78 @@ def _wrap_date_subtraction_in_duration_days(m_expr, columns, col_metadata_map):
     return m_expr
 
 
+def _strip_m_inline_comments(m_expr):
+    """Strip ``//`` single-line comments from an M expression.
+
+    Tableau calculated fields may contain inline comments like ``//New v1.6``
+    which break M parsing when the expression is written on a single line.
+    This function removes ``//``-style comments while preserving content
+    inside string literals (``"..."``).
+
+    Also fixes the ``#"each if ..."`` / ``#"else if ..."`` corruption pattern
+    where M keywords get incorrectly quoted as identifier references.
+    """
+    if not m_expr:
+        return m_expr
+
+    # Fix corrupted patterns: #"each if X" → each if X, #"else if X" → else if X
+    m_expr = re.sub(r'#"(each if[^"]*)"', r'\1', m_expr)
+    m_expr = re.sub(r'#"(else if[^"]*)"', r'\1', m_expr)
+    m_expr = re.sub(r'#"(else null[^"]*)"', r'\1', m_expr)
+
+    # Strip // comments outside string literals
+    if '//' not in m_expr:
+        return m_expr
+
+    result = []
+    i = 0
+    n = len(m_expr)
+    while i < n:
+        if m_expr[i] == '"':
+            # Inside a string literal — skip to closing quote
+            result.append(m_expr[i])
+            i += 1
+            while i < n:
+                if m_expr[i] == '"':
+                    result.append(m_expr[i])
+                    i += 1
+                    if i < n and m_expr[i] == '"':
+                        # Escaped quote ""
+                        result.append(m_expr[i])
+                        i += 1
+                    else:
+                        break
+                else:
+                    result.append(m_expr[i])
+                    i += 1
+        elif m_expr[i:i+2] == '//':
+            # Found a // comment — determine how much to strip.
+            # First check if there's a column ref [bracket] nearby after //
+            # indicating this is a short Tableau annotation (e.g. //New v1.6)
+            # followed by code that should be preserved.
+            j = i + 2
+            while j < n and m_expr[j] != '\n':
+                j += 1
+            # Text between // and end-of-line (or end-of-string)
+            comment_text = m_expr[i+2:j]
+            bracket_pos = comment_text.find('[')
+            if bracket_pos >= 0 and bracket_pos < 50:
+                # Short annotation followed by column ref — keep the code
+                # Remove just the comment text (up to the bracket)
+                i = i + 2 + bracket_pos
+            elif j < n:
+                # Multi-line: no bracket nearby, strip comment to newline
+                i = j
+            else:
+                # Single line: true trailing comment — strip everything
+                break
+        else:
+            result.append(m_expr[i])
+            i += 1
+
+    return ''.join(result)
+
+
 def _inject_m_steps_into_partition(table, steps):
     """Inject M transformation steps into a table's M partition.
 
@@ -423,10 +495,16 @@ def _inject_m_steps_into_partition(table, steps):
     """
     if not steps:
         return False
+    # Sanitize step expressions: strip // comments and fix corrupted patterns
+    sanitized_steps = []
+    for step_name, step_expr in steps:
+        sanitized_steps.append((step_name, _strip_m_inline_comments(step_expr)))
     for partition in table.get('partitions', []):
         source = partition.get('source', {})
         if source.get('type') == 'm' and source.get('expression'):
-            source['expression'] = inject_m_steps(source['expression'], steps)
+            # Also strip // comments from the existing M expression before injection
+            source['expression'] = _strip_m_inline_comments(source['expression'])
+            source['expression'] = inject_m_steps(source['expression'], sanitized_steps)
             # Phase 3: inline M validation after step injection
             try:
                 from powerbi_import.m_validator import validate_m_query
@@ -814,6 +892,103 @@ def _self_heal_model(model, recovery=None):
                                     action="Measure hidden with MigrationNote",
                                     severity='warning',
                                     follow_up=f"Fix column reference [{ref}] in measure '{mname}'")
+
+    # 2b. Validate calculated column references — add placeholders for missing refs
+    for t in tables:
+        tname = t.get('name', '')
+        existing_cols = {c.get('name', '') for c in t.get('columns', []) if c.get('name')}
+        created_for_cc = []
+        for col in t.get('columns', []):
+            expr = col.get('expression', '')
+            if not expr:
+                continue
+            # Find same-table qualified references in calc column expressions
+            qualified_refs = re.findall(r"'((?:[^']|'')+)'\[([^\]]+)\]", expr)
+            for q_table, q_col in qualified_refs:
+                q_table = q_table.replace("''", "'")
+                if q_table != tname:
+                    continue
+                if q_col in existing_cols or q_col in measure_names_in_model:
+                    continue
+                # Also check all_columns (might be known elsewhere)
+                if q_col in existing_cols:
+                    continue
+                # Add placeholder
+                t.setdefault('columns', []).append({
+                    'name': q_col,
+                    'dataType': 'string',
+                    'isHidden': True,
+                    'description': (
+                        'Self-heal placeholder column created from '
+                        f"calculated column reference [{q_col}]"
+                    ),
+                    'annotations': [{
+                        'name': 'MigrationNote',
+                        'value': (
+                            'Self-heal: placeholder column created to '
+                            f"satisfy missing reference '{tname}'[{q_col}] "
+                            f"in calculated column '{col.get('name', '?')}'."
+                        ),
+                    }],
+                })
+                table_columns.setdefault(tname, set()).add(q_col)
+                all_columns.add(q_col)
+                existing_cols.add(q_col)
+                created_for_cc.append(q_col)
+                repairs += 1
+
+            # Also check bare [ColumnName] references (not qualified)
+            bare_refs = re.findall(r'\[([^\]]+)\]', expr)
+            for ref in bare_refs:
+                if ref in existing_cols or ref in measure_names_in_model:
+                    continue
+                if ref.upper() in ('VALUE', 'FORMAT', 'YEAR', 'MONTH', 'DAY',
+                                   'HOUR', 'MINUTE', 'SECOND', 'DATE'):
+                    continue
+                # Add placeholder
+                t.setdefault('columns', []).append({
+                    'name': ref,
+                    'dataType': 'string',
+                    'isHidden': True,
+                    'description': (
+                        'Self-heal placeholder column created from '
+                        f"calculated column reference [{ref}]"
+                    ),
+                    'annotations': [{
+                        'name': 'MigrationNote',
+                        'value': (
+                            'Self-heal: placeholder column created to '
+                            f"satisfy missing reference [{ref}] "
+                            f"in calculated column '{col.get('name', '?')}'."
+                        ),
+                    }],
+                })
+                table_columns.setdefault(tname, set()).add(ref)
+                all_columns.add(ref)
+                existing_cols.add(ref)
+                created_for_cc.append(ref)
+                repairs += 1
+
+        if created_for_cc:
+            print(
+                f"  ⚕ Self-heal: Added {len(created_for_cc)} placeholder column(s) "
+                f"to '{tname}' for calculated columns"
+            )
+            if recovery:
+                recovery.record(
+                    'tmdl', 'placeholder_column_calc_col',
+                    item_name=tname,
+                    description=(
+                        'Missing references in calculated columns: '
+                        + ', '.join(f"[{c}]" for c in created_for_cc)
+                    ),
+                    action=(
+                        'Created hidden placeholder column(s): '
+                        + ', '.join(f'[{c}]' for c in created_for_cc)
+                    ),
+                    severity='warning',
+                    follow_up='Replace placeholders with actual source columns.',
+                )
 
     # 3. Orphan measures — measures on tables that got removed
     #    (shouldn't normally happen, but defensive)
@@ -1330,23 +1505,50 @@ def generate_tmdl(datasources, report_name, extra_objects, output_dir,
 
     actual_bim_measures = set()
     actual_bim_symbols = set()
+    actual_bim_column_types = {}  # (tname, cname) -> normalized dataType (lowercase)
+    actual_bim_measure_types = {}  # (tname, mname) -> inferred return type
     total_columns = 0
     total_measures = 0
     total_hierarchies = 0
+    # First pass: collect column types so we can infer measure return types from them
     for t in tables:
         tname = t.get('name', '')
-        for m in t.get('measures', []):
-            mname = m.get('name', '')
-            if mname:
-                actual_bim_measures.add(mname)
-                actual_bim_symbols.add((tname, mname))
         for c in t.get('columns', []):
             cname = c.get('name', '')
             if cname:
                 actual_bim_symbols.add((tname, cname))
+                ct = (c.get('dataType') or '').strip().lower()
+                if ct:
+                    actual_bim_column_types[(tname, cname)] = ct
         total_columns += len(t.get('columns', []))
-        total_measures += len(t.get('measures', []))
         total_hierarchies += len(t.get('hierarchies', []))
+    # Second pass: infer measure return types — especially for parameter
+    # measures (SELECTEDVALUE('Tbl'[Col], default)) — needed so filter
+    # literals on those measures are quoted/typed correctly.
+    _sv_re = re.compile(
+        r"SELECTEDVALUE\s*\(\s*'?([^'\[]+)'?\s*\[\s*([^\]]+)\s*\]",
+        re.IGNORECASE
+    )
+    for t in tables:
+        tname = t.get('name', '')
+        for m in t.get('measures', []):
+            mname = m.get('name', '')
+            if not mname:
+                continue
+            actual_bim_measures.add(mname)
+            actual_bim_symbols.add((tname, mname))
+            expr = (m.get('expression') or '').strip()
+            if not expr:
+                continue
+            sv = _sv_re.search(expr)
+            if sv:
+                ref_tbl = sv.group(1).strip()
+                ref_col = sv.group(2).strip()
+                ct = (actual_bim_column_types.get((ref_tbl, ref_col))
+                      or actual_bim_column_types.get((tname, ref_col)))
+                if ct:
+                    actual_bim_measure_types[(tname, mname)] = ct
+        total_measures += len(t.get('measures', []))
 
     # Step 2b: Build lineage map BEFORE writing — _write_tmdl_files clears
     #          column/measure data from tables to free memory, so lineage must
@@ -1366,6 +1568,8 @@ def generate_tmdl(datasources, report_name, extra_objects, output_dir,
         'roles': len(model.get('model', {}).get('roles', [])),
         'actual_bim_measures': actual_bim_measures,
         'actual_bim_symbols': actual_bim_symbols,
+        'actual_bim_column_types': actual_bim_column_types,
+        'actual_bim_measure_types': actual_bim_measure_types,
         'self_heal_repairs': repair_count,
         'recovery_summary': recovery.get_summary() if recovery.has_repairs else None,
         'm_validation_issues': m_validation_issues,
@@ -6470,7 +6674,11 @@ def _write_roles_tmdl(def_dir, roles):
 
         migration_note = role.get('_migration_note', '')
         if migration_note:
-            note_escaped = migration_note.replace('"', '\\"')
+            note_escaped = migration_note.replace('\r\n', ' ').replace('\n', ' ').replace('\r', ' ')
+            note_escaped = note_escaped.replace('"', '\\"')
+            # Collapse multiple spaces from newline removal
+            while '  ' in note_escaped:
+                note_escaped = note_escaped.replace('  ', ' ')
             lines.append(f'\tannotation MigrationNote = "{note_escaped}"')
 
         lines.append("")
@@ -7321,6 +7529,8 @@ def _write_partition(lines, table_name, partition):
             else:
                 lines.append(f"\t\tsource = {expr_clean}")
         else:
+            # Strip inline // comments and fix corrupted patterns before writing
+            expression = _strip_m_inline_comments(expression)
             # Validate M if/else balance before writing
             expression = _fix_m_if_else_balance(expression)
             lines.append(f"\t\tsource =")

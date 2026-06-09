@@ -22,6 +22,9 @@ from powerbi_import.self_healing_report import (
     _heal_pagesmeta_orphan_pageorder,
     _heal_pagesmeta_missing_active,
     _heal_visual_query_no_select,
+    _heal_filter_literal_null_placeholder,
+    _heal_filter_empty_in_expression,
+    _heal_invalid_visualtype,
     heal_report,
     load_report,
     run_report_healers,
@@ -69,7 +72,9 @@ def _visual(name, visual_json=None):
 
 class TestRegistry(unittest.TestCase):
     def test_eleven_healers(self):
-        self.assertEqual(len(_REPORT_HEALERS), 21)
+        # v3.4: 11, v3.6: +10 = 21, v3.7: +2 (filter literal preheal) = 23,
+        # Sprint 79: +1 (invalid visualType) = 24
+        self.assertEqual(len(_REPORT_HEALERS), 24)
 
     def test_run_on_empty_state_returns_zero(self):
         self.assertEqual(run_report_healers(None), 0)
@@ -445,3 +450,158 @@ class TestLoadWriteRoundTrip(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+# ════════════════════════════════════════════════════════════════════
+#  H22 — filter_literal_null_placeholder
+# ════════════════════════════════════════════════════════════════════
+
+def _make_in_filter(values):
+    """Build a filter dict whose Where[0] is an In-expression with the given values."""
+    return {
+        'field': 'X',
+        'filter': {
+            'Version': 2,
+            'From': [{'Name': 't', 'Entity': 'T', 'Type': 0}],
+            'Where': [{
+                'Condition': {
+                    'In': {
+                        'Expressions': [{
+                            'Column': {
+                                'Expression': {'SourceRef': {'Source': 't'}},
+                                'Property': 'X',
+                            }
+                        }],
+                        'Values': [[{'Literal': {'Value': v}}] for v in values],
+                    }
+                }
+            }]
+        }
+    }
+
+
+class TestHealFilterLiteralNullPlaceholder(unittest.TestCase):
+    def test_drops_null_placeholder_row(self):
+        f = _make_in_filter(["'a'", '%null%', "'b'"])
+        state = _make_state(pages=[_page('p1', [_visual('v1', {'filters': [f]})])])
+        n = _heal_filter_literal_null_placeholder(state)
+        self.assertEqual(n, 1)
+        kept = [row[0]['Literal']['Value']
+                for row in f['filter']['Where'][0]['Condition']['In']['Values']]
+        self.assertEqual(kept, ["'a'", "'b'"])
+
+    def test_handles_quoted_null_placeholder(self):
+        f = _make_in_filter(["'a'", "'%null%'"])
+        state = _make_state(pages=[_page('p1', [_visual('v1', {'filters': [f]})])])
+        n = _heal_filter_literal_null_placeholder(state)
+        self.assertEqual(n, 1)
+
+    def test_no_op_when_no_placeholder(self):
+        f = _make_in_filter(["'a'", "'b'"])
+        state = _make_state(pages=[_page('p1', [_visual('v1', {'filters': [f]})])])
+        n = _heal_filter_literal_null_placeholder(state)
+        self.assertEqual(n, 0)
+
+    def test_drops_clause_when_only_placeholder(self):
+        f = _make_in_filter(['%null%'])
+        state = _make_state(pages=[_page('p1', [_visual('v1', {'filters': [f]})])])
+        n = _heal_filter_literal_null_placeholder(state)
+        self.assertEqual(n, 1)
+        # Whole clause should be removed
+        self.assertEqual(f['filter']['Where'], [])
+
+    def test_scrubs_inside_not_wrapper(self):
+        f = _make_in_filter(["'a'", '%null%'])
+        # Wrap with Not (exclude filter)
+        original_in = f['filter']['Where'][0]['Condition'].pop('In')
+        f['filter']['Where'][0]['Condition']['Not'] = {'Expression': {'In': original_in}}
+        state = _make_state(pages=[_page('p1', [_visual('v1', {'filters': [f]})])])
+        n = _heal_filter_literal_null_placeholder(state)
+        self.assertEqual(n, 1)
+
+    def test_marks_visual_json_dirty(self):
+        f = _make_in_filter(['%null%', "'a'"])
+        state = _make_state(pages=[_page('p1', [_visual('v1', {'filters': [f]})])])
+        _heal_filter_literal_null_placeholder(state)
+        self.assertTrue(any('visual.json' in p for p in state['_dirty_files']))
+
+
+# ════════════════════════════════════════════════════════════════════
+#  H23 — filter_empty_in_expression
+# ════════════════════════════════════════════════════════════════════
+
+class TestHealFilterEmptyInExpression(unittest.TestCase):
+    def test_drops_filter_with_empty_values(self):
+        f = _make_in_filter([])
+        state = _make_state(pages=[_page('p1', [_visual('v1', {'filters': [f]})])])
+        n = _heal_filter_empty_in_expression(state)
+        self.assertEqual(n, 1)
+        self.assertEqual(state['pages'][0]['visuals'][0]['json']['filters'], [])
+
+    def test_keeps_filter_with_values(self):
+        f = _make_in_filter(["'a'"])
+        state = _make_state(pages=[_page('p1', [_visual('v1', {'filters': [f]})])])
+        n = _heal_filter_empty_in_expression(state)
+        self.assertEqual(n, 0)
+
+    def test_handles_page_level(self):
+        f = _make_in_filter([])
+        page = _page('p1', [])
+        page['json']['filters'] = [f]
+        state = _make_state(pages=[page])
+        n = _heal_filter_empty_in_expression(state)
+        self.assertEqual(n, 1)
+
+    def test_handles_report_level(self):
+        f = _make_in_filter([])
+        state = _make_state(report_json={'filters': [f]})
+        n = _heal_filter_empty_in_expression(state)
+        self.assertEqual(n, 1)
+
+
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#  H24 — invalid_visualtype (Sprint 79)
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+class TestHealInvalidVisualType(unittest.TestCase):
+    def test_raw_tableau_bar_normalized(self):
+        # Raw Tableau mark name 'bar' is invalid as a PBI visualType
+        # (renders blank). Healer must rewrite to 'clusteredBarChart'.
+        v = _visual('v1', {'visual': {'visualType': 'bar'}})
+        state = _make_state(pages=[_page('p1', [v])])
+        n = _heal_invalid_visualtype(state)
+        self.assertEqual(n, 1)
+        self.assertEqual(v['json']['visual']['visualType'], 'clusteredBarChart')
+
+    def test_valid_visualtype_unchanged(self):
+        v = _visual('v1', {'visual': {'visualType': 'lineChart'}})
+        state = _make_state(pages=[_page('p1', [v])])
+        n = _heal_invalid_visualtype(state)
+        self.assertEqual(n, 0)
+        self.assertEqual(v['json']['visual']['visualType'], 'lineChart')
+
+    def test_capitalized_pie_normalized(self):
+        v = _visual('v1', {'visual': {'visualType': 'Pie'}})
+        state = _make_state(pages=[_page('p1', [v])])
+        n = _heal_invalid_visualtype(state)
+        self.assertEqual(n, 1)
+        self.assertEqual(v['json']['visual']['visualType'], 'pieChart')
+
+    def test_unknown_type_falls_back_to_tableEx(self):
+        v = _visual('v1', {'visual': {'visualType': 'totallyMadeUpType'}})
+        state = _make_state(pages=[_page('p1', [v])])
+        n = _heal_invalid_visualtype(state)
+        self.assertEqual(n, 1)
+        self.assertEqual(v['json']['visual']['visualType'], 'tableEx')
+
+    def test_missing_visual_block_skipped(self):
+        v = _visual('v1', {})
+        state = _make_state(pages=[_page('p1', [v])])
+        n = _heal_invalid_visualtype(state)
+        self.assertEqual(n, 0)
+
+    def test_slicer_unchanged(self):
+        v = _visual('v1', {'visual': {'visualType': 'slicer'}})
+        state = _make_state(pages=[_page('p1', [v])])
+        n = _heal_invalid_visualtype(state)
+        self.assertEqual(n, 0)

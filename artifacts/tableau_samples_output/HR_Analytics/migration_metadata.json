@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-13T17:40:57.588956",
+  "generated_at": "2026-06-09T09:33:20.683256",
   "source": "Tableau Migration",
   "report_name": "HR_Analytics",
   "objects_converted": {
@@ -29,10 +29,19 @@
   },
   "tmdl_stats": {
     "tables": 2,
-    "measures": 6,
+    "measures": 7,
     "columns": 20,
     "relationships": 0
   },
+  "dax_measure_names": [
+    "Average Salary",
+    "Employee Count",
+    "Previous Year",
+    "Total Compensation",
+    "Total Compensation Formatted",
+    "Year Over Year %",
+    "Year To Date"
+  ],
   "visual_type_mappings": {
     "Headcount by Department": "Automatic",
     "Salary Analysis": "Automatic",
@@ -51,6 +60,7 @@
         "Employee_Count",
         "Employee_Count"
       ],
+      "dax_measures": [],
       "field_count": 3
     },
     {
@@ -64,6 +74,7 @@
         "AVG_Salary",
         "AVG_Salary"
       ],
+      "dax_measures": [],
       "field_count": 3
     },
     {
@@ -76,6 +87,7 @@
       "measures": [
         "Employee_Count"
       ],
+      "dax_measures": [],
       "field_count": 2
     },
     {
@@ -90,6 +102,7 @@
         "Employee_Count",
         "Employee_Count"
       ],
+      "dax_measures": [],
       "field_count": 4
     }
   ],

@@ -174,6 +174,14 @@ def extract_datasource(datasource_elem, twbx_path=None):
         'col_type_map': _extract_col_type_map(datasource_elem),
     }
 
+    # Rename 'sqlproxy' tables to use the datasource caption.
+    # Published datasources (hosted on Tableau Server) expose a single relation
+    # named literally 'sqlproxy' — an internal Tableau class token, not a
+    # user-facing name. Without renaming, PBI would surface tables called
+    # 'sqlproxy' or 'sqlproxy (Caption)' which is meaningless to end users.
+    # The friendly name lives on the parent <datasource caption="...">.
+    _rename_sqlproxy_tables(datasource)
+
     # Ensure join columns referenced by relationships exist in their tables.
     # Connectors like Salesforce use internal primary keys (e.g. Id) for joins
     # that Tableau doesn't expose as visible columns.
@@ -186,6 +194,81 @@ def extract_datasource(datasource_elem, twbx_path=None):
     _ensure_calc_referenced_columns(datasource)
     
     return datasource
+
+
+def _sanitize_caption_for_table_name(caption):
+    """Strip Tableau bracket-escaping and surrounding whitespace from a caption
+    so it can be used as a TMDL-friendly table name.
+    """
+    if not caption:
+        return ''
+    # Tableau XML occasionally stores names wrapped in [brackets]; strip them
+    # (TMDL adds its own quoting for names containing spaces / special chars).
+    clean = caption.strip()
+    if clean.startswith('[') and clean.endswith(']'):
+        clean = clean[1:-1]
+    return clean.strip()
+
+
+def _rename_sqlproxy_tables(datasource):
+    """Replace 'sqlproxy' table names with the datasource caption.
+
+    For published datasources, Tableau emits `<relation name="sqlproxy">` as
+    the single physical table. The friendly name lives on the parent
+    `<datasource caption="...">`. Without this rewrite the user sees a table
+    literally called `sqlproxy` (or `sqlproxy (Caption)` after the downstream
+    collision-deduplication) — both meaningless. We rename to the caption,
+    falling back to a stripped datasource id if no caption is available.
+    """
+    tables = datasource.get('tables', [])
+    if not tables:
+        return
+
+    ds_caption = datasource.get('caption', '') or ''
+    ds_name = datasource.get('name', '') or ''
+    pretty = _sanitize_caption_for_table_name(ds_caption)
+    if not pretty or pretty == ds_name:
+        # Caption missing or identical to the opaque ds id — derive a label
+        # from the ds id by dropping the 'sqlproxy.' / 'federated.' prefix.
+        candidate = ds_name
+        for prefix in ('sqlproxy.', 'federated.'):
+            if candidate.startswith(prefix):
+                candidate = candidate[len(prefix):]
+                break
+        pretty = candidate or 'Published Datasource'
+
+    rename_map = {}  # old_name -> new_name
+    for table in tables:
+        old_name = table.get('name', '')
+        if old_name != 'sqlproxy':
+            continue
+        # Avoid collisions inside the same datasource (extremely rare; published
+        # datasources expose exactly one sqlproxy relation, but defend anyway).
+        candidate = pretty
+        counter = 2
+        existing = {t.get('name', '') for t in tables if t is not table}
+        while candidate in existing:
+            candidate = f"{pretty} ({counter})"
+            counter += 1
+        table['name'] = candidate
+        rename_map[old_name] = candidate
+
+    if not rename_map:
+        return
+
+    # Propagate the rename to relationships and calculations that reference
+    # the old 'sqlproxy' table name.
+    for rel in datasource.get('relationships', []):
+        for side in ('left', 'right'):
+            info = rel.get(side, {})
+            tname = info.get('table', '')
+            if tname in rename_map:
+                info['table'] = rename_map[tname]
+
+    for calc in datasource.get('calculations', []):
+        tname = calc.get('column_table')
+        if tname in rename_map:
+            calc['column_table'] = rename_map[tname]
 
 
 def _ensure_relationship_columns(datasource):

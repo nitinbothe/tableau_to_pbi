@@ -614,14 +614,29 @@
 
     /* ── Print ───────────────────────────────────────────────── */
     @media print {
-        .report-header { background: #0078d4 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .section-body { max-height: none !important; opacity: 1 !important; }
-        .section-header { cursor: default; }
+        @page { size: A4 portrait; margin: 18mm 15mm; }
+        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        body { background: #fff; font-size: 10pt; line-height: 1.45; }
+        .report-header { background: #0078d4 !important; padding: 20px 24px 16px; }
+        .container { padding: 0 8px 20px; }
+        .section-body { max-height: none !important; opacity: 1 !important; overflow: visible !important; }
+        .section-body.collapsed { max-height: none !important; opacity: 1 !important; }
+        .section-header { cursor: default; pointer-events: none; }
         .toggle-arrow { display: none; }
+        .theme-toggle { display: none !important; }
+        .table-search { display: none; }
+        .tab-bar { display: none; }
+        .tab-content { display: block !important; }
         .stat-card { break-inside: avoid; }
         .card { break-inside: avoid; }
-        .table-search { display: none; }
-        body { background: #fff; }
+        .table-container { break-inside: avoid; }
+        .chart-card { break-inside: avoid; }
+        .donut-container { break-inside: avoid; }
+        .bar-chart { break-inside: avoid; }
+        thead th { background: #0078d4 !important; color: #fff !important; font-size: 0.78em; }
+        tbody td { font-size: 0.8em; padding: 5px 8px; }
+        .badge { border: 1px solid currentColor; }
+        .report-footer { page-break-before: avoid; margin-top: 20px; }
     }
 
     /* ── Responsive ──────────────────────────────────────────── */
@@ -697,8 +712,8 @@
     <h1>Tableau → Power BI — Migration Dashboard</h1>
     <div class='subtitle'>10 workbooks migrated</div>
     <div class="meta">
-        <span>&#128197; 2026-05-13 17:42</span>
-        <span>&#9881; v35.0.0</span>
+        <span>&#128197; 2026-06-09 09:34</span>
+        <span>&#9881; v38.2.0</span>
     </div>
 </div>
 <div class="container">
@@ -829,11 +844,11 @@
     <div class="stat-label">TMDL Tables</div>
 </div>
 <div class="stat-card accent-blue">
-    <div class="stat-value">365</div>
+    <div class="stat-value">382</div>
     <div class="stat-label">Columns</div>
 </div>
 <div class="stat-card accent-purple">
-    <div class="stat-value">146</div>
+    <div class="stat-value">206</div>
     <div class="stat-label">DAX Measures</div>
 </div>
 <div class="stat-card accent-teal">
@@ -848,6 +863,10 @@
     <div class="stat-value">60</div>
     <div class="stat-label">Visuals</div>
 </div>
+<div class="stat-card accent-purple">
+    <div class="stat-value">2</div>
+    <div class="stat-label">Visuals With DAX Measure</div>
+</div>
 </div><div class="card"><h4>&#127919; Workbook Complexity Heatmap</h4><div class="table-container"><table id="heatmap-tbl">
 <thead><tr>
 <th class="sortable" onclick="sortTable('heatmap-tbl', 0)">Workbook <span class="sort-icon">&#8693;</span></th>
@@ -861,18 +880,19 @@
 <th class="sortable" onclick="sortTable('heatmap-tbl', 8)">Filters <span class="sort-icon">&#8693;</span></th>
 <th class="sortable" onclick="sortTable('heatmap-tbl', 9)">Pages <span class="sort-icon">&#8693;</span></th>
 <th class="sortable" onclick="sortTable('heatmap-tbl', 10)">Visuals <span class="sort-icon">&#8693;</span></th>
+<th class="sortable" onclick="sortTable('heatmap-tbl', 11)">Visuals_With_Dax_Measure <span class="sort-icon">&#8693;</span></th>
 </tr></thead>
 <tbody>
-<tr><td><strong>BigQuery_Analytics</strong></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.41);color:#323130;text-align:center;font-weight:600">3</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.35);color:#323130;text-align:center;font-weight:600">27</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.28);color:#323130;text-align:center;font-weight:600">10</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.34);color:#323130;text-align:center;font-weight:600">2</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">4</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">1</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.28);color:#323130;text-align:center;font-weight:600">10</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.08);color:#323130;text-align:center;font-weight:600">0</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">1</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.24);color:#323130;text-align:center;font-weight:600">4</span></td></tr>
-<tr><td><strong>Complex_Enterprise</strong></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.73);color:#fff;text-align:center;font-weight:600">6</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.73);color:#fff;text-align:center;font-weight:600">66</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.73);color:#fff;text-align:center;font-weight:600">33</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.34);color:#323130;text-align:center;font-weight:600">2</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.73);color:#fff;text-align:center;font-weight:600">12</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.73);color:#fff;text-align:center;font-weight:600">3</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.73);color:#fff;text-align:center;font-weight:600">33</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.73);color:#fff;text-align:center;font-weight:600">7</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.73);color:#fff;text-align:center;font-weight:600">3</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.73);color:#fff;text-align:center;font-weight:600">16</span></td></tr>
-<tr><td><strong>Enterprise_Sales</strong></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.62);color:#fff;text-align:center;font-weight:600">5</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.46);color:#fff;text-align:center;font-weight:600">39</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.53);color:#fff;text-align:center;font-weight:600">23</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.34);color:#323130;text-align:center;font-weight:600">2</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.35);color:#323130;text-align:center;font-weight:600">5</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">1</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.51);color:#fff;text-align:center;font-weight:600">22</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.08);color:#323130;text-align:center;font-weight:600">0</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">1</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.32);color:#323130;text-align:center;font-weight:600">6</span></td></tr>
-<tr><td><strong>Financial_Report</strong></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.51);color:#fff;text-align:center;font-weight:600">4</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.26);color:#323130;text-align:center;font-weight:600">18</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">11</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.08);color:#323130;text-align:center;font-weight:600">0</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">4</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">1</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.20);color:#323130;text-align:center;font-weight:600">6</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.45);color:#fff;text-align:center;font-weight:600">4</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">1</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.24);color:#323130;text-align:center;font-weight:600">4</span></td></tr>
-<tr><td><strong>HR_Analytics</strong></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">2</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.28);color:#323130;text-align:center;font-weight:600">20</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.20);color:#323130;text-align:center;font-weight:600">6</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.08);color:#323130;text-align:center;font-weight:600">0</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">4</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">1</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.16);color:#323130;text-align:center;font-weight:600">4</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.08);color:#323130;text-align:center;font-weight:600">0</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">1</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.24);color:#323130;text-align:center;font-weight:600">4</span></td></tr>
-<tr><td><strong>Manufacturing_IoT</strong></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.62);color:#fff;text-align:center;font-weight:600">5</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.57);color:#fff;text-align:center;font-weight:600">50</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.36);color:#323130;text-align:center;font-weight:600">14</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.73);color:#fff;text-align:center;font-weight:600">5</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.41);color:#323130;text-align:center;font-weight:600">6</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.51);color:#fff;text-align:center;font-weight:600">2</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.57);color:#fff;text-align:center;font-weight:600">25</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.08);color:#323130;text-align:center;font-weight:600">0</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.51);color:#fff;text-align:center;font-weight:600">2</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.41);color:#323130;text-align:center;font-weight:600">8</span></td></tr>
-<tr><td><strong>Marketing_Campaign</strong></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.51);color:#fff;text-align:center;font-weight:600">4</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.57);color:#fff;text-align:center;font-weight:600">50</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.38);color:#323130;text-align:center;font-weight:600">15</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.34);color:#323130;text-align:center;font-weight:600">2</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.35);color:#323130;text-align:center;font-weight:600">5</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">1</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.57);color:#fff;text-align:center;font-weight:600">25</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.08);color:#323130;text-align:center;font-weight:600">0</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">1</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.32);color:#323130;text-align:center;font-weight:600">6</span></td></tr>
-<tr><td><strong>Security_Test</strong></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.41);color:#323130;text-align:center;font-weight:600">3</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.25);color:#323130;text-align:center;font-weight:600">17</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.24);color:#323130;text-align:center;font-weight:600">8</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.21);color:#323130;text-align:center;font-weight:600">1</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.19);color:#323130;text-align:center;font-weight:600">2</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">1</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.18);color:#323130;text-align:center;font-weight:600">5</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.08);color:#323130;text-align:center;font-weight:600">0</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">1</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.16);color:#323130;text-align:center;font-weight:600">2</span></td></tr>
-<tr><td><strong>Superstore_Sales</strong></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.51);color:#fff;text-align:center;font-weight:600">4</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.41);color:#323130;text-align:center;font-weight:600">33</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.22);color:#323130;text-align:center;font-weight:600">7</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.34);color:#323130;text-align:center;font-weight:600">2</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.24);color:#323130;text-align:center;font-weight:600">3</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">1</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.16);color:#323130;text-align:center;font-weight:600">4</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.08);color:#323130;text-align:center;font-weight:600">0</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">1</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.20);color:#323130;text-align:center;font-weight:600">3</span></td></tr>
-<tr><td><strong>Ventes_France</strong></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.73);color:#fff;text-align:center;font-weight:600">6</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.52);color:#fff;text-align:center;font-weight:600">45</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.45);color:#fff;text-align:center;font-weight:600">19</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.47);color:#fff;text-align:center;font-weight:600">3</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.41);color:#323130;text-align:center;font-weight:600">6</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.51);color:#fff;text-align:center;font-weight:600">2</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.51);color:#fff;text-align:center;font-weight:600">22</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.08);color:#323130;text-align:center;font-weight:600">0</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.51);color:#fff;text-align:center;font-weight:600">2</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.36);color:#323130;text-align:center;font-weight:600">7</span></td></tr>
+<tr><td><strong>BigQuery_Analytics</strong></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.41);color:#323130;text-align:center;font-weight:600">3</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.35);color:#323130;text-align:center;font-weight:600">28</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.27);color:#323130;text-align:center;font-weight:600">14</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.34);color:#323130;text-align:center;font-weight:600">2</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">4</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">1</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.28);color:#323130;text-align:center;font-weight:600">10</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.08);color:#323130;text-align:center;font-weight:600">0</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">1</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.24);color:#323130;text-align:center;font-weight:600">4</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.08);color:#323130;text-align:center;font-weight:600">0</span></td></tr>
+<tr><td><strong>Complex_Enterprise</strong></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.73);color:#fff;text-align:center;font-weight:600">6</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.73);color:#fff;text-align:center;font-weight:600">68</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.73);color:#fff;text-align:center;font-weight:600">49</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.34);color:#323130;text-align:center;font-weight:600">2</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.73);color:#fff;text-align:center;font-weight:600">12</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.73);color:#fff;text-align:center;font-weight:600">3</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.73);color:#fff;text-align:center;font-weight:600">33</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.73);color:#fff;text-align:center;font-weight:600">7</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.73);color:#fff;text-align:center;font-weight:600">3</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.73);color:#fff;text-align:center;font-weight:600">16</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.08);color:#323130;text-align:center;font-weight:600">0</span></td></tr>
+<tr><td><strong>Enterprise_Sales</strong></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.62);color:#fff;text-align:center;font-weight:600">5</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.50);color:#fff;text-align:center;font-weight:600">44</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.52);color:#fff;text-align:center;font-weight:600">33</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.34);color:#323130;text-align:center;font-weight:600">2</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.35);color:#323130;text-align:center;font-weight:600">5</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">1</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.51);color:#fff;text-align:center;font-weight:600">22</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.08);color:#323130;text-align:center;font-weight:600">0</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">1</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.32);color:#323130;text-align:center;font-weight:600">6</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.08);color:#323130;text-align:center;font-weight:600">0</span></td></tr>
+<tr><td><strong>Financial_Report</strong></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.51);color:#fff;text-align:center;font-weight:600">4</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.25);color:#323130;text-align:center;font-weight:600">18</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.29);color:#323130;text-align:center;font-weight:600">16</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.08);color:#323130;text-align:center;font-weight:600">0</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">4</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">1</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.20);color:#323130;text-align:center;font-weight:600">6</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.45);color:#fff;text-align:center;font-weight:600">4</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">1</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.24);color:#323130;text-align:center;font-weight:600">4</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.73);color:#fff;text-align:center;font-weight:600">2</span></td></tr>
+<tr><td><strong>HR_Analytics</strong></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">2</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.27);color:#323130;text-align:center;font-weight:600">20</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.17);color:#323130;text-align:center;font-weight:600">7</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.08);color:#323130;text-align:center;font-weight:600">0</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">4</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">1</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.16);color:#323130;text-align:center;font-weight:600">4</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.08);color:#323130;text-align:center;font-weight:600">0</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">1</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.24);color:#323130;text-align:center;font-weight:600">4</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.08);color:#323130;text-align:center;font-weight:600">0</span></td></tr>
+<tr><td><strong>Manufacturing_IoT</strong></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.62);color:#fff;text-align:center;font-weight:600">5</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.56);color:#fff;text-align:center;font-weight:600">50</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.29);color:#323130;text-align:center;font-weight:600">16</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.73);color:#fff;text-align:center;font-weight:600">5</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.41);color:#323130;text-align:center;font-weight:600">6</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.51);color:#fff;text-align:center;font-weight:600">2</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.57);color:#fff;text-align:center;font-weight:600">25</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.08);color:#323130;text-align:center;font-weight:600">0</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.51);color:#fff;text-align:center;font-weight:600">2</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.41);color:#323130;text-align:center;font-weight:600">8</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.08);color:#323130;text-align:center;font-weight:600">0</span></td></tr>
+<tr><td><strong>Marketing_Campaign</strong></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.51);color:#fff;text-align:center;font-weight:600">4</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.60);color:#fff;text-align:center;font-weight:600">54</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.37);color:#323130;text-align:center;font-weight:600">22</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.34);color:#323130;text-align:center;font-weight:600">2</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.35);color:#323130;text-align:center;font-weight:600">5</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">1</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.57);color:#fff;text-align:center;font-weight:600">25</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.08);color:#323130;text-align:center;font-weight:600">0</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">1</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.32);color:#323130;text-align:center;font-weight:600">6</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.08);color:#323130;text-align:center;font-weight:600">0</span></td></tr>
+<tr><td><strong>Security_Test</strong></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.41);color:#323130;text-align:center;font-weight:600">3</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.24);color:#323130;text-align:center;font-weight:600">17</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.21);color:#323130;text-align:center;font-weight:600">10</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.21);color:#323130;text-align:center;font-weight:600">1</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.19);color:#323130;text-align:center;font-weight:600">2</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">1</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.18);color:#323130;text-align:center;font-weight:600">5</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.08);color:#323130;text-align:center;font-weight:600">0</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">1</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.16);color:#323130;text-align:center;font-weight:600">2</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.08);color:#323130;text-align:center;font-weight:600">0</span></td></tr>
+<tr><td><strong>Superstore_Sales</strong></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.51);color:#fff;text-align:center;font-weight:600">4</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.40);color:#323130;text-align:center;font-weight:600">33</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.21);color:#323130;text-align:center;font-weight:600">10</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.34);color:#323130;text-align:center;font-weight:600">2</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.24);color:#323130;text-align:center;font-weight:600">3</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">1</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.16);color:#323130;text-align:center;font-weight:600">4</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.08);color:#323130;text-align:center;font-weight:600">0</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.30);color:#323130;text-align:center;font-weight:600">1</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.20);color:#323130;text-align:center;font-weight:600">3</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.08);color:#323130;text-align:center;font-weight:600">0</span></td></tr>
+<tr><td><strong>Ventes_France</strong></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.73);color:#fff;text-align:center;font-weight:600">6</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.56);color:#fff;text-align:center;font-weight:600">50</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.46);color:#fff;text-align:center;font-weight:600">29</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.47);color:#fff;text-align:center;font-weight:600">3</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.41);color:#323130;text-align:center;font-weight:600">6</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.51);color:#fff;text-align:center;font-weight:600">2</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.51);color:#fff;text-align:center;font-weight:600">22</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.08);color:#323130;text-align:center;font-weight:600">0</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.51);color:#fff;text-align:center;font-weight:600">2</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.36);color:#323130;text-align:center;font-weight:600">7</span></td><td><span style="display:block;padding:4px;border-radius:3px;background:rgba(0,120,212,0.08);color:#323130;text-align:center;font-weight:600">0</span></td></tr>
 </tbody></table></div></div>
 </div> <!-- /section -->
 
@@ -898,48 +918,49 @@
 <th class="sortable" onclick="sortTable('mig-tbl', 7)">Measures <span class="sort-icon">&#8693;</span></th>
 <th class="sortable" onclick="sortTable('mig-tbl', 8)">Pages <span class="sort-icon">&#8693;</span></th>
 <th class="sortable" onclick="sortTable('mig-tbl', 9)">Visuals <span class="sort-icon">&#8693;</span></th>
+<th class="sortable" onclick="sortTable('mig-tbl', 10)">Visuals With DAX Measure <span class="sort-icon">&#8693;</span></th>
 </tr></thead>
 <tbody>
 <tr><td><strong>BigQuery_Analytics</strong></td><td><span class="fidelity-bar">
     <span class="fidelity-track"><span class="fidelity-fill" style="width:100%;background:var(--success)"></span></span>
     <span class="fidelity-label" style="color:var(--success)">100.0%</span>
-</span></td><td>15</td><td><span class="text-success fw-bold">15</span></td><td>—</td><td>—</td><td>3</td><td>10</td><td>1</td><td>4</td></tr>
+</span></td><td>15</td><td><span class="text-success fw-bold">15</span></td><td>—</td><td>—</td><td>3</td><td>14</td><td>1</td><td>4</td><td>0</td></tr>
 <tr><td><strong>Complex_Enterprise</strong></td><td><span class="fidelity-bar">
     <span class="fidelity-track"><span class="fidelity-fill" style="width:100%;background:var(--success)"></span></span>
     <span class="fidelity-label" style="color:var(--success)">100.0%</span>
-</span></td><td>57</td><td><span class="text-success fw-bold">56</span></td><td>—</td><td>—</td><td>6</td><td>33</td><td>3</td><td>16</td></tr>
+</span></td><td>57</td><td><span class="text-success fw-bold">56</span></td><td>—</td><td>—</td><td>6</td><td>49</td><td>3</td><td>16</td><td>0</td></tr>
 <tr><td><strong>Enterprise_Sales</strong></td><td><span class="fidelity-bar">
     <span class="fidelity-track"><span class="fidelity-fill" style="width:100%;background:var(--success)"></span></span>
     <span class="fidelity-label" style="color:var(--success)">100.0%</span>
-</span></td><td>34</td><td><span class="text-success fw-bold">34</span></td><td>—</td><td>—</td><td>5</td><td>23</td><td>1</td><td>6</td></tr>
+</span></td><td>34</td><td><span class="text-success fw-bold">34</span></td><td>—</td><td>—</td><td>5</td><td>33</td><td>1</td><td>6</td><td>0</td></tr>
 <tr><td><strong>Financial_Report</strong></td><td><span class="fidelity-bar">
     <span class="fidelity-track"><span class="fidelity-fill" style="width:100%;background:var(--success)"></span></span>
     <span class="fidelity-label" style="color:var(--success)">100.0%</span>
-</span></td><td>14</td><td><span class="text-success fw-bold">14</span></td><td>—</td><td>—</td><td>4</td><td>11</td><td>1</td><td>4</td></tr>
+</span></td><td>14</td><td><span class="text-success fw-bold">14</span></td><td>—</td><td>—</td><td>4</td><td>16</td><td>1</td><td>4</td><td>2</td></tr>
 <tr><td><strong>HR_Analytics</strong></td><td><span class="fidelity-bar">
     <span class="fidelity-track"><span class="fidelity-fill" style="width:100%;background:var(--success)"></span></span>
     <span class="fidelity-label" style="color:var(--success)">100.0%</span>
-</span></td><td>9</td><td><span class="text-success fw-bold">9</span></td><td>—</td><td>—</td><td>2</td><td>6</td><td>1</td><td>4</td></tr>
+</span></td><td>9</td><td><span class="text-success fw-bold">9</span></td><td>—</td><td>—</td><td>2</td><td>7</td><td>1</td><td>4</td><td>0</td></tr>
 <tr><td><strong>Manufacturing_IoT</strong></td><td><span class="fidelity-bar">
     <span class="fidelity-track"><span class="fidelity-fill" style="width:100%;background:var(--success)"></span></span>
     <span class="fidelity-label" style="color:var(--success)">100.0%</span>
-</span></td><td>35</td><td><span class="text-success fw-bold">35</span></td><td>—</td><td>—</td><td>5</td><td>14</td><td>2</td><td>8</td></tr>
+</span></td><td>35</td><td><span class="text-success fw-bold">35</span></td><td>—</td><td>—</td><td>5</td><td>16</td><td>2</td><td>8</td><td>0</td></tr>
 <tr><td><strong>Marketing_Campaign</strong></td><td><span class="fidelity-bar">
     <span class="fidelity-track"><span class="fidelity-fill" style="width:100%;background:var(--success)"></span></span>
     <span class="fidelity-label" style="color:var(--success)">100.0%</span>
-</span></td><td>34</td><td><span class="text-success fw-bold">34</span></td><td>—</td><td>—</td><td>4</td><td>15</td><td>1</td><td>6</td></tr>
+</span></td><td>34</td><td><span class="text-success fw-bold">34</span></td><td>—</td><td>—</td><td>4</td><td>22</td><td>1</td><td>6</td><td>0</td></tr>
 <tr><td><strong>Security_Test</strong></td><td><span class="fidelity-bar">
     <span class="fidelity-track"><span class="fidelity-fill" style="width:100%;background:var(--success)"></span></span>
     <span class="fidelity-label" style="color:var(--success)">100.0%</span>
-</span></td><td>12</td><td><span class="text-success fw-bold">12</span></td><td>—</td><td>—</td><td>3</td><td>8</td><td>1</td><td>2</td></tr>
+</span></td><td>12</td><td><span class="text-success fw-bold">12</span></td><td>—</td><td>—</td><td>3</td><td>10</td><td>1</td><td>2</td><td>0</td></tr>
 <tr><td><strong>Superstore_Sales</strong></td><td><span class="fidelity-bar">
     <span class="fidelity-track"><span class="fidelity-fill" style="width:100%;background:var(--success)"></span></span>
     <span class="fidelity-label" style="color:var(--success)">100.0%</span>
-</span></td><td>8</td><td><span class="text-success fw-bold">8</span></td><td>—</td><td>—</td><td>4</td><td>7</td><td>1</td><td>3</td></tr>
+</span></td><td>8</td><td><span class="text-success fw-bold">8</span></td><td>—</td><td>—</td><td>4</td><td>10</td><td>1</td><td>3</td><td>0</td></tr>
 <tr><td><strong>Ventes_France</strong></td><td><span class="fidelity-bar">
     <span class="fidelity-track"><span class="fidelity-fill" style="width:100%;background:var(--success)"></span></span>
     <span class="fidelity-label" style="color:var(--success)">100.0%</span>
-</span></td><td>34</td><td><span class="text-success fw-bold">34</span></td><td>—</td><td>—</td><td>6</td><td>19</td><td>2</td><td>7</td></tr>
+</span></td><td>34</td><td><span class="text-success fw-bold">34</span></td><td>—</td><td>—</td><td>6</td><td>29</td><td>2</td><td>7</td><td>0</td></tr>
 </tbody></table></div></div>
 </div> <!-- /section -->
 
@@ -952,7 +973,7 @@
 <div class="card"><h4>&#128260; Migration Flow</h4><div class="flow-container">
 <div class="flow-box">Tableau Sources (42 tables)</div>
 <span class="flow-arrow">&#10132;</span>
-<div class="flow-box accent">Calculations (146)</div>
+<div class="flow-box accent">Calculations (206)</div>
 <span class="flow-arrow">&#10132;</span>
 <div class="flow-box">Power BI Model (29 relationships)</div>
 <span class="flow-arrow">&#10132;</span>
@@ -963,7 +984,7 @@
     <div class="stat-label">Tables Mapped</div>
 </div>
 <div class="stat-card accent-purple">
-    <div class="stat-value">146</div>
+    <div class="stat-value">206</div>
     <div class="stat-label">Calculations Traced</div>
 </div>
 <div class="stat-card accent-teal">
@@ -976,7 +997,7 @@
 </div>
 </div><div class="tab-bar">
 <div class="tab active" data-tab-group="lineage-tabs" data-tab-name="tables" onclick="switchTab('lineage-tabs', 'tables')">Tables (42)</div>
-<div class="tab" data-tab-group="lineage-tabs" data-tab-name="calcs" onclick="switchTab('lineage-tabs', 'calcs')">Calculations (146)</div>
+<div class="tab" data-tab-group="lineage-tabs" data-tab-name="calcs" onclick="switchTab('lineage-tabs', 'calcs')">Calculations (206)</div>
 <div class="tab" data-tab-group="lineage-tabs" data-tab-name="rels" onclick="switchTab('lineage-tabs', 'rels')">Relationships (29)</div>
 <div class="tab" data-tab-group="lineage-tabs" data-tab-name="ws" onclick="switchTab('lineage-tabs', 'ws')">Worksheets (51)</div>
 </div>
@@ -1060,6 +1081,10 @@
 <tr><td><strong>BigQuery_Analytics</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">SUM([revenue])</span></td><td>➡</td><td><strong>Total Revenue</strong></td><td><span class="tag tag-connector">sessions</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>BigQuery_Analytics</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">SUM([revenue]) / COUNT([session_id])</span></td><td>➡</td><td><strong>Revenue per Session</strong></td><td><span class="tag tag-connector">sessions</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>BigQuery_Analytics</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">{FIXED [channel] : SUM([revenue])}</span></td><td>➡</td><td><strong>Revenue by Channel</strong></td><td><span class="tag tag-connector">sessions</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>BigQuery_Analytics</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Conversion Rate Formatted</span></td><td>➡</td><td><strong>Conversion Rate Formatted</strong></td><td><span class="tag tag-connector">sessions</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>BigQuery_Analytics</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Total Revenue Formatted</span></td><td>➡</td><td><strong>Total Revenue Formatted</strong></td><td><span class="tag tag-connector">sessions</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>BigQuery_Analytics</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Revenue per Session Formatted</span></td><td>➡</td><td><strong>Revenue per Session Formatted</strong></td><td><span class="tag tag-connector">sessions</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>BigQuery_Analytics</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Revenue by Channel Formatted</span></td><td>➡</td><td><strong>Revenue by Channel Formatted</strong></td><td><span class="tag tag-connector">sessions</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>BigQuery_Analytics</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Year To Date</span></td><td>➡</td><td><strong>Year To Date</strong></td><td><span class="tag tag-connector">Calendar</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>BigQuery_Analytics</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Previous Year</span></td><td>➡</td><td><strong>Previous Year</strong></td><td><span class="tag tag-connector">Calendar</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>BigQuery_Analytics</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Year Over Year %</span></td><td>➡</td><td><strong>Year Over Year %</strong></td><td><span class="tag tag-connector">Calendar</span></td><td><span class="tag tag-success">measure</span></td></tr>
@@ -1094,6 +1119,22 @@
 <tr><td><strong>Complex_Enterprise</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Analysis Start Date</span></td><td>➡</td><td><strong>Analysis Start Date</strong></td><td><span class="tag tag-connector">fact_sales</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Complex_Enterprise</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Metric Selector</span></td><td>➡</td><td><strong>Metric Selector</strong></td><td><span class="tag tag-connector">fact_sales</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Complex_Enterprise</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Display Currency</span></td><td>➡</td><td><strong>Display Currency</strong></td><td><span class="tag tag-connector">fact_sales</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Complex_Enterprise</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Gross Revenue Formatted</span></td><td>➡</td><td><strong>Gross Revenue Formatted</strong></td><td><span class="tag tag-connector">fact_sales</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Complex_Enterprise</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Net Revenue Formatted</span></td><td>➡</td><td><strong>Net Revenue Formatted</strong></td><td><span class="tag tag-connector">fact_sales</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Complex_Enterprise</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">COGS Formatted</span></td><td>➡</td><td><strong>COGS Formatted</strong></td><td><span class="tag tag-connector">fact_sales</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Complex_Enterprise</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Gross Profit Formatted</span></td><td>➡</td><td><strong>Gross Profit Formatted</strong></td><td><span class="tag tag-connector">fact_sales</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Complex_Enterprise</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Tax Amount Formatted</span></td><td>➡</td><td><strong>Tax Amount Formatted</strong></td><td><span class="tag tag-connector">fact_sales</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Complex_Enterprise</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Return Rate Formatted</span></td><td>➡</td><td><strong>Return Rate Formatted</strong></td><td><span class="tag tag-connector">fact_sales</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Complex_Enterprise</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Revenue per Customer Formatted</span></td><td>➡</td><td><strong>Revenue per Customer Formatted</strong></td><td><span class="tag tag-connector">fact_sales</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Complex_Enterprise</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Revenue per Product Formatted</span></td><td>➡</td><td><strong>Revenue per Product Formatted</strong></td><td><span class="tag tag-connector">fact_sales</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Complex_Enterprise</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Revenue by Region-Channel Formatted</span></td><td>➡</td><td><strong>Revenue by Region-Channel Formatted</strong></td><td><span class="tag tag-connector">fact_sales</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Complex_Enterprise</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Revenue excl Territory Formatted</span></td><td>➡</td><td><strong>Revenue excl Territory Formatted</strong></td><td><span class="tag tag-connector">fact_sales</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Complex_Enterprise</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Revenue incl Subcategory Formatted</span></td><td>➡</td><td><strong>Revenue incl Subcategory Formatted</strong></td><td><span class="tag tag-connector">fact_sales</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Complex_Enterprise</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Revenue Rank Formatted</span></td><td>➡</td><td><strong>Revenue Rank Formatted</strong></td><td><span class="tag tag-connector">fact_sales</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Complex_Enterprise</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Revenue Rank Dense Formatted</span></td><td>➡</td><td><strong>Revenue Rank Dense Formatted</strong></td><td><span class="tag tag-connector">fact_sales</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Complex_Enterprise</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Moving Avg 3-Period Formatted</span></td><td>➡</td><td><strong>Moving Avg 3-Period Formatted</strong></td><td><span class="tag tag-connector">fact_sales</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Complex_Enterprise</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Window Max Revenue Formatted</span></td><td>➡</td><td><strong>Window Max Revenue Formatted</strong></td><td><span class="tag tag-connector">fact_sales</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Complex_Enterprise</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">YTD Revenue Formatted</span></td><td>➡</td><td><strong>YTD Revenue Formatted</strong></td><td><span class="tag tag-connector">fact_sales</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Complex_Enterprise</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Target Margin %</span></td><td>➡</td><td><strong>Target Margin %</strong></td><td><span class="tag tag-connector">Target Margin %</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Complex_Enterprise</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Top N Items</span></td><td>➡</td><td><strong>Top N Items</strong></td><td><span class="tag tag-connector">Top N Items</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Enterprise_Sales</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">SUM([quantity] * [unit_price])</span></td><td>➡</td><td><strong>Gross Revenue</strong></td><td><span class="tag tag-connector">Orders</span></td><td><span class="tag tag-success">measure</span></td></tr>
@@ -1114,6 +1155,16 @@
 <tr><td><strong>Enterprise_Sales</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">STDEV(SUM([quantity] * [unit_price]))</span></td><td>➡</td><td><strong>Revenue StdDev</strong></td><td><span class="tag tag-connector">Orders</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Enterprise_Sales</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">[customer_email] = USERNAME()</span></td><td>➡</td><td><strong>Is My Account</strong></td><td><span class="tag tag-connector">Orders</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Enterprise_Sales</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Date Range Start</span></td><td>➡</td><td><strong>Date Range Start</strong></td><td><span class="tag tag-connector">Orders</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Enterprise_Sales</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Gross Revenue Formatted</span></td><td>➡</td><td><strong>Gross Revenue Formatted</strong></td><td><span class="tag tag-connector">Orders</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Enterprise_Sales</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Net Revenue Formatted</span></td><td>➡</td><td><strong>Net Revenue Formatted</strong></td><td><span class="tag tag-connector">Orders</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Enterprise_Sales</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Total Discount Formatted</span></td><td>➡</td><td><strong>Total Discount Formatted</strong></td><td><span class="tag tag-connector">Orders</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Enterprise_Sales</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Profit Formatted</span></td><td>➡</td><td><strong>Profit Formatted</strong></td><td><span class="tag tag-connector">Orders</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Enterprise_Sales</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Revenue per Customer Formatted</span></td><td>➡</td><td><strong>Revenue per Customer Formatted</strong></td><td><span class="tag tag-connector">Orders</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Enterprise_Sales</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Regional Channel Revenue Formatted</span></td><td>➡</td><td><strong>Regional Channel Revenue Formatted</strong></td><td><span class="tag tag-connector">Orders</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Enterprise_Sales</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Revenue Excl Category Formatted</span></td><td>➡</td><td><strong>Revenue Excl Category Formatted</strong></td><td><span class="tag tag-connector">Orders</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Enterprise_Sales</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Moving Avg Revenue Formatted</span></td><td>➡</td><td><strong>Moving Avg Revenue Formatted</strong></td><td><span class="tag tag-connector">Orders</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Enterprise_Sales</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Revenue Rank Formatted</span></td><td>➡</td><td><strong>Revenue Rank Formatted</strong></td><td><span class="tag tag-connector">Orders</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Enterprise_Sales</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">YTD Revenue Formatted</span></td><td>➡</td><td><strong>YTD Revenue Formatted</strong></td><td><span class="tag tag-connector">Orders</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Enterprise_Sales</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Year To Date</span></td><td>➡</td><td><strong>Year To Date</strong></td><td><span class="tag tag-connector">Calendar</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Enterprise_Sales</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Previous Year</span></td><td>➡</td><td><strong>Previous Year</strong></td><td><span class="tag tag-connector">Calendar</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Enterprise_Sales</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Year Over Year %</span></td><td>➡</td><td><strong>Year Over Year %</strong></td><td><span class="tag tag-connector">Calendar</span></td><td><span class="tag tag-success">measure</span></td></tr>
@@ -1125,6 +1176,11 @@
 <tr><td><strong>Financial_Report</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">([Revenue] - [Expenses]) / [Revenue]</span></td><td>➡</td><td><strong>Profit Margin %</strong></td><td><span class="tag tag-connector">transactions</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Financial_Report</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">{FIXED : SUM(IF YEAR([transaction_date]) = YEAR(TODAY()) THEN [amount] ELSE 0 END)}</span></td><td>➡</td><td><strong>YTD Revenue</strong></td><td><span class="tag tag-connector">transactions</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Financial_Report</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">SUM([amount]) - WINDOW_AVG(SUM([amount]))</span></td><td>➡</td><td><strong>Budget Variance</strong></td><td><span class="tag tag-connector">transactions</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Financial_Report</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Revenue Formatted</span></td><td>➡</td><td><strong>Revenue Formatted</strong></td><td><span class="tag tag-connector">transactions</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Financial_Report</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Expenses Formatted</span></td><td>➡</td><td><strong>Expenses Formatted</strong></td><td><span class="tag tag-connector">transactions</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Financial_Report</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Net Income Formatted</span></td><td>➡</td><td><strong>Net Income Formatted</strong></td><td><span class="tag tag-connector">transactions</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Financial_Report</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">YTD Revenue Formatted</span></td><td>➡</td><td><strong>YTD Revenue Formatted</strong></td><td><span class="tag tag-connector">transactions</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Financial_Report</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Budget Variance Formatted</span></td><td>➡</td><td><strong>Budget Variance Formatted</strong></td><td><span class="tag tag-connector">transactions</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Financial_Report</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Year To Date</span></td><td>➡</td><td><strong>Year To Date</strong></td><td><span class="tag tag-connector">Calendar</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Financial_Report</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Previous Year</span></td><td>➡</td><td><strong>Previous Year</strong></td><td><span class="tag tag-connector">Calendar</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Financial_Report</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Year Over Year %</span></td><td>➡</td><td><strong>Year Over Year %</strong></td><td><span class="tag tag-connector">Calendar</span></td><td><span class="tag tag-success">measure</span></td></tr>
@@ -1133,6 +1189,7 @@
 <tr><td><strong>HR_Analytics</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">AVG([Salary])</span></td><td>➡</td><td><strong>Average Salary</strong></td><td><span class="tag tag-connector">Employees</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>HR_Analytics</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">COUNT([EmployeeID])</span></td><td>➡</td><td><strong>Employee Count</strong></td><td><span class="tag tag-connector">Employees</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>HR_Analytics</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">SUM([Salary]) * 1.25</span></td><td>➡</td><td><strong>Total Compensation</strong></td><td><span class="tag tag-connector">Employees</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>HR_Analytics</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Total Compensation Formatted</span></td><td>➡</td><td><strong>Total Compensation Formatted</strong></td><td><span class="tag tag-connector">Employees</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>HR_Analytics</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Year To Date</span></td><td>➡</td><td><strong>Year To Date</strong></td><td><span class="tag tag-connector">Calendar</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>HR_Analytics</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Previous Year</span></td><td>➡</td><td><strong>Previous Year</strong></td><td><span class="tag tag-connector">Calendar</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>HR_Analytics</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Year Over Year %</span></td><td>➡</td><td><strong>Year Over Year %</strong></td><td><span class="tag tag-connector">Calendar</span></td><td><span class="tag tag-success">measure</span></td></tr>
@@ -1149,6 +1206,8 @@
 <tr><td><strong>Manufacturing_IoT</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">RANK_UNIQUE(AVG([value]))</span></td><td>➡</td><td><strong>Unique Rank</strong></td><td><span class="tag tag-connector">Sensors</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Manufacturing_IoT</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">WINDOW_SUM(SUM([value]))</span></td><td>➡</td><td><strong>Window Total</strong></td><td><span class="tag tag-connector">Sensors</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Manufacturing_IoT</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Time Granularity</span></td><td>➡</td><td><strong>Time Granularity</strong></td><td><span class="tag tag-connector">Sensors</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Manufacturing_IoT</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Dense Rank Formatted</span></td><td>➡</td><td><strong>Dense Rank Formatted</strong></td><td><span class="tag tag-connector">Sensors</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Manufacturing_IoT</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Window Total Formatted</span></td><td>➡</td><td><strong>Window Total Formatted</strong></td><td><span class="tag tag-connector">Sensors</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Manufacturing_IoT</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Alert Threshold</span></td><td>➡</td><td><strong>Alert Threshold</strong></td><td><span class="tag tag-connector">Alert Threshold</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Marketing_Campaign</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">COUNTA([lead_name])</span></td><td>➡</td><td><strong>Non-Blank Leads</strong></td><td><span class="tag tag-connector">Campaigns</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Marketing_Campaign</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">CORR([budget], [deal_value])</span></td><td>➡</td><td><strong>Budget Deal Correlation</strong></td><td><span class="tag tag-connector">Campaigns</span></td><td><span class="tag tag-success">measure</span></td></tr>
@@ -1161,6 +1220,13 @@
 <tr><td><strong>Marketing_Campaign</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">RUNNING_COUNT(COUNTD([lead_id]))</span></td><td>➡</td><td><strong>Cumulative Leads</strong></td><td><span class="tag tag-connector">Campaigns</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Marketing_Campaign</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">SUM(IF [lead_status] = &quot;Won&quot; THEN 1 ELSE 0 END) / COUNT([lead_id])</span></td><td>➡</td><td><strong>Conversion Rate</strong></td><td><span class="tag tag-connector">Campaigns</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Marketing_Campaign</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Target Channel</span></td><td>➡</td><td><strong>Target Channel</strong></td><td><span class="tag tag-connector">Campaigns</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Marketing_Campaign</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Budget Deal Correlation Formatted</span></td><td>➡</td><td><strong>Budget Deal Correlation Formatted</strong></td><td><span class="tag tag-connector">Campaigns</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Marketing_Campaign</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Spend Engagement Covar Formatted</span></td><td>➡</td><td><strong>Spend Engagement Covar Formatted</strong></td><td><span class="tag tag-connector">Campaigns</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Marketing_Campaign</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Campaign ROI Formatted</span></td><td>➡</td><td><strong>Campaign ROI Formatted</strong></td><td><span class="tag tag-connector">Campaigns</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Marketing_Campaign</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Cost Per Lead Formatted</span></td><td>➡</td><td><strong>Cost Per Lead Formatted</strong></td><td><span class="tag tag-connector">Campaigns</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Marketing_Campaign</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Window Best ROI Formatted</span></td><td>➡</td><td><strong>Window Best ROI Formatted</strong></td><td><span class="tag tag-connector">Campaigns</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Marketing_Campaign</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Window Worst ROI Formatted</span></td><td>➡</td><td><strong>Window Worst ROI Formatted</strong></td><td><span class="tag tag-connector">Campaigns</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Marketing_Campaign</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Conversion Rate Formatted</span></td><td>➡</td><td><strong>Conversion Rate Formatted</strong></td><td><span class="tag tag-connector">Campaigns</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Marketing_Campaign</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Year To Date</span></td><td>➡</td><td><strong>Year To Date</strong></td><td><span class="tag tag-connector">Calendar</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Marketing_Campaign</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Previous Year</span></td><td>➡</td><td><strong>Previous Year</strong></td><td><span class="tag tag-connector">Calendar</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Marketing_Campaign</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Year Over Year %</span></td><td>➡</td><td><strong>Year Over Year %</strong></td><td><span class="tag tag-connector">Calendar</span></td><td><span class="tag tag-success">measure</span></td></tr>
@@ -1170,6 +1236,8 @@
 <tr><td><strong>Security_Test</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">[RegionManager] = FULLNAME()</span></td><td>➡</td><td><strong>Region Match</strong></td><td><span class="tag tag-connector">Orders</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Security_Test</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">SUM([Sales])</span></td><td>➡</td><td><strong>Total Sales</strong></td><td><span class="tag tag-connector">Orders</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Security_Test</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">SUM([Profit]) / SUM([Sales])</span></td><td>➡</td><td><strong>Profit Ratio</strong></td><td><span class="tag tag-connector">Orders</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Security_Test</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Total Sales Formatted</span></td><td>➡</td><td><strong>Total Sales Formatted</strong></td><td><span class="tag tag-connector">Orders</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Security_Test</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Profit Ratio Formatted</span></td><td>➡</td><td><strong>Profit Ratio Formatted</strong></td><td><span class="tag tag-connector">Orders</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Security_Test</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Year To Date</span></td><td>➡</td><td><strong>Year To Date</strong></td><td><span class="tag tag-connector">Calendar</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Security_Test</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Previous Year</span></td><td>➡</td><td><strong>Previous Year</strong></td><td><span class="tag tag-connector">Calendar</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Security_Test</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Year Over Year %</span></td><td>➡</td><td><strong>Year Over Year %</strong></td><td><span class="tag tag-connector">Calendar</span></td><td><span class="tag tag-success">measure</span></td></tr>
@@ -1177,6 +1245,9 @@
 <tr><td><strong>Superstore_Sales</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">SUM([Profit])</span></td><td>➡</td><td><strong>Total Profit</strong></td><td><span class="tag tag-connector">Orders</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Superstore_Sales</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">SUM([Profit]) / SUM([Sales])</span></td><td>➡</td><td><strong>Profit Ratio</strong></td><td><span class="tag tag-connector">Orders</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Superstore_Sales</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">COUNTD([Order ID])</span></td><td>➡</td><td><strong>Number of Orders</strong></td><td><span class="tag tag-connector">Orders</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Superstore_Sales</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Total Sales Formatted</span></td><td>➡</td><td><strong>Total Sales Formatted</strong></td><td><span class="tag tag-connector">Orders</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Superstore_Sales</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Total Profit Formatted</span></td><td>➡</td><td><strong>Total Profit Formatted</strong></td><td><span class="tag tag-connector">Orders</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Superstore_Sales</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Profit Ratio Formatted</span></td><td>➡</td><td><strong>Profit Ratio Formatted</strong></td><td><span class="tag tag-connector">Orders</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Superstore_Sales</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Year To Date</span></td><td>➡</td><td><strong>Year To Date</strong></td><td><span class="tag tag-connector">Calendar</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Superstore_Sales</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Previous Year</span></td><td>➡</td><td><strong>Previous Year</strong></td><td><span class="tag tag-connector">Calendar</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Superstore_Sales</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Year Over Year %</span></td><td>➡</td><td><strong>Year Over Year %</strong></td><td><span class="tag tag-connector">Calendar</span></td><td><span class="tag tag-success">measure</span></td></tr>
@@ -1197,6 +1268,16 @@
 <tr><td><strong>Ventes_France</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">RANK(SUM([quantite] * [prix_unitaire]))</span></td><td>➡</td><td><strong>Classement CA</strong></td><td><span class="tag tag-connector">Commandes</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Ventes_France</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">{FIXED : SUM(IF YEAR([date_commande]) = YEAR(TODAY()) THEN [quantite] * [prix_unitaire] ELSE 0 END)}</span></td><td>➡</td><td><strong>CA Année en Cours</strong></td><td><span class="tag tag-connector">Commandes</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Ventes_France</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Période d'Analyse</span></td><td>➡</td><td><strong>Période d'Analyse</strong></td><td><span class="tag tag-connector">Commandes</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Ventes_France</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Chiffre d'Affaires Brut Formatted</span></td><td>➡</td><td><strong>Chiffre d'Affaires Brut Formatted</strong></td><td><span class="tag tag-connector">Commandes</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Ventes_France</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Chiffre d'Affaires Net Formatted</span></td><td>➡</td><td><strong>Chiffre d'Affaires Net Formatted</strong></td><td><span class="tag tag-connector">Commandes</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Ventes_France</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Marge Brute Formatted</span></td><td>➡</td><td><strong>Marge Brute Formatted</strong></td><td><span class="tag tag-connector">Commandes</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Ventes_France</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Montant Remises Formatted</span></td><td>➡</td><td><strong>Montant Remises Formatted</strong></td><td><span class="tag tag-connector">Commandes</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Ventes_France</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">CA par Client Formatted</span></td><td>➡</td><td><strong>CA par Client Formatted</strong></td><td><span class="tag tag-connector">Commandes</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Ventes_France</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">CA Régional par Catégorie Formatted</span></td><td>➡</td><td><strong>CA Régional par Catégorie Formatted</strong></td><td><span class="tag tag-connector">Commandes</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Ventes_France</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">CA hors Produit Formatted</span></td><td>➡</td><td><strong>CA hors Produit Formatted</strong></td><td><span class="tag tag-connector">Commandes</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Ventes_France</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Moyenne Mobile 3M Formatted</span></td><td>➡</td><td><strong>Moyenne Mobile 3M Formatted</strong></td><td><span class="tag tag-connector">Commandes</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Ventes_France</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Classement CA Formatted</span></td><td>➡</td><td><strong>Classement CA Formatted</strong></td><td><span class="tag tag-connector">Commandes</span></td><td><span class="tag tag-success">measure</span></td></tr>
+<tr><td><strong>Ventes_France</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">CA Année en Cours Formatted</span></td><td>➡</td><td><strong>CA Année en Cours Formatted</strong></td><td><span class="tag tag-connector">Commandes</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Ventes_France</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Objectif Marge</span></td><td>➡</td><td><strong>Objectif Marge</strong></td><td><span class="tag tag-connector">Objectif Marge</span></td><td><span class="tag tag-success">measure</span></td></tr>
 <tr><td><strong>Ventes_France</strong></td><td><span class="mono fs-sm" style="max-width:350px;word-break:break-all;display:inline-block">Top N Produits</span></td><td>➡</td><td><strong>Top N Produits</strong></td><td><span class="tag tag-connector">Top N Produits</span></td><td><span class="tag tag-success">measure</span></td></tr>
 </tbody></table></div>
@@ -2069,7 +2150,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
     <div class="bar-track"><div class="bar-fill" style="width:10.0%;background:#0078d4"></div></div>
     <div class="bar-value">1</div>
 </div>
-</div><h4>&#127912; Tableau Visual &#8594; Power BI Visual</h4><div class="table-container"><table id="tbl-2914586603840" class="detail-table">
+</div><h4>&#127912; Tableau Visual &#8594; Power BI Visual</h4><div class="table-container"><table id="tbl-2382484633920" class="detail-table">
 <thead><tr>
 <th>Worksheet</th>
 <th>Tableau Mark</th>
@@ -2084,7 +2165,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 <tr><td><strong>Revenue Trend</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">lineChart</span></td><td><span class="tag tag-dim">session_date</span></td><td><span class="tag tag-measure">Total_Revenue</span></td><td>2</td></tr>
 <tr><td><strong>Conversion by Device</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">clusteredBarChart</span></td><td><span class="tag tag-dim">device_type</span></td><td><span class="tag tag-measure">Conversion_Rate</span></td><td>2</td></tr>
 <tr><td><strong>User Engagement</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">clusteredBarChart</span></td><td><span class="tag tag-dim">country</span>, <span class="tag tag-dim">Engagement_Level</span></td><td><span class="tag tag-measure">Unique_Visitors</span></td><td>3</td></tr>
-</tbody></table></div><h4>&#128203; Table Mapping</h4><div class="table-container"><table id="tbl-2914586602880" class="detail-table">
+</tbody></table></div><h4>&#128203; Table Mapping</h4><div class="table-container"><table id="tbl-2382484632960" class="detail-table">
 <thead><tr>
 <th>Source Datasource</th>
 <th>Source Table</th>
@@ -2102,7 +2183,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 <div class="tab" data-tab-group="wb-tab-BigQuery_Analytics" data-tab-name="vis" onclick="switchTab('wb-tab-BigQuery_Analytics', 'vis')">Visuals (4)</div>
 </div>
 <div class="tab-content active" id="wb-tab-BigQuery_Analytics-all" data-tab-content-group="wb-tab-BigQuery_Analytics">
-<div class="table-container"><table id="tbl-2914586605184" class="detail-table">
+<div class="table-container"><table id="tbl-2382484635264" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -2136,7 +2217,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-BigQuery_Analytics-calc" data-tab-content-group="wb-tab-BigQuery_Analytics">
-<div class="table-container"><table id="tbl-2914586604864" class="detail-table">
+<div class="table-container"><table id="tbl-2382484634944" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -2165,7 +2246,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-BigQuery_Analytics-ds" data-tab-content-group="wb-tab-BigQuery_Analytics">
-<div class="table-container"><table id="tbl-2914586604288" class="detail-table">
+<div class="table-container"><table id="tbl-2382484634368" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -2178,7 +2259,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-BigQuery_Analytics-vis" data-tab-content-group="wb-tab-BigQuery_Analytics">
-<div class="table-container"><table id="tbl-2914586604480" class="detail-table">
+<div class="table-container"><table id="tbl-2382484634560" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -2233,7 +2314,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
     <div class="bar-track"><div class="bar-fill" style="width:6.1%;background:#0078d4"></div></div>
     <div class="bar-value">2</div>
 </div>
-</div><h4>&#127912; Tableau Visual &#8594; Power BI Visual</h4><div class="table-container"><table id="tbl-2914586604672" class="detail-table">
+</div><h4>&#127912; Tableau Visual &#8594; Power BI Visual</h4><div class="table-container"><table id="tbl-2382484634752" class="detail-table">
 <thead><tr>
 <th>Worksheet</th>
 <th>Tableau Mark</th>
@@ -2244,19 +2325,19 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 <th>Fields</th>
 </tr></thead>
 <tbody>
-<tr><td><strong>Executive KPIs</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">tableEx</span></td><td><span class="text-muted">—</span></td><td><span class="text-muted">—</span></td><td>0</td></tr>
+<tr><td><strong>Executive KPIs</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">tableEx</span></td><td><span class="text-muted">—</span></td><td><span class="tag tag-measure">C_NetRev</span>, <span class="tag tag-measure">C_GrossProfit</span>, <span class="tag tag-measure">C_OrderCount</span>, <span class="tag tag-measure">C_UniqueCust</span></td><td>4</td></tr>
 <tr><td><strong>Revenue by Region</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">stackedBarChart</span></td><td><span class="tag tag-dim">region</span>, <span class="tag tag-dim">channel</span></td><td><span class="tag tag-measure">C_NetRev</span>, <span class="tag tag-measure">C_NetRev</span></td><td>4</td></tr>
 <tr><td><strong>Revenue Trend</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">lineChart</span></td><td><span class="tag tag-dim">full_date</span></td><td><span class="tag tag-measure">C_NetRev</span></td><td>2</td></tr>
 <tr><td><strong>Sales Map</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">map</span></td><td><span class="tag tag-dim">country</span></td><td><span class="tag tag-measure">C_NetRev</span>, <span class="tag tag-measure">C_NetRev</span></td><td>3</td></tr>
 <tr><td><strong>Category Mix</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">treemap</span></td><td><span class="tag tag-dim">category</span>, <span class="tag tag-dim">subcategory</span></td><td><span class="tag tag-measure">C_NetRev</span></td><td>3</td></tr>
 <tr><td><strong>Customer Analysis</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">scatterChart</span></td><td><span class="tag tag-dim">segment</span>, <span class="tag tag-dim">customer_name</span></td><td><span class="tag tag-measure">C_RevPerCust</span>, <span class="tag tag-measure">C_GrossMargin</span>, <span class="tag tag-measure">C_OrderCount</span></td><td>5</td></tr>
-<tr><td><strong>Profit Waterfall</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">ganttChart</span></td><td><span class="text-muted">—</span></td><td><span class="text-muted">—</span></td><td>0</td></tr>
+<tr><td><strong>Profit Waterfall</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">ganttChart</span></td><td><span class="text-muted">—</span></td><td><span class="tag tag-measure">C_GrossRev</span>, <span class="tag tag-measure">C_COGS</span>, <span class="tag tag-measure">C_TaxAmt</span>, <span class="tag tag-measure">C_GrossProfit</span></td><td>4</td></tr>
 <tr><td><strong>Monthly Heatmap</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">matrix</span></td><td><span class="tag tag-dim">month_name</span>, <span class="tag tag-dim">category</span></td><td><span class="tag tag-measure">C_NetRev</span></td><td>3</td></tr>
 <tr><td><strong>Payment Distribution</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">donutChart</span></td><td><span class="tag tag-dim">payment_method</span></td><td><span class="tag tag-measure">C_OrderCount</span></td><td>2</td></tr>
 <tr><td><strong>Order Funnel</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">funnel</span></td><td><span class="tag tag-dim">order_status</span></td><td><span class="tag tag-measure">C_OrderCount</span></td><td>2</td></tr>
 <tr><td><strong>Discount Distribution</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">boxAndWhisker</span></td><td><span class="tag tag-dim">category</span></td><td><span class="tag tag-measure">discount_pct</span></td><td>2</td></tr>
 <tr><td><strong>Customer Detail Tooltip</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">clusteredBarChart</span></td><td><span class="tag tag-dim">customer_name</span></td><td><span class="tag tag-measure">C_NetRev</span></td><td>2</td></tr>
-</tbody></table></div><h4>&#128203; Table Mapping</h4><div class="table-container"><table id="tbl-2914586604800" class="detail-table">
+</tbody></table></div><h4>&#128203; Table Mapping</h4><div class="table-container"><table id="tbl-2382484634880" class="detail-table">
 <thead><tr>
 <th>Source Datasource</th>
 <th>Source Table</th>
@@ -2277,7 +2358,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 <div class="tab" data-tab-group="wb-tab-Complex_Enterprise" data-tab-name="other" onclick="switchTab('wb-tab-Complex_Enterprise', 'other')">Other (10)</div>
 </div>
 <div class="tab-content active" id="wb-tab-Complex_Enterprise-all" data-tab-content-group="wb-tab-Complex_Enterprise">
-<div class="table-container"><table id="tbl-2914586597056" class="detail-table">
+<div class="table-container"><table id="tbl-2382484627136" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -2346,7 +2427,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-Complex_Enterprise-calc" data-tab-content-group="wb-tab-Complex_Enterprise">
-<div class="table-container"><table id="tbl-2914586606656" class="detail-table">
+<div class="table-container"><table id="tbl-2382484800640" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -2391,7 +2472,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-Complex_Enterprise-ds" data-tab-content-group="wb-tab-Complex_Enterprise">
-<div class="table-container"><table id="tbl-2914586604992" class="detail-table">
+<div class="table-container"><table id="tbl-2382484635072" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -2405,7 +2486,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-Complex_Enterprise-vis" data-tab-content-group="wb-tab-Complex_Enterprise">
-<div class="table-container"><table id="tbl-2914586605376" class="detail-table">
+<div class="table-container"><table id="tbl-2382484635456" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -2429,7 +2510,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-Complex_Enterprise-other" data-tab-content-group="wb-tab-Complex_Enterprise">
-<div class="table-container"><table id="tbl-2914586603200" class="detail-table">
+<div class="table-container"><table id="tbl-2382484633280" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -2490,7 +2571,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
     <div class="bar-track"><div class="bar-fill" style="width:4.5%;background:#0078d4"></div></div>
     <div class="bar-value">1</div>
 </div>
-</div><h4>&#127912; Tableau Visual &#8594; Power BI Visual</h4><div class="table-container"><table id="tbl-2914586603136" class="detail-table">
+</div><h4>&#127912; Tableau Visual &#8594; Power BI Visual</h4><div class="table-container"><table id="tbl-2382484633216" class="detail-table">
 <thead><tr>
 <th>Worksheet</th>
 <th>Tableau Mark</th>
@@ -2503,10 +2584,10 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 <tbody>
 <tr><td><strong>Executive KPIs</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">tableEx</span></td><td><span class="text-muted">—</span></td><td><span class="tag tag-measure">Calc_NetRevenue</span>, <span class="tag tag-measure">Calc_Profit</span>, <span class="tag tag-measure">Calc_UniqueCustomers</span></td><td>3</td></tr>
 <tr><td><strong>Revenue by Region</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">clusteredColumnChart</span></td><td><span class="tag tag-dim">region</span>, <span class="tag tag-dim">channel</span></td><td><span class="tag tag-measure">Calc_NetRevenue</span>, <span class="tag tag-measure">Calc_NetRevenue</span></td><td>4</td></tr>
-<tr><td><strong>Profit Trend</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">lineChart</span></td><td><span class="tag tag-dim">order_date</span></td><td><span class="text-muted">—</span></td><td>1</td></tr>
+<tr><td><strong>Profit Trend</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">lineChart</span></td><td><span class="tag tag-dim">order_date</span></td><td><span class="tag tag-measure">Calc_NetRevenue</span>, <span class="tag tag-measure">Calc_Profit</span>, <span class="tag tag-measure">Calc_MovAvgRev</span></td><td>4</td></tr>
 <tr><td><strong>Customer Analysis</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">scatterChart</span></td><td><span class="tag tag-dim">segment</span></td><td><span class="tag tag-measure">Calc_NetRevenue</span>, <span class="tag tag-measure">Calc_ProfitMargin</span>, <span class="tag tag-measure">Calc_UniqueCustomers</span></td><td>4</td></tr>
 <tr><td><strong>Sales Map</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">map</span></td><td><span class="text-muted">—</span></td><td><span class="tag tag-measure">Calc_NetRevenue</span>, <span class="tag tag-measure">Calc_NetRevenue</span></td><td>2</td></tr>
-</tbody></table></div><h4>&#128203; Table Mapping</h4><div class="table-container"><table id="tbl-2914586603904" class="detail-table">
+</tbody></table></div><h4>&#128203; Table Mapping</h4><div class="table-container"><table id="tbl-2382484633984" class="detail-table">
 <thead><tr>
 <th>Source Datasource</th>
 <th>Source Table</th>
@@ -2525,7 +2606,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 <div class="tab" data-tab-group="wb-tab-Enterprise_Sales" data-tab-name="other" onclick="switchTab('wb-tab-Enterprise_Sales', 'other')">Other (6)</div>
 </div>
 <div class="tab-content active" id="wb-tab-Enterprise_Sales-all" data-tab-content-group="wb-tab-Enterprise_Sales">
-<div class="table-container"><table id="tbl-2914586606208" class="detail-table">
+<div class="table-container"><table id="tbl-2382484800192" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -2571,7 +2652,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-Enterprise_Sales-calc" data-tab-content-group="wb-tab-Enterprise_Sales">
-<div class="table-container"><table id="tbl-2914586605440" class="detail-table">
+<div class="table-container"><table id="tbl-2382484635520" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -2605,7 +2686,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-Enterprise_Sales-ds" data-tab-content-group="wb-tab-Enterprise_Sales">
-<div class="table-container"><table id="tbl-2914586604736" class="detail-table">
+<div class="table-container"><table id="tbl-2382484634816" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -2618,7 +2699,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-Enterprise_Sales-vis" data-tab-content-group="wb-tab-Enterprise_Sales">
-<div class="table-container"><table id="tbl-2914586604416" class="detail-table">
+<div class="table-container"><table id="tbl-2382484634496" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -2635,7 +2716,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-Enterprise_Sales-other" data-tab-content-group="wb-tab-Enterprise_Sales">
-<div class="table-container"><table id="tbl-2914586604480" class="detail-table">
+<div class="table-container"><table id="tbl-2382484634560" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -2687,7 +2768,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
     <div class="bar-track"><div class="bar-fill" style="width:16.7%;background:#0078d4">1</div></div>
     <div class="bar-value">1</div>
 </div>
-</div><h4>&#127912; Tableau Visual &#8594; Power BI Visual</h4><div class="table-container"><table id="tbl-2914586603712" class="detail-table">
+</div><h4>&#127912; Tableau Visual &#8594; Power BI Visual</h4><div class="table-container"><table id="tbl-2382484633792" class="detail-table">
 <thead><tr>
 <th>Worksheet</th>
 <th>Tableau Mark</th>
@@ -2702,7 +2783,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 <tr><td><strong>Category Breakdown</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">clusteredBarChart</span></td><td><span class="tag tag-dim">category</span></td><td><span class="tag tag-measure">Net_Income</span>, <span class="tag tag-measure">Net_Income</span></td><td>3</td></tr>
 <tr><td><strong>Business Unit Performance</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">scatterChart</span></td><td><span class="tag tag-dim">business_unit</span>, <span class="tag tag-dim">business_unit</span></td><td><span class="tag tag-measure">Profit_Margin</span>, <span class="tag tag-measure">Profit_Margin</span>, <span class="tag tag-measure">Revenue</span></td><td>5</td></tr>
 <tr><td><strong>Top 10 Accounts</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">clusteredBarChart</span></td><td><span class="tag tag-dim">account</span></td><td><span class="tag tag-measure">amount</span>, <span class="tag tag-measure">amount</span></td><td>3</td></tr>
-</tbody></table></div><h4>&#128203; Table Mapping</h4><div class="table-container"><table id="tbl-2914586604672" class="detail-table">
+</tbody></table></div><h4>&#128203; Table Mapping</h4><div class="table-container"><table id="tbl-2382484634752" class="detail-table">
 <thead><tr>
 <th>Source Datasource</th>
 <th>Source Table</th>
@@ -2720,7 +2801,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 <div class="tab" data-tab-group="wb-tab-Financial_Report" data-tab-name="other" onclick="switchTab('wb-tab-Financial_Report', 'other')">Other (3)</div>
 </div>
 <div class="tab-content active" id="wb-tab-Financial_Report-all" data-tab-content-group="wb-tab-Financial_Report">
-<div class="table-container"><table id="tbl-2914586605056" class="detail-table">
+<div class="table-container"><table id="tbl-2382484635136" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -2746,7 +2827,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-Financial_Report-calc" data-tab-content-group="wb-tab-Financial_Report">
-<div class="table-container"><table id="tbl-2914586604352" class="detail-table">
+<div class="table-container"><table id="tbl-2382484634432" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -2764,7 +2845,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-Financial_Report-ds" data-tab-content-group="wb-tab-Financial_Report">
-<div class="table-container"><table id="tbl-2914586603776" class="detail-table">
+<div class="table-container"><table id="tbl-2382484633856" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -2777,7 +2858,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-Financial_Report-vis" data-tab-content-group="wb-tab-Financial_Report">
-<div class="table-container"><table id="tbl-2914586604224" class="detail-table">
+<div class="table-container"><table id="tbl-2382484634304" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -2793,7 +2874,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-Financial_Report-other" data-tab-content-group="wb-tab-Financial_Report">
-<div class="table-container"><table id="tbl-2914586604736" class="detail-table">
+<div class="table-container"><table id="tbl-2382484634816" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -2832,7 +2913,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
     <div class="bar-track"><div class="bar-fill" style="width:25.0%;background:#0078d4">1</div></div>
     <div class="bar-value">1</div>
 </div>
-</div><h4>&#127912; Tableau Visual &#8594; Power BI Visual</h4><div class="table-container"><table id="tbl-2914586603648" class="detail-table">
+</div><h4>&#127912; Tableau Visual &#8594; Power BI Visual</h4><div class="table-container"><table id="tbl-2382484633728" class="detail-table">
 <thead><tr>
 <th>Worksheet</th>
 <th>Tableau Mark</th>
@@ -2847,7 +2928,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 <tr><td><strong>Salary Analysis</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">clusteredBarChart</span></td><td><span class="tag tag-dim">Department</span></td><td><span class="tag tag-measure">AVG_Salary</span>, <span class="tag tag-measure">AVG_Salary</span></td><td>3</td></tr>
 <tr><td><strong>Hiring Trend</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">areaChart</span></td><td><span class="tag tag-dim">HireDate</span></td><td><span class="tag tag-measure">Employee_Count</span></td><td>2</td></tr>
 <tr><td><strong>Performance Matrix</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">treemap</span></td><td><span class="tag tag-dim">Tenure_Category</span>, <span class="tag tag-dim">PerformanceRating</span></td><td><span class="tag tag-measure">Employee_Count</span>, <span class="tag tag-measure">Employee_Count</span></td><td>4</td></tr>
-</tbody></table></div><h4>&#128203; Table Mapping</h4><div class="table-container"><table id="tbl-2914586603136" class="detail-table">
+</tbody></table></div><h4>&#128203; Table Mapping</h4><div class="table-container"><table id="tbl-2382484633216" class="detail-table">
 <thead><tr>
 <th>Source Datasource</th>
 <th>Source Table</th>
@@ -2864,7 +2945,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 <div class="tab" data-tab-group="wb-tab-HR_Analytics" data-tab-name="vis" onclick="switchTab('wb-tab-HR_Analytics', 'vis')">Visuals (4)</div>
 </div>
 <div class="tab-content active" id="wb-tab-HR_Analytics-all" data-tab-content-group="wb-tab-HR_Analytics">
-<div class="table-container"><table id="tbl-2914586604544" class="detail-table">
+<div class="table-container"><table id="tbl-2382484634624" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -2888,7 +2969,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-HR_Analytics-calc" data-tab-content-group="wb-tab-HR_Analytics">
-<div class="table-container"><table id="tbl-2914586604224" class="detail-table">
+<div class="table-container"><table id="tbl-2382484634304" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -2907,7 +2988,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-HR_Analytics-ds" data-tab-content-group="wb-tab-HR_Analytics">
-<div class="table-container"><table id="tbl-2914586603776" class="detail-table">
+<div class="table-container"><table id="tbl-2382484633856" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -2920,7 +3001,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-HR_Analytics-vis" data-tab-content-group="wb-tab-HR_Analytics">
-<div class="table-container"><table id="tbl-2914586604224" class="detail-table">
+<div class="table-container"><table id="tbl-2382484634304" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -2970,7 +3051,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
     <div class="bar-track"><div class="bar-fill" style="width:4.0%;background:#0078d4"></div></div>
     <div class="bar-value">1</div>
 </div>
-</div><h4>&#127912; Tableau Visual &#8594; Power BI Visual</h4><div class="table-container"><table id="tbl-2914586603776" class="detail-table">
+</div><h4>&#127912; Tableau Visual &#8594; Power BI Visual</h4><div class="table-container"><table id="tbl-2382484633856" class="detail-table">
 <thead><tr>
 <th>Worksheet</th>
 <th>Tableau Mark</th>
@@ -2987,7 +3068,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 <tr><td><strong>Value Distribution</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">areaChart</span></td><td><span class="tag tag-dim">sensor_type</span>, <span class="tag tag-dim">sensor_type</span></td><td><span class="tag tag-measure">value</span></td><td>3</td></tr>
 <tr><td><strong>Vibration Analysis</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">scatterChart</span></td><td><span class="tag tag-dim">machine_name</span></td><td><span class="tag tag-measure">Calc_VibX</span>, <span class="tag tag-measure">Calc_VibY</span>, <span class="tag tag-measure">Calc_EnergyIdx</span></td><td>4</td></tr>
 <tr><td><strong>Machine Rankings</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">clusteredColumnChart</span></td><td><span class="tag tag-dim">machine_name</span></td><td><span class="tag tag-measure">Calc_WinTotal</span>, <span class="tag tag-measure">Calc_DenseRank</span></td><td>3</td></tr>
-</tbody></table></div><h4>&#128203; Table Mapping</h4><div class="table-container"><table id="tbl-2914586604736" class="detail-table">
+</tbody></table></div><h4>&#128203; Table Mapping</h4><div class="table-container"><table id="tbl-2382484634816" class="detail-table">
 <thead><tr>
 <th>Source Datasource</th>
 <th>Source Table</th>
@@ -3007,7 +3088,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 <div class="tab" data-tab-group="wb-tab-Manufacturing_IoT" data-tab-name="other" onclick="switchTab('wb-tab-Manufacturing_IoT', 'other')">Other (3)</div>
 </div>
 <div class="tab-content active" id="wb-tab-Manufacturing_IoT-all" data-tab-content-group="wb-tab-Manufacturing_IoT">
-<div class="table-container"><table id="tbl-2914586606400" class="detail-table">
+<div class="table-container"><table id="tbl-2382484800384" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -3054,7 +3135,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-Manufacturing_IoT-calc" data-tab-content-group="wb-tab-Manufacturing_IoT">
-<div class="table-container"><table id="tbl-2914586605760" class="detail-table">
+<div class="table-container"><table id="tbl-2382484799744" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -3091,7 +3172,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-Manufacturing_IoT-ds" data-tab-content-group="wb-tab-Manufacturing_IoT">
-<div class="table-container"><table id="tbl-2914586604288" class="detail-table">
+<div class="table-container"><table id="tbl-2382484634368" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -3104,7 +3185,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-Manufacturing_IoT-vis" data-tab-content-group="wb-tab-Manufacturing_IoT">
-<div class="table-container"><table id="tbl-2914586604608" class="detail-table">
+<div class="table-container"><table id="tbl-2382484634688" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -3122,7 +3203,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-Manufacturing_IoT-other" data-tab-content-group="wb-tab-Manufacturing_IoT">
-<div class="table-container"><table id="tbl-2914586604416" class="detail-table">
+<div class="table-container"><table id="tbl-2382484634496" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -3171,7 +3252,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
     <div class="bar-track"><div class="bar-fill" style="width:4.0%;background:#0078d4"></div></div>
     <div class="bar-value">1</div>
 </div>
-</div><h4>&#127912; Tableau Visual &#8594; Power BI Visual</h4><div class="table-container"><table id="tbl-2914586603584" class="detail-table">
+</div><h4>&#127912; Tableau Visual &#8594; Power BI Visual</h4><div class="table-container"><table id="tbl-2382484633664" class="detail-table">
 <thead><tr>
 <th>Worksheet</th>
 <th>Tableau Mark</th>
@@ -3186,8 +3267,8 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 <tr><td><strong>Lead Funnel</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">clusteredColumnChart</span></td><td><span class="tag tag-dim">lead_status</span>, <span class="tag tag-dim">channel</span></td><td><span class="tag tag-measure">Calc_NonBlankLeads</span></td><td>3</td></tr>
 <tr><td><strong>Conversion Trend</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">lineChart</span></td><td><span class="tag tag-dim">created_date</span></td><td><span class="tag tag-measure">Calc_ConvRate</span></td><td>2</td></tr>
 <tr><td><strong>Budget Analysis</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">scatterChart</span></td><td><span class="tag tag-dim">channel</span></td><td><span class="tag tag-measure">budget</span>, <span class="tag tag-measure">deal_value</span>, <span class="tag tag-measure">spend</span></td><td>4</td></tr>
-<tr><td><strong>Lead Details</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">tableEx</span></td><td><span class="tag tag-dim">company</span></td><td><span class="text-muted">—</span></td><td>1</td></tr>
-</tbody></table></div><h4>&#128203; Table Mapping</h4><div class="table-container"><table id="tbl-2914586603712" class="detail-table">
+<tr><td><strong>Lead Details</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">tableEx</span></td><td><span class="tag tag-dim">company</span></td><td><span class="tag tag-measure">deal_value</span></td><td>2</td></tr>
+</tbody></table></div><h4>&#128203; Table Mapping</h4><div class="table-container"><table id="tbl-2382484633792" class="detail-table">
 <thead><tr>
 <th>Source Datasource</th>
 <th>Source Table</th>
@@ -3206,7 +3287,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 <div class="tab" data-tab-group="wb-tab-Marketing_Campaign" data-tab-name="other" onclick="switchTab('wb-tab-Marketing_Campaign', 'other')">Other (3)</div>
 </div>
 <div class="tab-content active" id="wb-tab-Marketing_Campaign-all" data-tab-content-group="wb-tab-Marketing_Campaign">
-<div class="table-container"><table id="tbl-2914586606208" class="detail-table">
+<div class="table-container"><table id="tbl-2382484800192" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -3252,7 +3333,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-Marketing_Campaign-calc" data-tab-content-group="wb-tab-Marketing_Campaign">
-<div class="table-container"><table id="tbl-2914586605632" class="detail-table">
+<div class="table-container"><table id="tbl-2382484799616" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -3289,7 +3370,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-Marketing_Campaign-ds" data-tab-content-group="wb-tab-Marketing_Campaign">
-<div class="table-container"><table id="tbl-2914586603840" class="detail-table">
+<div class="table-container"><table id="tbl-2382484633920" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -3302,7 +3383,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-Marketing_Campaign-vis" data-tab-content-group="wb-tab-Marketing_Campaign">
-<div class="table-container"><table id="tbl-2914586604416" class="detail-table">
+<div class="table-container"><table id="tbl-2382484634496" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -3319,7 +3400,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-Marketing_Campaign-other" data-tab-content-group="wb-tab-Marketing_Campaign">
-<div class="table-container"><table id="tbl-2914586604288" class="detail-table">
+<div class="table-container"><table id="tbl-2382484634368" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -3363,7 +3444,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
     <div class="bar-track"><div class="bar-fill" style="width:20.0%;background:#0078d4">1</div></div>
     <div class="bar-value">1</div>
 </div>
-</div><h4>&#127912; Tableau Visual &#8594; Power BI Visual</h4><div class="table-container"><table id="tbl-2914586604032" class="detail-table">
+</div><h4>&#127912; Tableau Visual &#8594; Power BI Visual</h4><div class="table-container"><table id="tbl-2382484634112" class="detail-table">
 <thead><tr>
 <th>Worksheet</th>
 <th>Tableau Mark</th>
@@ -3374,9 +3455,9 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 <th>Fields</th>
 </tr></thead>
 <tbody>
-<tr><td><strong>Sales Overview</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">bar</span></td><td><span class="text-muted">—</span></td><td><span class="text-muted">—</span></td><td>0</td></tr>
-<tr><td><strong>Profit Analysis</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">bar</span></td><td><span class="text-muted">—</span></td><td><span class="text-muted">—</span></td><td>0</td></tr>
-</tbody></table></div><h4>&#128203; Table Mapping</h4><div class="table-container"><table id="tbl-2914586603648" class="detail-table">
+<tr><td><strong>Sales Overview</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">clusteredBarChart</span></td><td><span class="tag tag-dim">Region</span></td><td><span class="tag tag-measure">Sales</span></td><td>2</td></tr>
+<tr><td><strong>Profit Analysis</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">clusteredBarChart</span></td><td><span class="tag tag-dim">Category</span></td><td><span class="tag tag-measure">Profit</span></td><td>2</td></tr>
+</tbody></table></div><h4>&#128203; Table Mapping</h4><div class="table-container"><table id="tbl-2382484633728" class="detail-table">
 <thead><tr>
 <th>Source Datasource</th>
 <th>Source Table</th>
@@ -3395,7 +3476,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 <div class="tab" data-tab-group="wb-tab-Security_Test" data-tab-name="other" onclick="switchTab('wb-tab-Security_Test', 'other')">Other (4)</div>
 </div>
 <div class="tab-content active" id="wb-tab-Security_Test-all" data-tab-content-group="wb-tab-Security_Test">
-<div class="table-container"><table id="tbl-2914586604864" class="detail-table">
+<div class="table-container"><table id="tbl-2382484634944" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -3419,7 +3500,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-Security_Test-calc" data-tab-content-group="wb-tab-Security_Test">
-<div class="table-container"><table id="tbl-2914586604224" class="detail-table">
+<div class="table-container"><table id="tbl-2382484634304" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -3436,7 +3517,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-Security_Test-ds" data-tab-content-group="wb-tab-Security_Test">
-<div class="table-container"><table id="tbl-2914586604160" class="detail-table">
+<div class="table-container"><table id="tbl-2382484634240" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -3449,7 +3530,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-Security_Test-vis" data-tab-content-group="wb-tab-Security_Test">
-<div class="table-container"><table id="tbl-2914586603520" class="detail-table">
+<div class="table-container"><table id="tbl-2382484633600" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -3463,7 +3544,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-Security_Test-other" data-tab-content-group="wb-tab-Security_Test">
-<div class="table-container"><table id="tbl-2914586603840" class="detail-table">
+<div class="table-container"><table id="tbl-2382484633920" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -3503,7 +3584,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
     <div class="bar-track"><div class="bar-fill" style="width:25.0%;background:#0078d4">1</div></div>
     <div class="bar-value">1</div>
 </div>
-</div><h4>&#127912; Tableau Visual &#8594; Power BI Visual</h4><div class="table-container"><table id="tbl-2914586604096" class="detail-table">
+</div><h4>&#127912; Tableau Visual &#8594; Power BI Visual</h4><div class="table-container"><table id="tbl-2382484634176" class="detail-table">
 <thead><tr>
 <th>Worksheet</th>
 <th>Tableau Mark</th>
@@ -3517,7 +3598,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 <tr><td><strong>Sales by Region</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">clusteredBarChart</span></td><td><span class="tag tag-dim">Region</span>, <span class="tag tag-dim">Region</span></td><td><span class="tag tag-measure">Calculation_1</span>, <span class="tag tag-measure">Calculation_1</span></td><td>4</td></tr>
 <tr><td><strong>Profit by Category</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">clusteredBarChart</span></td><td><span class="tag tag-dim">Category</span>, <span class="tag tag-dim">Category</span></td><td><span class="tag tag-measure">Calculation_2</span>, <span class="tag tag-measure">Calculation_2</span></td><td>4</td></tr>
 <tr><td><strong>Sales Trend</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">lineChart</span></td><td><span class="tag tag-dim">Order Date</span></td><td><span class="tag tag-measure">Calculation_1</span></td><td>2</td></tr>
-</tbody></table></div><h4>&#128203; Table Mapping</h4><div class="table-container"><table id="tbl-2914586604160" class="detail-table">
+</tbody></table></div><h4>&#128203; Table Mapping</h4><div class="table-container"><table id="tbl-2382484634240" class="detail-table">
 <thead><tr>
 <th>Source Datasource</th>
 <th>Source Table</th>
@@ -3536,7 +3617,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 <div class="tab" data-tab-group="wb-tab-Superstore_Sales" data-tab-name="vis" onclick="switchTab('wb-tab-Superstore_Sales', 'vis')">Visuals (3)</div>
 </div>
 <div class="tab-content active" id="wb-tab-Superstore_Sales-all" data-tab-content-group="wb-tab-Superstore_Sales">
-<div class="table-container"><table id="tbl-2914586604544" class="detail-table">
+<div class="table-container"><table id="tbl-2382484634624" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -3556,7 +3637,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-Superstore_Sales-calc" data-tab-content-group="wb-tab-Superstore_Sales">
-<div class="table-container"><table id="tbl-2914586604288" class="detail-table">
+<div class="table-container"><table id="tbl-2382484634368" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -3572,7 +3653,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-Superstore_Sales-ds" data-tab-content-group="wb-tab-Superstore_Sales">
-<div class="table-container"><table id="tbl-2914586603392" class="detail-table">
+<div class="table-container"><table id="tbl-2382484633472" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -3585,7 +3666,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-Superstore_Sales-vis" data-tab-content-group="wb-tab-Superstore_Sales">
-<div class="table-container"><table id="tbl-2914586604224" class="detail-table">
+<div class="table-container"><table id="tbl-2382484634304" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -3639,7 +3720,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
     <div class="bar-track"><div class="bar-fill" style="width:4.5%;background:#0078d4"></div></div>
     <div class="bar-value">1</div>
 </div>
-</div><h4>&#127912; Tableau Visual &#8594; Power BI Visual</h4><div class="table-container"><table id="tbl-2914586603840" class="detail-table">
+</div><h4>&#127912; Tableau Visual &#8594; Power BI Visual</h4><div class="table-container"><table id="tbl-2382484633920" class="detail-table">
 <thead><tr>
 <th>Worksheet</th>
 <th>Tableau Mark</th>
@@ -3656,7 +3737,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 <tr><td><strong>Carte des Ventes</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">map</span></td><td><span class="tag tag-dim">region</span>, <span class="tag tag-dim">region</span></td><td><span class="tag tag-measure">Calc_CA_Brut</span>, <span class="tag tag-measure">Calc_CA_Brut</span></td><td>4</td></tr>
 <tr><td><strong>Top Produits</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">clusteredBarChart</span></td><td><span class="tag tag-dim">nom_produit</span></td><td><span class="tag tag-measure">Calc_CA_Net</span>, <span class="tag tag-measure">Calc_CA_Net</span></td><td>3</td></tr>
 <tr><td><strong>Modes de Paiement</strong></td><td><span class="tag tag-connector">Automatic</span></td><td>&#8594;</td><td><span class="tag tag-success">pieChart</span></td><td><span class="tag tag-dim">mode_paiement</span></td><td><span class="tag tag-measure">Calc_NbCommandes</span></td><td>2</td></tr>
-</tbody></table></div><h4>&#128203; Table Mapping</h4><div class="table-container"><table id="tbl-2914586603776" class="detail-table">
+</tbody></table></div><h4>&#128203; Table Mapping</h4><div class="table-container"><table id="tbl-2382484633856" class="detail-table">
 <thead><tr>
 <th>Source Datasource</th>
 <th>Source Table</th>
@@ -3676,7 +3757,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 <div class="tab" data-tab-group="wb-tab-Ventes_France" data-tab-name="other" onclick="switchTab('wb-tab-Ventes_France', 'other')">Other (5)</div>
 </div>
 <div class="tab-content active" id="wb-tab-Ventes_France-all" data-tab-content-group="wb-tab-Ventes_France">
-<div class="table-container"><table id="tbl-2914586606336" class="detail-table">
+<div class="table-container"><table id="tbl-2382484800320" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -3722,7 +3803,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-Ventes_France-calc" data-tab-content-group="wb-tab-Ventes_France">
-<div class="table-container"><table id="tbl-2914586605568" class="detail-table">
+<div class="table-container"><table id="tbl-2382484799552" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -3756,7 +3837,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-Ventes_France-ds" data-tab-content-group="wb-tab-Ventes_France">
-<div class="table-container"><table id="tbl-2914586604288" class="detail-table">
+<div class="table-container"><table id="tbl-2382484634368" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -3769,7 +3850,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-Ventes_France-vis" data-tab-content-group="wb-tab-Ventes_France">
-<div class="table-container"><table id="tbl-2914586604608" class="detail-table">
+<div class="table-container"><table id="tbl-2382484634688" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -3787,7 +3868,7 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </tbody></table></div>
 </div>
 <div class="tab-content" id="wb-tab-Ventes_France-other" data-tab-content-group="wb-tab-Ventes_France">
-<div class="table-container"><table id="tbl-2914586604544" class="detail-table">
+<div class="table-container"><table id="tbl-2382484634624" class="detail-table">
 <thead><tr>
 <th>Category</th>
 <th>Name</th>
@@ -3806,31 +3887,9 @@ END</span></td><td><span class="mono fs-sm" style="max-width:350px;word-break:br
 </div></div>
 </div> <!-- /section -->
 
-<div class="section-header" onclick="toggleSection('pbi-validation')">
-    <span class="section-icon">&#128270;</span>
-    <h2>PBI Desktop Validation</h2>
-    <span class="toggle-arrow" id="pbi-validation-arrow">&#9660;</span>
-</div>
-<div class="section-body" id="pbi-validation">
-<div class="stat-grid">
-<div class="stat-card accent-fail">
-    <div class="stat-value">Failed</div>
-    <div class="stat-label">Status</div>
-</div>
-<div class="stat-card accent-fail">
-    <div class="stat-value">2</div>
-    <div class="stat-label">Errors</div>
-</div>
-<div class="stat-card accent-success">
-    <div class="stat-value">0</div>
-    <div class="stat-label">Warnings</div>
-</div>
-</div><div class="card"><h4>Complex_Enterprise &nbsp; <span class="badge badge-red">RED</span></h4><h5 class="text-fail">&#10060; Errors &mdash; will cause failures in PBI Desktop</h5><ul class="fs-sm"><li class="text-fail">Unknown column/measure [-2,0] in table 'fact_sales' (fact_sales.tmdl)</li></ul></div><div class="card"><h4>Ventes_France &nbsp; <span class="badge badge-red">RED</span></h4><h5 class="text-fail">&#10060; Errors &mdash; will cause failures in PBI Desktop</h5><ul class="fs-sm"><li class="text-fail">Unknown column/measure [-2,0] in table 'Commandes' (Commandes.tmdl)</li></ul></div>
-</div> <!-- /section -->
-
 </div> <!-- /container -->
 <div class="report-footer">
-    <p>Tableau &#8594; Power BI Migration Tool v35.0.0 &nbsp;|&nbsp; Report generated 2026-05-13 17:42</p>
+    <p>Tableau &#8594; Power BI Migration Tool v38.2.0 &nbsp;|&nbsp; Report generated 2026-06-09 09:34</p>
     <p>Open .pbip files in Power BI Desktop (Developer Mode) to validate</p>
 </div>
 <script>

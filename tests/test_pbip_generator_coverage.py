@@ -100,6 +100,40 @@ class TestPbiLiteral(unittest.TestCase):
     def test_bool_with_whitespace(self):
         self.assertEqual(_pbi_literal(' True '), 'true')
 
+    # --- Type-aware formatting (column_type hint) ---
+    # Prevents PBI visitIn crash when a string column receives unquoted
+    # numeric or boolean-looking literals.
+
+    def test_string_column_quotes_digit_value(self):
+        """String column with digit-only value must quote it (Theme="1")."""
+        self.assertEqual(_pbi_literal('1', column_type='string'), "'1'")
+        self.assertEqual(_pbi_literal(7, column_type='string'), "'7'")
+
+    def test_string_column_quotes_boolean_text(self):
+        """String column with the literal text 'true' must quote it."""
+        self.assertEqual(_pbi_literal('true', column_type='string'), "'true'")
+        self.assertEqual(_pbi_literal('false', column_type='string'), "'false'")
+
+    def test_string_column_handles_normal_string(self):
+        self.assertEqual(_pbi_literal('hello', column_type='string'), "'hello'")
+
+    def test_boolean_column_emits_unquoted_bool(self):
+        self.assertEqual(_pbi_literal('true', column_type='boolean'), 'true')
+        self.assertEqual(_pbi_literal('false', column_type='boolean'), 'false')
+        self.assertEqual(_pbi_literal('vrai', column_type='boolean'), 'true')
+
+    def test_int64_column_emits_unquoted_number(self):
+        self.assertEqual(_pbi_literal('42', column_type='int64'), '42')
+        self.assertEqual(_pbi_literal(42, column_type='int64'), '42')
+
+    def test_double_column_emits_unquoted_number(self):
+        self.assertEqual(_pbi_literal('3.14', column_type='double'), '3.14')
+
+    def test_numeric_column_with_non_numeric_value_falls_back_to_string(self):
+        """Non-numeric value on a numeric column → quote as string fallback."""
+        self.assertEqual(_pbi_literal('not_a_number', column_type='int64'),
+                         "'not_a_number'")
+
 
 class TestWriteJson(unittest.TestCase):
     """_write_json file writing with makedirs."""
@@ -303,14 +337,22 @@ class TestDetectSlicerMode(unittest.TestCase):
 class TestCreateSlicerVisualCoverage(unittest.TestCase):
     """Slicer visual creation — Between mode numericInputStyle."""
 
-    def test_between_mode_has_numeric_input(self):
+    def test_between_mode_sets_mode_property(self):
+        """Between mode emits the ``mode`` data property.
+
+        Note: ``numericInputStyle`` is intentionally *not* emitted —
+        extra slicer blocks (numericInputStyle/search/selection/
+        relativeDate) trigger client-side rendering errors in some
+        Power BI Desktop builds, so slicer objects are kept minimal.
+        """
         gen = _make_generator()
         gen._main_table = 'Sales'
         slicer = gen._create_slicer_visual(
             'v1', 0, 0, 200, 50, 'Amount', 'Sales', 1,
             slicer_mode='Between')
         objects = slicer['visual']['objects']
-        self.assertIn('numericInputStyle', objects)
+        # numericInputStyle deliberately omitted for PBIR compatibility
+        self.assertNotIn('numericInputStyle', objects)
         self.assertEqual(
             objects['data'][0]['properties']['mode'],
             _L("'Between'"))
@@ -1317,18 +1359,21 @@ class TestBuildColorEncodingObjects(unittest.TestCase):
                          'palette_colors': ['#FF0000', '#00FF00']}}
         self.gen._build_color_encoding_objects(objects, {}, 'bar', me)
         self.assertIn('dataPoint', objects)
-        rules = objects['dataPoint'][0].get('rules', [])
-        self.assertTrue(len(rules) >= 1)
-        self.assertIn('min', rules[0]['gradient'])
-        self.assertIn('max', rules[0]['gradient'])
+        # PBIR v4.0 does not support 'rules' in dataPoint items
+        self.assertNotIn('rules', objects['dataPoint'][0])
+        # Static fill color is the first palette color
+        fill = objects['dataPoint'][0]['properties']['fill']['solid']['color']
+        self.assertIn('#FF0000', str(fill))
 
     def test_gradient_three_colors_midpoint(self):
         objects = {}
         me = {'color': {'type': 'quantitative',
                          'palette_colors': ['#FF0000', '#FFFF00', '#00FF00']}}
         self.gen._build_color_encoding_objects(objects, {}, 'bar', me)
-        rules = objects['dataPoint'][0].get('rules', [])
-        self.assertIn('mid', rules[0]['gradient'])
+        # PBIR v4.0 does not support 'rules' in dataPoint items
+        self.assertNotIn('rules', objects['dataPoint'][0])
+        fill = objects['dataPoint'][0]['properties']['fill']['solid']['color']
+        self.assertIn('#FF0000', str(fill))
 
     def test_single_color(self):
         objects = {}

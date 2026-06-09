@@ -1,9 +1,9 @@
 table Clients
-	lineageTag: acf7e4f8-6931-45ff-8a87-fd3f3168f203
+	lineageTag: 664d2760-e156-40ef-8002-3764bbe04669
 
 	column client_id
 		dataType: int64
-		lineageTag: d94a6832-67d2-46c9-af3c-6454bcb68af0
+		lineageTag: a3fa016c-88ea-4e53-9aab-4ab7a589929c
 		summarizeBy: sum
 		sourceColumn: client_id
 		annotation Copilot_Hidden = true
@@ -12,7 +12,7 @@ table Clients
 
 	column nom_client
 		dataType: string
-		lineageTag: de16ace5-2a47-4cc3-a39d-38c07f44e99b
+		lineageTag: 2f6cea14-8374-4303-a761-878f3bb407ed
 		summarizeBy: none
 		sourceColumn: nom_client
 
@@ -20,7 +20,7 @@ table Clients
 
 	column prenom_client
 		dataType: string
-		lineageTag: dec4edf9-ee9d-4bd3-9fb4-267c7f89d957
+		lineageTag: 7139773e-54e2-400a-9759-9474af262203
 		summarizeBy: none
 		sourceColumn: prenom_client
 
@@ -28,7 +28,7 @@ table Clients
 
 	column email
 		dataType: string
-		lineageTag: 6087d7a2-75bd-4be1-82a2-b807fbccb94a
+		lineageTag: 4df0f99a-4ae9-4ff3-81c1-01fdee3c414e
 		summarizeBy: none
 		sourceColumn: email
 
@@ -36,7 +36,7 @@ table Clients
 
 	column segment
 		dataType: string
-		lineageTag: aea0070a-ab97-4066-b1c8-e7016ed320d7
+		lineageTag: 44a49edf-cb53-4c60-895b-7d9fa62da4ba
 		summarizeBy: none
 		sourceColumn: segment
 
@@ -44,7 +44,7 @@ table Clients
 
 	column type_client
 		dataType: string
-		lineageTag: 9704d5bb-bac4-4986-a650-a7c4b3b77918
+		lineageTag: bb66936c-9c6f-4119-a7b7-46a302261250
 		summarizeBy: none
 		sourceColumn: type_client
 
@@ -53,17 +53,17 @@ table Clients
 	column date_inscription
 		dataType: dateTime
 		formatString: General Date
-		lineageTag: a3142552-fce7-4a31-8269-9cb6c830a989
+		lineageTag: 69389e44-9a17-4ad7-97a5-6829f363c623
 		summarizeBy: none
 		sourceColumn: date_inscription
 
 		annotation SummarizationSetBy = Automatic
 
-	partition 'Clients-25dfd807-e938-4e01-97f2-978c0f0cf5d5' = m
+	partition 'Clients-f22feb75-5e30-415d-b353-9c5d03784468' = m
 		mode: import
 		source =
 				let
-				    // Source PostgreSQL
+				    
 				    Source = try
 				
 				        let

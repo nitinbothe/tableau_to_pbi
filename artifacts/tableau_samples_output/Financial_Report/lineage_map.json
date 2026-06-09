@@ -59,6 +59,36 @@
       "pbi_type": "measure"
     },
     {
+      "tableau_calculation": "Revenue Formatted",
+      "pbi_table": "transactions",
+      "pbi_object": "Revenue Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Expenses Formatted",
+      "pbi_table": "transactions",
+      "pbi_object": "Expenses Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Net Income Formatted",
+      "pbi_table": "transactions",
+      "pbi_object": "Net Income Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "YTD Revenue Formatted",
+      "pbi_table": "transactions",
+      "pbi_object": "YTD Revenue Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Budget Variance Formatted",
+      "pbi_table": "transactions",
+      "pbi_object": "Budget Variance Formatted",
+      "pbi_type": "measure"
+    },
+    {
       "tableau_calculation": "Year To Date",
       "pbi_table": "Calendar",
       "pbi_object": "Year To Date",

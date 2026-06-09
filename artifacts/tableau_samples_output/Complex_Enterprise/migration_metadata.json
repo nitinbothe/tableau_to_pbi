@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-13T17:39:58.949099",
+  "generated_at": "2026-06-09T09:32:41.979918",
   "source": "Tableau Migration",
   "report_name": "Complex_Enterprise",
   "objects_converted": {
@@ -29,10 +29,61 @@
   },
   "tmdl_stats": {
     "tables": 6,
-    "measures": 33,
-    "columns": 66,
+    "measures": 49,
+    "columns": 68,
     "relationships": 2
   },
+  "dax_measure_names": [
+    "Analysis Start Date",
+    "COGS",
+    "COGS Formatted",
+    "Customer Tier",
+    "Display Currency",
+    "Gross Margin %",
+    "Gross Profit",
+    "Gross Profit Formatted",
+    "Gross Revenue",
+    "Gross Revenue Formatted",
+    "Is My Account",
+    "Manager Access",
+    "Metric Selector",
+    "Moving Avg 3-Period",
+    "Moving Avg 3-Period Formatted",
+    "Net Revenue",
+    "Net Revenue Formatted",
+    "Order Count",
+    "Return Rate",
+    "Return Rate Formatted",
+    "Revenue Rank",
+    "Revenue Rank Dense",
+    "Revenue Rank Dense Formatted",
+    "Revenue Rank Formatted",
+    "Revenue StdDev",
+    "Revenue by Region-Channel",
+    "Revenue by Region-Channel Formatted",
+    "Revenue excl Territory",
+    "Revenue excl Territory Formatted",
+    "Revenue incl Subcategory",
+    "Revenue incl Subcategory Formatted",
+    "Revenue per Customer",
+    "Revenue per Customer Formatted",
+    "Revenue per Product",
+    "Revenue per Product Formatted",
+    "Running Avg Revenue",
+    "Running Count",
+    "Running Total Revenue",
+    "Target Margin %",
+    "Tax Amount",
+    "Tax Amount Formatted",
+    "Top N Items",
+    "Total Revenue incl Tax",
+    "Unique Customers",
+    "Unique Products Sold",
+    "Window Max Revenue",
+    "Window Max Revenue Formatted",
+    "YTD Revenue",
+    "YTD Revenue Formatted"
+  ],
   "visual_type_mappings": {
     "Executive KPIs": "Automatic",
     "Revenue by Region": "Automatic",
@@ -53,8 +104,14 @@
       "tableau_mark": "Automatic",
       "pbi_visual": "tableEx",
       "dimensions": [],
-      "measures": [],
-      "field_count": 0
+      "measures": [
+        "C_NetRev",
+        "C_GrossProfit",
+        "C_OrderCount",
+        "C_UniqueCust"
+      ],
+      "dax_measures": [],
+      "field_count": 4
     },
     {
       "worksheet": "Revenue by Region",
@@ -68,6 +125,7 @@
         "C_NetRev",
         "C_NetRev"
       ],
+      "dax_measures": [],
       "field_count": 4
     },
     {
@@ -80,6 +138,7 @@
       "measures": [
         "C_NetRev"
       ],
+      "dax_measures": [],
       "field_count": 2
     },
     {
@@ -93,6 +152,7 @@
         "C_NetRev",
         "C_NetRev"
       ],
+      "dax_measures": [],
       "field_count": 3
     },
     {
@@ -106,6 +166,7 @@
       "measures": [
         "C_NetRev"
       ],
+      "dax_measures": [],
       "field_count": 3
     },
     {
@@ -121,6 +182,7 @@
         "C_GrossMargin",
         "C_OrderCount"
       ],
+      "dax_measures": [],
       "field_count": 5
     },
     {
@@ -128,8 +190,14 @@
       "tableau_mark": "Automatic",
       "pbi_visual": "ganttChart",
       "dimensions": [],
-      "measures": [],
-      "field_count": 0
+      "measures": [
+        "C_GrossRev",
+        "C_COGS",
+        "C_TaxAmt",
+        "C_GrossProfit"
+      ],
+      "dax_measures": [],
+      "field_count": 4
     },
     {
       "worksheet": "Monthly Heatmap",
@@ -142,6 +210,7 @@
       "measures": [
         "C_NetRev"
       ],
+      "dax_measures": [],
       "field_count": 3
     },
     {
@@ -154,6 +223,7 @@
       "measures": [
         "C_OrderCount"
       ],
+      "dax_measures": [],
       "field_count": 2
     },
     {
@@ -166,6 +236,7 @@
       "measures": [
         "C_OrderCount"
       ],
+      "dax_measures": [],
       "field_count": 2
     },
     {
@@ -178,6 +249,7 @@
       "measures": [
         "discount_pct"
       ],
+      "dax_measures": [],
       "field_count": 2
     },
     {
@@ -190,6 +262,7 @@
       "measures": [
         "C_NetRev"
       ],
+      "dax_measures": [],
       "field_count": 2
     }
   ],

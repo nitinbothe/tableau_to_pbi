@@ -159,9 +159,21 @@ class TestDetermineChartType(unittest.TestCase):
         ws = ET.fromstring('<worksheet><encoding><map/></encoding></worksheet>')
         self.assertEqual(self.ext.determine_chart_type(ws), 'map')
 
-    def test_no_mark_defaults_to_bar(self):
+    def test_no_mark_defaults_to_clusteredBarChart(self):
+        # Fallback must be a *valid* PBI visualType, never the raw
+        # Tableau name. PBI renders unknown visualType as a blank box.
         ws = ET.fromstring('<worksheet></worksheet>')
-        self.assertEqual(self.ext.determine_chart_type(ws), 'bar')
+        self.assertEqual(self.ext.determine_chart_type(ws), 'clusteredBarChart')
+
+    def test_mark_type_element_text_variant(self):
+        # Minimal/hand-authored TWBs use <mark-type>X</mark-type> element
+        # text instead of the standard <mark class="X"/> attribute.
+        ws = ET.fromstring('<worksheet><mark-type>bar</mark-type></worksheet>')
+        self.assertEqual(self.ext.determine_chart_type(ws), 'clusteredBarChart')
+
+    def test_mark_type_element_lowercase_line(self):
+        ws = ET.fromstring('<worksheet><mark-type>line</mark-type></worksheet>')
+        self.assertEqual(self.ext.determine_chart_type(ws), 'lineChart')
 
     def test_automatic_with_date_is_line(self):
         ws = ET.fromstring('''
@@ -201,6 +213,21 @@ class TestMapTableauMarkToType(unittest.TestCase):
 
     def test_unknown_defaults_to_bar(self):
         self.assertEqual(self.ext._map_tableau_mark_to_type('UnknownType'),
+                         'clusteredBarChart')
+
+    def test_case_insensitive_lookup(self):
+        # Minimal/hand-authored TWBs may emit lowercase mark names like
+        # ``<mark-type>bar</mark-type>``. The mapper must canonicalize
+        # to a valid PBI visualType regardless of case.
+        self.assertEqual(self.ext._map_tableau_mark_to_type('bar'),
+                         'clusteredBarChart')
+        self.assertEqual(self.ext._map_tableau_mark_to_type('LINE'),
+                         'lineChart')
+        self.assertEqual(self.ext._map_tableau_mark_to_type('pIe'),
+                         'pieChart')
+
+    def test_empty_string_returns_valid_fallback(self):
+        self.assertEqual(self.ext._map_tableau_mark_to_type(''),
                          'clusteredBarChart')
 
 
@@ -295,6 +322,52 @@ class TestExtractWorksheetFields(unittest.TestCase):
         shelves = [f['shelf'] for f in fields]
         self.assertIn('color', shelves)
         self.assertIn('size', shelves)
+
+    def test_shelf_columns_fallback(self):
+        # Minimal/hand-authored TWBs use <shelf-columns><field>...</field></shelf-columns>
+        # as a child-element variant instead of the standard
+        # <table><cols>text</cols></table> form. Extractor must handle both.
+        ws = ET.fromstring('''
+        <worksheet>
+            <shelf-columns>
+                <field>[federated.sales].[Region]</field>
+            </shelf-columns>
+            <shelf-rows>
+                <field>[federated.sales].[Sales]</field>
+            </shelf-rows>
+        </worksheet>''')
+        fields = self.ext.extract_worksheet_fields(ws)
+        names = [f['name'] for f in fields]
+        self.assertIn('Region', names)
+        self.assertIn('Sales', names)
+
+    def test_measure_names_fallback_to_column_role_measure(self):
+        # When a worksheet uses [Measure Names]/[Measure Values] but
+        # provides NO <column-instance> entries (only bare <column> defs),
+        # the extractor must fall back to expanding every
+        # <column role='measure'> with a default sum aggregation.
+        ws = ET.fromstring('''
+        <worksheet>
+            <table>
+                <cols>[federated.x].[Measure Names]</cols>
+                <rows>[federated.x].[Measure Values]</rows>
+            </table>
+            <datasource-dependencies datasource="federated.x">
+                <column name="[C_NetRev]" role="measure" type="quantitative"/>
+                <column name="[C_GrossProfit]" role="measure" type="quantitative"/>
+                <column name="[Region]" role="dimension" type="nominal"/>
+            </datasource-dependencies>
+        </worksheet>''')
+        fields = self.ext.extract_worksheet_fields(ws)
+        names = [f['name'] for f in fields]
+        self.assertIn('C_NetRev', names)
+        self.assertIn('C_GrossProfit', names)
+        # Dimension columns must NOT be expanded
+        self.assertNotIn('Region', names)
+        # Default aggregation should be 'sum'
+        for f in fields:
+            if f['name'] in ('C_NetRev', 'C_GrossProfit'):
+                self.assertEqual(f.get('aggregation'), 'sum')
 
 
 # ═══════════════════════════════════════════════════════════════════

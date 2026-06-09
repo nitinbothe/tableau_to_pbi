@@ -1,9 +1,9 @@
 table Machines
-	lineageTag: cc0ba634-c5c5-428f-97da-666e4a4c9be8
+	lineageTag: 8d2252ef-489e-4140-b0c9-dcc12388906b
 
 	column machine_id
 		dataType: int64
-		lineageTag: 76bc4466-9592-4787-88e2-d75b39b05ddb
+		lineageTag: 21653b0e-7d30-440f-8716-4197e4d30753
 		summarizeBy: sum
 		sourceColumn: machine_id
 		annotation Copilot_Hidden = true
@@ -12,7 +12,7 @@ table Machines
 
 	column machine_name
 		dataType: string
-		lineageTag: d77bb5e5-fe42-4275-aa13-82368bc81389
+		lineageTag: af101b0d-df69-4196-b16b-0b3b6b48385c
 		summarizeBy: none
 		sourceColumn: machine_name
 
@@ -20,7 +20,7 @@ table Machines
 
 	column machine_type
 		dataType: string
-		lineageTag: 76c1e2e3-d64b-4abb-b315-97638de98079
+		lineageTag: e7f92145-13f5-445b-a4fb-b48f514f8d3a
 		summarizeBy: none
 		sourceColumn: machine_type
 
@@ -29,7 +29,7 @@ table Machines
 	column install_date
 		dataType: dateTime
 		formatString: General Date
-		lineageTag: 351fda30-7f26-4ba6-85a4-e7ea8c0b3b7f
+		lineageTag: 63c68742-9f8d-4891-8fdb-dd4fe62ff799
 		summarizeBy: none
 		sourceColumn: install_date
 
@@ -37,7 +37,7 @@ table Machines
 
 	column location
 		dataType: string
-		lineageTag: ade864b3-0d8e-423e-bc84-70cec10f4641
+		lineageTag: 8d9b7efa-36da-4be4-93de-cd00b3697441
 		summarizeBy: none
 		sourceColumn: location
 
@@ -45,7 +45,7 @@ table Machines
 
 	column line_id
 		dataType: string
-		lineageTag: d8b0df2e-e836-4de8-9613-1ca9afe7618d
+		lineageTag: d314cdef-a048-4165-a755-e2e5728cb9bd
 		summarizeBy: none
 		sourceColumn: line_id
 		annotation Copilot_Hidden = true
@@ -55,17 +55,17 @@ table Machines
 	column rated_capacity
 		dataType: double
 		formatString: #,0.00
-		lineageTag: 2d9e8076-c792-4f53-82c0-02cc5e685e71
+		lineageTag: fc19e346-7afa-493d-b921-8049c0658ecd
 		summarizeBy: sum
 		sourceColumn: rated_capacity
 
 		annotation SummarizationSetBy = Automatic
 
-	partition 'Machines-b0916756-e8ad-4146-b21d-2d115fc7fb69' = m
+	partition 'Machines-8d1bb82e-d251-4bf3-b6e0-5b3a7f89289f' = m
 		mode: import
 		source =
 				let
-				    // Source Oracle: mfg-oracle.corp.local:1521/MFGDB
+				    
 				    Source = try
 				
 				        let

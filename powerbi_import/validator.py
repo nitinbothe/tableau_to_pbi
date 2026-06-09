@@ -819,6 +819,11 @@ class ArtifactValidator:
                 table_ref = _norm_ref_name(match.group(1))
                 col_ref = _norm_ref_name(match.group(2))
 
+                # Skip false-positive matches from DAX string literals or
+                # expressions that the regex picks up as "table references"
+                if any(c in table_ref for c in ('=', '(', ')', ',', '"')):
+                    continue
+
                 table_key = table_ref.lower()
                 canonical_table = known_tables_lc.get(table_key)
                 if canonical_table is None:
@@ -858,10 +863,10 @@ class ArtifactValidator:
             return None, None
         if m.group(1) is not None:
             table = cls._unescape_tmdl_name(m.group(1))
-            col = m.group(2).strip().strip("'")
+            col = cls._unescape_tmdl_name(m.group(2).strip().strip("'"))
         elif m.group(3) is not None:
             table = m.group(3)
-            col = m.group(4).strip().strip("'")
+            col = cls._unescape_tmdl_name(m.group(4).strip().strip("'"))
         else:
             return None, None
         return table, col

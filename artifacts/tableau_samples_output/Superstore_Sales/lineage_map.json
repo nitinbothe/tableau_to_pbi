@@ -47,6 +47,24 @@
       "pbi_type": "measure"
     },
     {
+      "tableau_calculation": "Total Sales Formatted",
+      "pbi_table": "Orders",
+      "pbi_object": "Total Sales Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Total Profit Formatted",
+      "pbi_table": "Orders",
+      "pbi_object": "Total Profit Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Profit Ratio Formatted",
+      "pbi_table": "Orders",
+      "pbi_object": "Profit Ratio Formatted",
+      "pbi_type": "measure"
+    },
+    {
       "tableau_calculation": "Year To Date",
       "pbi_table": "Calendar",
       "pbi_object": "Year To Date",

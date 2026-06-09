@@ -1,5 +1,26 @@
 # Changelog
 
+## v38.3.0 — Empty Visual Fix — Marks-Only Worksheets & Shape Encoding
+
+### Problem
+Real-world workbook UC80 (12 pages, 142 data visuals) was reporting 100% fidelity but contained **82 empty visuals** (65 `tableEx` + 17 `scatterChart`). Worksheets that had fields in Tableau (on Marks card, Detail shelf, Shape encoding) were producing visuals with no fields in PBIR — Power BI Desktop opened them as blank containers.
+
+### Root Causes (3 GAPs)
+1. **GAP 1 — Shape encoding missing**: `extract_worksheet_fields()` iterated `['color', 'size', 'detail', 'tooltip', 'label', 'text']` but **omitted `'shape'`**. Worksheets with `mark='Shape'` (e.g. `Assistance_sollen`) extracted 0 fields.
+2. **GAP 2 — Marks-only worksheets ignored**: Worksheets with empty `<rows>`/`<cols>` but fields on the Detail/Marks shelf placed them inside `<slices>/<column>` elements. `D_10 - Ps en cours` had **12 slices** (only 1 field extracted), `D_2 - Obs prog v2 (2)` had **11 slices** (only 2 extracted). The extractor never read this XML location.
+3. **GAP 3 — BIM symbol mismatch** (already fixed in prior commit on `pbip_generator.py`): `_field_map` placed measures on `measures_table` (the main table) but TMDL placed them on the source-column table. Phase 4c reconciles via caption-based `bim_by_prop` lookup, dropping field references that don't exist in the final BIM model.
+
+### Fixes
+- **`tableau_export/extract_tableau_data.py`** — `extract_worksheet_fields()`:
+  1. Added `'shape'` to the encoding iteration list.
+  2. Added a post-encoding block that walks `worksheet.findall('.//slices/column')`, parses `[ds].[field]` references, strips aggregation/derivation/suffix prefixes, deduplicates against fields already collected, and appends them as `shelf='detail'` entries.
+- **`powerbi_import/pbip_generator.py`** (prior commit) — Phase 4c BIM reconciliation: drops field map entries whose `(symbol, table)` pair is not present in `_actual_bim_symbols` and re-resolves them via caption-based lookup against the actually-emitted TMDL.
+
+### Validation
+- UC80 re-migration: **82 empty visuals → 0** (`_diag_empty.py` reports `TOTAL EMPTY: 0`)
+- 100% fidelity preserved, 41s end-to-end
+- Full regression suite: **8,746 passed, 66 skipped, 1 xfailed, 0 failures** (528.58s)
+
 ## v38.2.0 — Sprint 178 — Migration Diff & Comparison Tooling
 
 ### Artifact Diff Engine

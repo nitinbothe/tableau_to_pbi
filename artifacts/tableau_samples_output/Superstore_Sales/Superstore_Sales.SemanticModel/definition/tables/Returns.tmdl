@@ -1,9 +1,9 @@
 table Returns
-	lineageTag: 97d8abb7-381c-406e-988c-8ede9c3df81b
+	lineageTag: 0eae22d9-ad4d-4e30-b7bb-6a4c32ec07b4
 
 	column Returned
 		dataType: string
-		lineageTag: 531ff9ef-0922-4dfa-9485-d1912063cc04
+		lineageTag: 27123c65-76de-4290-83f6-eecaa9268aaa
 		summarizeBy: none
 		sourceColumn: Returned
 
@@ -11,18 +11,18 @@ table Returns
 
 	column 'Order ID'
 		dataType: string
-		lineageTag: 622f72fb-ffa8-47e1-998f-2cf9ca6b9115
+		lineageTag: aae0ea56-1eab-41c7-832c-5695efba2570
 		summarizeBy: none
 		sourceColumn: 'Order ID'
 		annotation Copilot_Hidden = true
 
 		annotation SummarizationSetBy = Automatic
 
-	partition 'Returns-75c9ec4a-76c3-40c3-86c9-9e9286a7e272' = m
+	partition 'Returns-2897123a-65ab-42f2-a0fc-ebc0b557ef57' = m
 		mode: import
 		source =
 				let
-				    // Source Excel: Sample - Superstore.xlsx
+				    
 				    Source = try
 				
 				        let

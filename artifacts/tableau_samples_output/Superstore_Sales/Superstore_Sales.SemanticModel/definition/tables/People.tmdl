@@ -1,9 +1,9 @@
 table People
-	lineageTag: 41def726-0a99-4bc3-aa62-ea9aa23011e2
+	lineageTag: 1f6851fb-0b41-4e3b-b3e4-b8e8a7b5bd42
 
 	column 'Regional Manager'
 		dataType: string
-		lineageTag: 12859ac8-ebfa-4f27-93ec-c7cb3540cc39
+		lineageTag: 6836ca18-2b53-4c5f-8f56-4ff4c5639966
 		summarizeBy: none
 		sourceColumn: 'Regional Manager'
 		dataCategory: StateOrProvince
@@ -12,18 +12,18 @@ table People
 
 	column Region
 		dataType: string
-		lineageTag: 5dc3f3e3-d437-4984-b729-1a2544076b81
+		lineageTag: 4a2f5746-3625-4001-a156-6daa3b863eb9
 		summarizeBy: none
 		sourceColumn: Region
 		dataCategory: StateOrProvince
 
 		annotation SummarizationSetBy = Automatic
 
-	partition 'People-00a532c5-a4b9-480a-a8d4-6130efe56ca6' = m
+	partition 'People-90e54861-adf0-4add-9886-4b4ad5615b12' = m
 		mode: import
 		source =
 				let
-				    // Source Excel: Sample - Superstore.xlsx
+				    
 				    Source = try
 				
 				        let

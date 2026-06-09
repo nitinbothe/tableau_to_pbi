@@ -422,7 +422,8 @@ def convert_tableau_formula_to_dax(formula, column_name='Measure', table_name='T
     dax = _normalize_spaces_outside_identifiers(dax).strip()
     # Strip // line comments before collapsing newlines — otherwise
     # the comment swallows the rest of the single-line DAX/M expression.
-    dax = re.sub(r'(?m)^\s*//[^\r\n]*', '', dax)
+    dax = re.sub(r'(?m)^\s*//[^\r\n]*', '', dax)  # Full-line comments
+    dax = re.sub(r'(?m)\s*//[^\r\n"]*\r?$', '', dax)  # Trailing comments (\r? handles CRLF)
     dax = _RE_NEWLINES.sub(' ', dax)
 
     # === Phase 6b: Fix date literals ===

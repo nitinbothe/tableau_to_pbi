@@ -1,183 +1,262 @@
 table fact_sales
-	lineageTag: 1c96f4c4-6296-4387-accc-a3f34f29db4b
+	lineageTag: 8357fd40-71a5-401b-b9ac-df2758e71238
 
 	measure 'Gross Revenue' = SUMX('fact_sales', 'fact_sales'[quantity] * 'fact_sales'[unit_price])
 		formatString: #,0.00
 		displayFolder: Measures
-		lineageTag: e524b672-3398-4d71-926c-4eb0d60fdc63
+		lineageTag: ab8b134b-7325-4dd3-91f1-a444aa4d975c
 		annotation Copilot_Description = Migrated from Tableau: SUM([quantity] * [unit_price]) | DAX: SUMX('fact_sales', 'fact_sales'[quantity] * 'fact_sales'[unit_price])
 
 	measure 'Net Revenue' = SUMX('fact_sales', IF('fact_sales'[order_status] <> "Cancelled" && 'fact_sales'[is_returned] = FALSE, 'fact_sales'[quantity] * 'fact_sales'[unit_price] * (1 - 'fact_sales'[discount_pct]), 0))
 		formatString: #,0.00
 		displayFolder: Measures
-		lineageTag: 76d8b1af-a744-4a31-8c2c-ac0dc2470614
+		lineageTag: d4916766-bb12-4919-a6eb-5213194a6d5f
 		annotation Copilot_Description = Migrated from Tableau: SUM(IF [order_status] != "Cancelled" AND [is_returned] = FALSE THEN [quantity] * [unit_price] * (1 - [discount_pct]) ELSE 0 END) | DAX: SUMX('fact_sales', IF('fact_sales'[order_status] <> "Cancelled" && 'fact_sales'[is_returned] = FALSE, 'fact_sales'[quantity] * 'fact_sales'[unit_price] * (1 - 'fact_sales'[discount_pct]), 0))
 
 	measure COGS = SUMX('fact_sales', 'fact_sales'[quantity] * 'fact_sales'[unit_cost])
 		formatString: #,0.00
 		displayFolder: Measures
-		lineageTag: 57285eb5-453c-4785-9a6d-f949991adfea
+		lineageTag: 1bd14eec-b499-4981-98bc-8b3f3793511a
 		annotation Copilot_Description = Migrated from Tableau: SUM([quantity] * [unit_cost]) | DAX: SUMX('fact_sales', 'fact_sales'[quantity] * 'fact_sales'[unit_cost])
 
 	measure 'Gross Profit' = [Net Revenue] - [COGS] - SUM('fact_sales'[shipping_cost])
 		formatString: #,0.00
 		displayFolder: Measures
-		lineageTag: 352418b3-5671-4652-b78b-1d3ca0b18144
+		lineageTag: 3bf97a5f-9ab7-4bcf-adb2-f6d33b3d30c5
 		annotation Copilot_Description = Migrated from Tableau: [C_NetRev] - [C_COGS] - SUM([shipping_cost]) | DAX: [Net Revenue] - [COGS] - SUM('fact_sales'[shipping_cost])
 
 	measure 'Gross Margin %' = IF(ISBLANK([Gross Profit] / [Net Revenue]), 0, [Gross Profit] / [Net Revenue])
 		formatString: #,0.00
 		displayFolder: Measures
-		lineageTag: 0c279f4b-aeb1-48e0-85f8-aae86da4b3e6
+		lineageTag: 8980675a-4671-4f8f-abc4-39ad7a9677c0
 		annotation Copilot_Description = Migrated from Tableau: ZN([C_GrossProfit] / [C_NetRev]) | DAX: IF(ISBLANK([Gross Profit] / [Net Revenue]), 0, [Gross Profit] / [Net Revenue])
 
 	measure 'Tax Amount' = SUMX('fact_sales', 'fact_sales'[quantity] * 'fact_sales'[unit_price] * (1 - 'fact_sales'[discount_pct]) * 'fact_sales'[tax_rate])
 		formatString: #,0.00
 		displayFolder: Measures
-		lineageTag: f67e5b8d-c113-49b2-9fc2-7b07ae46a0fb
+		lineageTag: a37c8694-0d5e-4956-b02e-da3ab28f76bd
 		annotation Copilot_Description = Migrated from Tableau: SUM([quantity] * [unit_price] * (1 - [discount_pct]) * [tax_rate]) | DAX: SUMX('fact_sales', 'fact_sales'[quantity] * 'fact_sales'[unit_price] * (1 - 'fact_sales'[discount_pct]) * 'fact_sales'[tax_rate])
 
 	measure 'Total Revenue incl Tax' = [Net Revenue] + [Tax Amount]
 		formatString: #,0.00
 		displayFolder: Measures
-		lineageTag: ba0141cb-2bfe-4554-bc4c-53b9b6be57e5
+		lineageTag: 717951da-2fd4-454b-b389-05f8bfe0c411
 		annotation Copilot_Description = Migrated from Tableau: [C_NetRev] + [C_TaxAmt] | DAX: [Net Revenue] + [Tax Amount]
 
 	measure 'Return Rate' = SUMX('fact_sales', IF('fact_sales'[is_returned] = TRUE, 1, 0)) / COUNT('fact_sales'[sale_id])
 		formatString: #,0.00
 		displayFolder: Measures
-		lineageTag: a52ad8d5-521a-4c0c-8202-0b40078aa388
+		lineageTag: 093843e6-f879-4ffe-9c2c-853b5d511768
 		annotation Copilot_Description = Migrated from Tableau: SUM(IF [is_returned] = TRUE THEN 1 ELSE 0 END) / COUNT([sale_id]) | DAX: SUMX('fact_sales', IF('fact_sales'[is_returned] = TRUE, 1, 0)) / COUNT('fact_sales'[sale_id])
 
 	measure 'Revenue per Customer' = CALCULATE(SUMX('fact_sales', 'fact_sales'[quantity] * 'fact_sales'[unit_price]), ALLEXCEPT('dim_customer', 'dim_customer'[customer_id]))
 		formatString: #,0.00
 		displayFolder: Measures
-		lineageTag: 724fd3db-9353-440b-8bbb-020eb20714f6
+		lineageTag: 827f2e36-8f1e-43d6-a902-d0629fd741bb
 		annotation Copilot_Description = Migrated from Tableau: {FIXED [customer_id] : SUM([quantity] * [unit_price])} | DAX: CALCULATE(SUMX('fact_sales', 'fact_sales'[quantity] * 'fact_sales'[unit_price]), ALLEXCEPT('dim_customer', 'dim_customer'[customer_id]))
 
 	measure 'Revenue per Product' = CALCULATE(SUMX('fact_sales', 'fact_sales'[quantity] * 'fact_sales'[unit_price]), ALLEXCEPT('dim_product', 'dim_product'[product_id]))
 		formatString: #,0.00
 		displayFolder: Measures
-		lineageTag: 8e7951f4-f6d0-4ae8-be21-543ae4500db0
+		lineageTag: 65355e58-4a40-436d-b542-b7140596f94e
 		annotation Copilot_Description = Migrated from Tableau: {FIXED [product_id] : SUM([quantity] * [unit_price])} | DAX: CALCULATE(SUMX('fact_sales', 'fact_sales'[quantity] * 'fact_sales'[unit_price]), ALLEXCEPT('dim_product', 'dim_product'[product_id]))
 
 	measure 'Revenue by Region-Channel' = CALCULATE(SUMX('fact_sales', 'fact_sales'[quantity] * 'fact_sales'[unit_price]), ALLEXCEPT('fact_sales', 'fact_sales'[region], 'fact_sales'[channel]))
 		formatString: #,0.00
 		displayFolder: Measures
-		lineageTag: 71739e69-0a41-4041-bfe4-eaae7f40b182
+		lineageTag: a3e52da1-1a6d-44bf-9956-cd8958da6c8e
 		annotation Copilot_Description = Migrated from Tableau: {FIXED [region], [channel] : SUM([quantity] * [unit_price])} | DAX: CALCULATE(SUMX('fact_sales', 'fact_sales'[quantity] * 'fact_sales'[unit_price]), ALLEXCEPT('fact_sales', 'fact_sales'[region], 'fact_sales'[channel]))
 
 	measure 'Revenue excl Territory' = CALCULATE(SUMX('fact_sales', 'fact_sales'[quantity] * 'fact_sales'[unit_price]), REMOVEFILTERS('fact_sales'[territory]))
 		formatString: #,0.00
 		displayFolder: Measures
-		lineageTag: 0f0e6556-690e-4484-b22b-5ed82b4ce5c3
+		lineageTag: c7662ca1-845e-4fc6-9418-a2adde067c52
 		annotation Copilot_Description = Migrated from Tableau: {EXCLUDE [territory] : SUM([quantity] * [unit_price])} | DAX: CALCULATE(SUMX('fact_sales', 'fact_sales'[quantity] * 'fact_sales'[unit_price]), REMOVEFILTERS('fact_sales'[territory]))
 
 	measure 'Revenue incl Subcategory' = CALCULATE(SUMX('fact_sales', 'fact_sales'[quantity] * 'fact_sales'[unit_price]))
 		formatString: #,0.00
 		displayFolder: Measures
-		lineageTag: c4d1f5c5-a727-4f91-ac20-eff93cb2a8ee
+		lineageTag: be7a7e6d-3fd5-4a38-a7b0-38319091cd65
 		annotation Copilot_Description = Migrated from Tableau: {INCLUDE [subcategory] : SUM([quantity] * [unit_price])} | DAX: CALCULATE(SUMX('fact_sales', 'fact_sales'[quantity] * 'fact_sales'[unit_price]))
 
 	measure 'Running Total Revenue' = /* TODO: DAX conversion validation failed for C_RunTotal: unconverted Tableau function token detected in DAX output */ BLANK()
 		formatString: #,0.00
 		displayFolder: Measures
-		lineageTag: 07735416-7886-4d49-b78d-d03b148db3d7
+		lineageTag: 224e4313-233d-4ca5-882c-2c8d5bc43fa4
 		annotation Copilot_Description = Migrated from Tableau: RUNNING_SUM(SUM([quantity] * [unit_price])) | DAX: /* TODO: DAX conversion validation failed for C_RunTotal: unconverted Tableau function token detected in DAX output */ BLANK()
 
 	measure 'Running Avg Revenue' = /* TODO: DAX conversion validation failed for C_RunAvg: unconverted Tableau function token detected in DAX output */ BLANK()
 		formatString: #,0.00
 		displayFolder: Measures
-		lineageTag: 12998d9c-aef2-4972-84b2-c7529bc772de
+		lineageTag: 2ed8d1ca-a838-4b73-9711-9699a27076fe
 		annotation Copilot_Description = Migrated from Tableau: RUNNING_AVG(SUM([quantity] * [unit_price])) | DAX: /* TODO: DAX conversion validation failed for C_RunAvg: unconverted Tableau function token detected in DAX output */ BLANK()
 
 	measure 'Running Count' = /* TODO: DAX conversion validation failed for C_RunCount: unconverted Tableau function token detected in DAX output */ BLANK()
 		displayFolder: Measures
-		lineageTag: e3f2ae6c-8865-4d58-a7a8-ef55200b3499
+		lineageTag: 25b78e76-7439-48cb-a3bc-303155e7c8d5
 		annotation Copilot_Description = Migrated from Tableau: RUNNING_COUNT(SUM([quantity])) | DAX: /* TODO: DAX conversion validation failed for C_RunCount: unconverted Tableau function token detected in DAX output */ BLANK()
 
 	measure 'Revenue Rank' = RANKX(ALL('fact_sales'), SUMX('fact_sales', 'fact_sales'[quantity] * 'fact_sales'[unit_price]))
 		displayFolder: Measures
-		lineageTag: a7d3822b-23e9-41df-928a-3278785840fc
+		lineageTag: 7deab4e9-74ca-4e7e-bed0-e035451561f8
 		annotation Copilot_Description = Migrated from Tableau: RANK(SUM([quantity] * [unit_price])) | DAX: RANKX(ALL('fact_sales'), SUMX('fact_sales', 'fact_sales'[quantity] * 'fact_sales'[unit_price]))
 
 	measure 'Revenue Rank Dense' = RANKX(ALL('fact_sales'), SUMX('fact_sales', 'fact_sales'[quantity] * 'fact_sales'[unit_price]),, ASC, DENSE)
 		displayFolder: Measures
-		lineageTag: e7595940-ee75-4927-a139-4d5d1c82004d
+		lineageTag: c796c4a8-5e68-4df7-a59f-47202d86ba81
 		annotation Copilot_Description = Migrated from Tableau: RANK_DENSE(SUM([quantity] * [unit_price])) | DAX: RANKX(ALL('fact_sales'), SUMX('fact_sales', 'fact_sales'[quantity] * 'fact_sales'[unit_price]),, ASC, DENSE)
 
 	measure 'Moving Avg 3-Period' = CALCULATE(SUMX('fact_sales', 'fact_sales'[quantity] * 'fact_sales'[unit_price]), WINDOW(-2, REL, 0, REL, ORDERBY(SUM('fact_sales'[sale_id]), ASC)), ALL('fact_sales')) /* WINDOW.AVG: frame SUM('fact_sales'[-2,0]) */
 		formatString: #,0.00
 		displayFolder: Measures
-		isHidden
-		lineageTag: 003a9c3e-fb1d-44fc-b69c-900f71398d97
+		lineageTag: d40464e7-0704-464b-8f89-b5ba1f32afae
 		annotation Copilot_Description = Migrated from Tableau: WINDOW_AVG(SUM([quantity] * [unit_price]), -2, 0) | DAX: CALCULATE(SUMX('fact_sales', 'fact_sales'[quantity] * 'fact_sales'[unit_price]), WINDOW(-2, REL, 0, REL, ORDERBY(SUM('fact_sales'[sale_id]), ASC)), ALL('fact_sales')) /* WINDOW.AVG: frame SUM('fact_sa)...
 
 	measure 'Window Max Revenue' = CALCULATE(SUMX('fact_sales', 'fact_sales'[quantity] * 'fact_sales'[unit_price]), ALL('fact_sales'))
 		formatString: #,0.00
 		displayFolder: Measures
-		lineageTag: 11e57c64-bc95-408f-a650-50ce252dc1bb
+		lineageTag: 8ca12c36-cdf0-4f07-b295-827195e2e424
 		annotation Copilot_Description = Migrated from Tableau: WINDOW_MAX(SUM([quantity] * [unit_price])) | DAX: CALCULATE(SUMX('fact_sales', 'fact_sales'[quantity] * 'fact_sales'[unit_price]), ALL('fact_sales'))
 
 	measure 'Revenue StdDev' = STDEVX.S('fact_sales', MAX('fact_sales'[quantity]) * MAX('fact_sales'[unit_price]))
 		formatString: #,0.00
 		displayFolder: Measures
-		lineageTag: 9adc116c-4960-4882-9b3c-0b271b47f17a
+		lineageTag: c47dd020-6fc7-473b-b8e6-6c5a2b6daa1a
 		annotation Copilot_Description = Migrated from Tableau: STDEV(SUM([quantity] * [unit_price])) | DAX: STDEVX.S('fact_sales', MAX('fact_sales'[quantity]) * MAX('fact_sales'[unit_price]))
 
 	measure 'Order Count' = DISTINCTCOUNT('fact_sales'[sale_id])
 		displayFolder: Measures
-		lineageTag: b85fc6d0-8e12-4fdf-843a-8dc5bb105a8c
+		lineageTag: b8c3f287-43ce-4b1a-a3b6-fab84445af48
 		annotation Copilot_Description = Migrated from Tableau: COUNTD([sale_id]) | DAX: DISTINCTCOUNT('fact_sales'[sale_id])
 
 	measure 'Unique Customers' = DISTINCTCOUNT('dim_customer'[customer_id])
 		displayFolder: Measures
-		lineageTag: 4dc783d6-277b-480e-ab8a-2f1621f6681c
+		lineageTag: a64c7322-1e7d-4cce-99f8-16941307a3a1
 		annotation Copilot_Description = Migrated from Tableau: COUNTD([customer_id]) | DAX: DISTINCTCOUNT('dim_customer'[customer_id])
 
 	measure 'Unique Products Sold' = DISTINCTCOUNT('dim_product'[product_id])
 		displayFolder: Measures
-		lineageTag: ccaa7163-f615-4ce0-9987-78a2f5292bbf
+		lineageTag: ddb5671d-4038-4a05-a742-8256b13fc6d6
 		annotation Copilot_Description = Migrated from Tableau: COUNTD([product_id]) | DAX: DISTINCTCOUNT('dim_product'[product_id])
 
 	measure 'Customer Tier' = IF([Revenue per Customer] > 100000, "Enterprise", IF([Revenue per Customer] > 50000, "Mid-Market", IF([Revenue per Customer] > 10000, "SMB", "Startup")))
 		displayFolder: Dimensions
-		lineageTag: 1cb00c61-0316-454f-ba6d-d1687548f18b
+		lineageTag: 9a24ef5d-a0aa-4510-af41-245a0a035571
 		annotation Copilot_Description = Migrated from Tableau: IF [C_RevPerCust] > 100000 THEN "Enterprise" ELSEIF [C_RevPerCust] > 50000 THEN "Mid-Market" ELSEIF [C_RevPerCust] > 10000 THEN "SMB" ELSE "Startup" END | DAX: IF([Revenue per Customer] > 100000, "Enterprise", IF([Revenue per Customer] > 50000, "Mid-Market", IF([Revenue per Customer] > 10000, "SMB", "Startup")))
 
 	measure 'YTD Revenue' = CALCULATE(SUMX('dim_date', IF('dim_date'[year] = YEAR(TODAY()) && LOOKUPVALUE(fact_sales[is_returned], fact_sales[date_key], dim_date[date_key]) = FALSE, LOOKUPVALUE(fact_sales[quantity], fact_sales[date_key], dim_date[date_key]) * LOOKUPVALUE(fact_sales[unit_price], fact_sales[date_key], dim_date[date_key]), 0)), ALL('fact_sales'))
 		formatString: #,0.00
 		displayFolder: Measures
-		lineageTag: 9abb6f7a-c692-4c5f-ab6f-e3d49710ce41
+		lineageTag: 2cf0d6a6-d96e-4267-a92d-57c490522685
 		annotation Copilot_Description = Migrated from Tableau: {FIXED : SUM(IF [year] = YEAR(TODAY()) AND [is_returned] = FALSE THEN [quantity] * [unit_price] ELSE 0 END)} | DAX: CALCULATE(SUMX('dim_date', IF('dim_date'[year] = YEAR(TODAY()) && LOOKUPVALUE(fact_sales[is_returned], fact_sales[date_key], dim_date[date_key]) = FALSE, LOOKUPVALUE(fact_sales[quantity], fact_sales[d]))))...
 
 	measure 'Is My Account' = SUM('dim_customer'[email]) = USERPRINCIPALNAME()
 		formatString: True/False
 		displayFolder: Dimensions
-		lineageTag: d9da18dc-3d3c-40f2-bc4d-590341b3fcdf
+		lineageTag: 6f14b195-cd42-4b84-b048-3360e91fdf5a
 		annotation Copilot_Description = Migrated from Tableau: [email] = USERNAME() | DAX: SUM('dim_customer'[email]) = USERPRINCIPALNAME()
 
 	measure 'Manager Access' = TRUE() /* ISMEMBEROF("Regional Managers"): implement via RLS role */
 		formatString: True/False
 		displayFolder: Dimensions
-		lineageTag: 328fba2d-16d2-46c0-94b4-b6cb177f100b
+		lineageTag: 49d80d37-df31-4649-9ec1-a4fbea1d99e2
 		annotation Copilot_Description = Migrated from Tableau: ISMEMBEROF("Regional Managers") | DAX: TRUE() /* ISMEMBEROF("Regional Managers"): implement via RLS role */
 
 	measure 'Analysis Start Date' = DATE(2024, 1, 1)
-		lineageTag: 64f2836a-deda-4849-9313-a770a5a31447
+		lineageTag: 3d9904cd-8623-4331-8d39-baaaeaa4cf0f
 		annotation Copilot_Description = DAX: DATE(2024, 1, 1)
 
 	measure 'Metric Selector' = "Revenue"
-		lineageTag: 25be56dd-ddc8-414d-9c8c-78504194eb4d
+		lineageTag: 620e7f52-60b3-4382-830f-318a83eb1c68
 		annotation Copilot_Description = DAX: "Revenue"
 
 	measure 'Display Currency' = "USD"
-		lineageTag: f8331a8c-8ea9-47a7-a3aa-b2d1dc566959
+		lineageTag: 870c0ca4-e48e-4085-8957-1a25f081309e
 		annotation Copilot_Description = DAX: "USD"
+
+	measure 'Gross Revenue Formatted' = VAR _val = [Gross Revenue] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+		displayFolder: Formatted
+		lineageTag: da4fbcef-f089-4050-b919-8516f990d7ed
+		annotation Copilot_Description = Dynamic numeric abbreviation for Gross Revenue (K/M/B)
+
+	measure 'Net Revenue Formatted' = VAR _val = [Net Revenue] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+		displayFolder: Formatted
+		lineageTag: 857635b2-f2b3-4d62-a282-a59fb0517cdd
+		annotation Copilot_Description = Dynamic numeric abbreviation for Net Revenue (K/M/B)
+
+	measure 'COGS Formatted' = VAR _val = [COGS] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+		displayFolder: Formatted
+		lineageTag: 07a269c9-d00c-4bc4-9518-0480565d74d5
+		annotation Copilot_Description = Dynamic numeric abbreviation for COGS (K/M/B)
+
+	measure 'Gross Profit Formatted' = VAR _val = [Gross Profit] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+		displayFolder: Formatted
+		lineageTag: 3ffe7eba-f5a2-4e6e-a097-40a7fda03c96
+		annotation Copilot_Description = Dynamic numeric abbreviation for Gross Profit (K/M/B)
+
+	measure 'Tax Amount Formatted' = VAR _val = [Tax Amount] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+		displayFolder: Formatted
+		lineageTag: 442f6b5f-e04e-4c56-8cb5-16ad8f41986b
+		annotation Copilot_Description = Dynamic numeric abbreviation for Tax Amount (K/M/B)
+
+	measure 'Return Rate Formatted' = VAR _val = [Return Rate] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+		displayFolder: Formatted
+		lineageTag: f035805b-4253-4317-9f9f-ff2bb603bb45
+		annotation Copilot_Description = Dynamic numeric abbreviation for Return Rate (K/M/B)
+
+	measure 'Revenue per Customer Formatted' = VAR _val = [Revenue per Customer] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+		displayFolder: Formatted
+		lineageTag: b929f7a6-27ce-4ad3-93f8-0c9664f80df2
+		annotation Copilot_Description = Dynamic numeric abbreviation for Revenue per Customer (K/M/B)
+
+	measure 'Revenue per Product Formatted' = VAR _val = [Revenue per Product] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+		displayFolder: Formatted
+		lineageTag: 1a0312d6-c95d-4c21-8aa0-02e28abcb6e1
+		annotation Copilot_Description = Dynamic numeric abbreviation for Revenue per Product (K/M/B)
+
+	measure 'Revenue by Region-Channel Formatted' = VAR _val = [Revenue by Region-Channel] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+		displayFolder: Formatted
+		lineageTag: 3d5413f0-8725-467e-9bc0-8c5a36ed1bd3
+		annotation Copilot_Description = Dynamic numeric abbreviation for Revenue by Region-Channel (K/M/B)
+
+	measure 'Revenue excl Territory Formatted' = VAR _val = [Revenue excl Territory] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+		displayFolder: Formatted
+		lineageTag: fbcd050d-f1d5-463b-a5d6-f850c05cda4e
+		annotation Copilot_Description = Dynamic numeric abbreviation for Revenue excl Territory (K/M/B)
+
+	measure 'Revenue incl Subcategory Formatted' = VAR _val = [Revenue incl Subcategory] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+		displayFolder: Formatted
+		lineageTag: 09c5da2d-06f7-40e2-9bb8-f0bedecc9eae
+		annotation Copilot_Description = Dynamic numeric abbreviation for Revenue incl Subcategory (K/M/B)
+
+	measure 'Revenue Rank Formatted' = VAR _val = [Revenue Rank] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "0"))))
+		displayFolder: Formatted
+		lineageTag: 61070e2d-9f06-45c0-b6a0-3ed621c0efa9
+		annotation Copilot_Description = Dynamic numeric abbreviation for Revenue Rank (K/M/B)
+
+	measure 'Revenue Rank Dense Formatted' = VAR _val = [Revenue Rank Dense] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "0"))))
+		displayFolder: Formatted
+		lineageTag: 8f460e13-a2d5-434a-80e4-7720a5cd4871
+		annotation Copilot_Description = Dynamic numeric abbreviation for Revenue Rank Dense (K/M/B)
+
+	measure 'Moving Avg 3-Period Formatted' = VAR _val = [Moving Avg 3-Period] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+		displayFolder: Formatted
+		lineageTag: 3e05f7b2-addd-49c4-9dd9-3d7606148d9e
+		annotation Copilot_Description = Dynamic numeric abbreviation for Moving Avg 3-Period (K/M/B)
+
+	measure 'Window Max Revenue Formatted' = VAR _val = [Window Max Revenue] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+		displayFolder: Formatted
+		lineageTag: 64f13f35-7b7a-4a71-8688-0960978e15a4
+		annotation Copilot_Description = Dynamic numeric abbreviation for Window Max Revenue (K/M/B)
+
+	measure 'YTD Revenue Formatted' = VAR _val = [YTD Revenue] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+		displayFolder: Formatted
+		lineageTag: 096ccde0-54d8-4901-8d2c-85829cd9ef5a
+		annotation Copilot_Description = Dynamic numeric abbreviation for YTD Revenue (K/M/B)
 
 	column sale_id
 		dataType: int64
-		lineageTag: 4be1c159-9dfa-4420-b460-51b97d088938
+		lineageTag: dc540c23-fbeb-4183-94aa-73441f3ee79b
 		summarizeBy: sum
 		sourceColumn: sale_id
 		annotation Copilot_Hidden = true
@@ -186,7 +265,7 @@ table fact_sales
 
 	column date_key
 		dataType: int64
-		lineageTag: f2a8363a-8588-473c-a1c8-92c49cf4f4a5
+		lineageTag: b3c98bef-46af-4865-a091-20a392144015
 		summarizeBy: sum
 		sourceColumn: date_key
 		annotation Copilot_Hidden = true
@@ -195,7 +274,7 @@ table fact_sales
 
 	column customer_key
 		dataType: int64
-		lineageTag: 79a3e44c-7f24-4311-8873-4f74aa4f51af
+		lineageTag: 8c951296-c76c-43a2-9d88-2440eec3011d
 		summarizeBy: sum
 		sourceColumn: customer_key
 		annotation Copilot_Hidden = true
@@ -204,7 +283,7 @@ table fact_sales
 
 	column product_key
 		dataType: int64
-		lineageTag: 91ebfb87-f88f-4ae9-9c6a-ce6d372d472e
+		lineageTag: 2cc7a23d-dd41-4a56-89e8-67d420188460
 		summarizeBy: sum
 		sourceColumn: product_key
 		annotation Copilot_Hidden = true
@@ -213,7 +292,7 @@ table fact_sales
 
 	column store_key
 		dataType: int64
-		lineageTag: 8f58b4a9-6f00-48a5-8de0-cbf59cd0da04
+		lineageTag: 5713e678-1838-475e-a851-9080f9cc75b6
 		summarizeBy: sum
 		sourceColumn: store_key
 		annotation Copilot_Hidden = true
@@ -222,7 +301,7 @@ table fact_sales
 
 	column channel
 		dataType: string
-		lineageTag: 38775e43-746d-41a8-a72c-0c4d926989df
+		lineageTag: 3feb5680-820d-40b0-bc42-b300c170bd3c
 		summarizeBy: none
 		sourceColumn: channel
 
@@ -230,7 +309,7 @@ table fact_sales
 
 	column region
 		dataType: string
-		lineageTag: 2d4304be-8af5-48a7-bdad-d79910d4986a
+		lineageTag: acd06806-8c79-44b2-9c95-cdc801a3ea10
 		summarizeBy: none
 		sourceColumn: region
 		dataCategory: StateOrProvince
@@ -239,7 +318,7 @@ table fact_sales
 
 	column territory
 		dataType: string
-		lineageTag: 38907b39-cb28-4578-b446-b926d2a3a1c1
+		lineageTag: 8f96e0b5-f642-4a25-a291-1a4308a2e6f5
 		summarizeBy: none
 		sourceColumn: territory
 
@@ -247,7 +326,7 @@ table fact_sales
 
 	column country
 		dataType: string
-		lineageTag: fac38548-1d91-4a86-b012-70a285de49f7
+		lineageTag: cd255ff4-eb42-4210-b869-6c5b0492b874
 		summarizeBy: none
 		sourceColumn: country
 		dataCategory: Country
@@ -256,7 +335,7 @@ table fact_sales
 
 	column state
 		dataType: string
-		lineageTag: 58f8de6c-a086-4891-b230-09f4c418601f
+		lineageTag: 04fe8b3f-a1db-4172-b643-27bc6857ee66
 		summarizeBy: none
 		sourceColumn: state
 		dataCategory: StateOrProvince
@@ -265,7 +344,7 @@ table fact_sales
 
 	column city
 		dataType: string
-		lineageTag: 9a12d26b-b20b-4a68-ac83-6220619b96b4
+		lineageTag: 4ccf02c4-adc5-4af4-9da7-0f62161cbca7
 		summarizeBy: none
 		sourceColumn: city
 		dataCategory: City
@@ -274,7 +353,7 @@ table fact_sales
 
 	column postal_code
 		dataType: string
-		lineageTag: 9de96467-a990-4d89-a6d1-3c4bdc5dbbc7
+		lineageTag: ae4b2e01-323d-4e65-bc89-3930f12b842d
 		summarizeBy: none
 		sourceColumn: postal_code
 		dataCategory: PostalCode
@@ -284,7 +363,7 @@ table fact_sales
 	column latitude
 		dataType: double
 		formatString: #,0.00
-		lineageTag: eaa56d9f-207a-4a7b-9ab4-244882dcbffe
+		lineageTag: b29a78d7-b33d-4498-977c-9cbbde55f2de
 		summarizeBy: sum
 		sourceColumn: latitude
 		dataCategory: Latitude
@@ -294,7 +373,7 @@ table fact_sales
 	column longitude
 		dataType: double
 		formatString: #,0.00
-		lineageTag: effa11e9-a70e-4e01-b1e9-f24a400abbe8
+		lineageTag: 2207c997-aa4b-4ba6-9b9d-e1ac398c6f8d
 		summarizeBy: sum
 		sourceColumn: longitude
 		dataCategory: Longitude
@@ -304,7 +383,7 @@ table fact_sales
 	column quantity
 		dataType: double
 		formatString: #,0.00
-		lineageTag: 6de8e9a0-96be-40b5-8aad-0c2bcfc218e0
+		lineageTag: 8c65243e-e980-42d1-8fa0-f94a11e45bab
 		summarizeBy: sum
 		sourceColumn: quantity
 
@@ -313,7 +392,7 @@ table fact_sales
 	column unit_price
 		dataType: double
 		formatString: #,0.00
-		lineageTag: db25c3be-24ab-43a5-9e83-d7bd2879d6e1
+		lineageTag: bf0b7c8f-a0c0-43cd-a401-2787ef1ea701
 		summarizeBy: sum
 		sourceColumn: unit_price
 
@@ -322,7 +401,7 @@ table fact_sales
 	column unit_cost
 		dataType: double
 		formatString: #,0.00
-		lineageTag: c9eb14e2-98ea-489a-a8d5-4e0aab24eaa8
+		lineageTag: e9d4f3b6-dc7b-4ff0-9da6-9ce973308afb
 		summarizeBy: sum
 		sourceColumn: unit_cost
 
@@ -331,7 +410,7 @@ table fact_sales
 	column discount_pct
 		dataType: double
 		formatString: #,0.00
-		lineageTag: 20a0d6b2-98cc-4a16-a812-ff78afb1809c
+		lineageTag: 9dcf5411-16d6-4f5a-b9e6-f07f920e464a
 		summarizeBy: sum
 		sourceColumn: discount_pct
 
@@ -340,7 +419,7 @@ table fact_sales
 	column tax_rate
 		dataType: double
 		formatString: #,0.00
-		lineageTag: 3612c19d-d5e1-4925-9c08-480960ef2418
+		lineageTag: 9b67b44a-6555-4d41-a411-60c6074bbe18
 		summarizeBy: sum
 		sourceColumn: tax_rate
 
@@ -349,7 +428,7 @@ table fact_sales
 	column shipping_cost
 		dataType: double
 		formatString: #,0.00
-		lineageTag: f2a3c3e9-9752-42f4-97b2-8bbc8c594f49
+		lineageTag: 14972535-194f-4414-9e12-f539b288f84c
 		summarizeBy: sum
 		sourceColumn: shipping_cost
 
@@ -357,7 +436,7 @@ table fact_sales
 
 	column currency_code
 		dataType: string
-		lineageTag: f3300523-7cdc-48fa-8dda-bc81304abb62
+		lineageTag: a2fb74cc-5804-4c54-94d7-eebd865d39a1
 		summarizeBy: none
 		sourceColumn: currency_code
 
@@ -365,7 +444,7 @@ table fact_sales
 
 	column order_status
 		dataType: string
-		lineageTag: c1c9386c-9fd7-440e-9432-7350fa6e12ff
+		lineageTag: 0539b260-0ba1-4912-82c9-2e44a3a10ffc
 		summarizeBy: none
 		sourceColumn: order_status
 
@@ -373,7 +452,7 @@ table fact_sales
 
 	column payment_method
 		dataType: string
-		lineageTag: 5d1d9691-2fd3-4d39-97bb-e9e318593b69
+		lineageTag: 0f068569-2daf-4d1e-b18b-335b603dddb9
 		summarizeBy: none
 		sourceColumn: payment_method
 
@@ -381,7 +460,7 @@ table fact_sales
 
 	column sales_rep
 		dataType: string
-		lineageTag: 7ec6716f-d452-46d0-a106-0a92a8c4a765
+		lineageTag: d4da8f9b-9ff4-4370-bf70-32a46b78b9d5
 		summarizeBy: none
 		sourceColumn: sales_rep
 
@@ -389,7 +468,7 @@ table fact_sales
 
 	column promotion_code
 		dataType: string
-		lineageTag: 611c5545-e6d3-43e2-adc7-cce7b530b490
+		lineageTag: cb6f23c9-b29e-4f99-ba9b-c34cc6198bac
 		summarizeBy: none
 		sourceColumn: promotion_code
 
@@ -397,7 +476,7 @@ table fact_sales
 
 	column is_returned
 		dataType: boolean
-		lineageTag: 831e9c65-3583-4e3b-b49d-6cbc8898db99
+		lineageTag: fd1c2dde-45cf-4846-a61e-b1b53cb4c7ca
 		summarizeBy: none
 		sourceColumn: is_returned
 
@@ -405,21 +484,21 @@ table fact_sales
 
 	column 'Days Since First Order' = DATEDIFF(CALCULATE(SELECTEDVALUE(dim_customer[first_order_date])), TODAY(), DAY)
 		dataType: int64
-		lineageTag: d6c1c9c7-0e88-4283-9143-1a771dc6e75b
+		lineageTag: e9bbba27-af19-4b15-90fb-dce8bef711d7
 		summarizeBy: none
 
 		annotation SummarizationSetBy = Automatic
 
 	column 'Full Location' = UPPER('fact_sales'[city]) & ", " & 'fact_sales'[state] & " (" & 'fact_sales'[country] & ")"
 		dataType: string
-		lineageTag: f5bb5729-d4d7-4e97-9009-8f01795cee22
+		lineageTag: 86a6c648-3eba-4c58-b08a-5f17f744702c
 		summarizeBy: none
 
 		annotation SummarizationSetBy = Automatic
 
 	column 'Discount Category'
 		dataType: string
-		lineageTag: df8bb598-e30c-4da8-aa26-2831007402e7
+		lineageTag: 3c3a508b-1728-4699-9a70-1dd2b21b38e9
 		summarizeBy: none
 		sourceColumn: 'Discount Category'
 
@@ -428,17 +507,37 @@ table fact_sales
 	column 'Safe Discount'
 		dataType: double
 		formatString: #,0.00
-		lineageTag: 6f7a1f85-e6e0-4f30-99a2-18a47d6f1d51
+		lineageTag: 2bfc94b7-4575-4626-9647-41c8355bd6ed
 		summarizeBy: none
 		sourceColumn: 'Safe Discount'
 
 		annotation SummarizationSetBy = Automatic
 
-	partition 'fact_sales-43af1857-b887-4d0b-884a-a90ad1b47adc' = m
+	column '-2,0'
+		dataType: string
+		lineageTag: ce0146d3-8d58-4657-94f1-ff62955585db
+		summarizeBy: none
+		sourceColumn: '-2,0'
+		isHidden
+		annotation MigrationNote = Self-heal: placeholder column created to satisfy missing qualified reference 'fact_sales'[-2,0].
+
+		annotation SummarizationSetBy = Automatic
+
+	column first_order_date
+		dataType: string
+		lineageTag: e257a95f-0f0e-43d6-ad18-f458772a75ec
+		summarizeBy: none
+		sourceColumn: first_order_date
+		isHidden
+		annotation MigrationNote = Self-heal: placeholder column created to satisfy missing reference [first_order_date] in calculated column 'Days Since First Order'.
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'fact_sales-1548d54f-0c7a-49c9-8e0a-9d0b087d0490' = m
 		mode: import
 		source =
 				let
-				    // Source Snowflake: analytics.snowflakecomputing.com
+				    
 				    Source = try
 				
 				        let
@@ -462,5 +561,5 @@ table fact_sales
 				    Result
 
 	annotation PBI_ResultType = Table
-	annotation Copilot_TableDescription = Contains 30 columns and 31 measures: sale_id, date_key, customer_key, product_key, store_key, channel, region, territory, ... (30 columns total).
+	annotation Copilot_TableDescription = Contains 32 columns and 47 measures: sale_id, date_key, customer_key, product_key, store_key, channel, region, territory, ... (32 columns total).
 

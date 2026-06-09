@@ -59,8 +59,10 @@ def _visual(name, visual_json=None):
 # ════════════════════════════════════════════════════════════════════
 
 class TestRegistryPhase5(unittest.TestCase):
-    def test_twenty_one_healers(self):
-        self.assertEqual(len(_REPORT_HEALERS), 21)
+    def test_healer_registry_size(self):
+        # 21 base healers + 2 filter-literal preheal (v3.7) + 1 Sprint 79
+        # defensive visualType normalizer = 24 total.
+        self.assertEqual(len(_REPORT_HEALERS), 24)
 
 
 # ════════════════════════════════════════════════════════════════════

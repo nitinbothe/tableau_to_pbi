@@ -1,9 +1,9 @@
 table Maintenance
-	lineageTag: 026d8e6d-28f3-49ba-8b4c-ea2e6aba250f
+	lineageTag: 515ef37a-a240-4a37-af1b-ae899536e22e
 
 	column maint_id
 		dataType: int64
-		lineageTag: 3b1ca644-cec9-4045-b425-d9d495dc31c8
+		lineageTag: 2eff27c6-9b23-4ae2-9337-201444a1da30
 		summarizeBy: sum
 		sourceColumn: maint_id
 		annotation Copilot_Hidden = true
@@ -12,7 +12,7 @@ table Maintenance
 
 	column machine_id
 		dataType: int64
-		lineageTag: 16196a19-78d6-4266-9609-b2d1475f31c6
+		lineageTag: 6b6d5b00-2570-49a8-a599-88254ef5b24c
 		summarizeBy: sum
 		sourceColumn: machine_id
 		annotation Copilot_Hidden = true
@@ -22,7 +22,7 @@ table Maintenance
 	column maint_date
 		dataType: dateTime
 		formatString: General Date
-		lineageTag: ae610e01-693a-48c9-96f3-75385e948b0f
+		lineageTag: 0a565587-d75b-4b2d-afda-08b799c951c9
 		summarizeBy: none
 		sourceColumn: maint_date
 
@@ -30,7 +30,7 @@ table Maintenance
 
 	column maint_type
 		dataType: string
-		lineageTag: d54baf89-97c7-475c-83da-1ee2bfaeb593
+		lineageTag: 80664914-9e6f-4619-83a0-2c8986710551
 		summarizeBy: none
 		sourceColumn: maint_type
 
@@ -39,7 +39,7 @@ table Maintenance
 	column maint_cost
 		dataType: double
 		formatString: #,0.00
-		lineageTag: 194c2206-a80d-4415-b62a-84e7731ffd08
+		lineageTag: 8f119ec9-09ac-4f6c-baa8-e1054bf59bba
 		summarizeBy: sum
 		sourceColumn: maint_cost
 
@@ -48,7 +48,7 @@ table Maintenance
 	column downtime_hours
 		dataType: double
 		formatString: #,0.00
-		lineageTag: 01a6bcd5-6ed0-44ae-937e-0d8a0f64b1b1
+		lineageTag: 2d596b52-c3e4-46e8-a62f-f18984b90837
 		summarizeBy: sum
 		sourceColumn: downtime_hours
 
@@ -56,7 +56,7 @@ table Maintenance
 
 	column technician
 		dataType: string
-		lineageTag: cd8662ee-4a9f-4808-aabb-d076cf49f29f
+		lineageTag: 83ae2be9-23a5-46eb-9502-cf70796bd432
 		summarizeBy: none
 		sourceColumn: technician
 
@@ -64,17 +64,17 @@ table Maintenance
 
 	column description
 		dataType: string
-		lineageTag: 6231ca91-4273-4b94-a8df-13e38d36a440
+		lineageTag: 580e87c9-d943-4d2d-9da9-a32403d90618
 		summarizeBy: none
 		sourceColumn: description
 
 		annotation SummarizationSetBy = Automatic
 
-	partition 'Maintenance-96aaa1a6-7c11-46ac-a652-4925cff58903' = m
+	partition 'Maintenance-2e0a0bb0-b05c-495d-b337-c9d3b641abd5' = m
 		mode: import
 		source =
 				let
-				    // Source Oracle: mfg-oracle.corp.local:1521/MFGDB
+				    
 				    Source = try
 				
 				        let

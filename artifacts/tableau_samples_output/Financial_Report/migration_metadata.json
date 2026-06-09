@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-13T17:40:40.092743",
+  "generated_at": "2026-06-09T09:33:08.368128",
   "source": "Tableau Migration",
   "report_name": "Financial_Report",
   "objects_converted": {
@@ -29,10 +29,28 @@
   },
   "tmdl_stats": {
     "tables": 4,
-    "measures": 11,
+    "measures": 16,
     "columns": 18,
     "relationships": 0
   },
+  "dax_measure_names": [
+    "Budget Variance",
+    "Budget Variance Formatted",
+    "Business Unit",
+    "Expenses",
+    "Expenses Formatted",
+    "Fiscal Year",
+    "Net Income",
+    "Net Income Formatted",
+    "Previous Year",
+    "Profit Margin %",
+    "Revenue",
+    "Revenue Formatted",
+    "YTD Revenue",
+    "YTD Revenue Formatted",
+    "Year Over Year %",
+    "Year To Date"
+  ],
   "visual_type_mappings": {
     "Revenue vs Expenses": "Automatic",
     "Category Breakdown": "Automatic",
@@ -51,6 +69,10 @@
         "Revenue",
         "Expenses"
       ],
+      "dax_measures": [
+        "Revenue",
+        "Expenses"
+      ],
       "field_count": 3
     },
     {
@@ -64,6 +86,7 @@
         "Net_Income",
         "Net_Income"
       ],
+      "dax_measures": [],
       "field_count": 3
     },
     {
@@ -79,6 +102,9 @@
         "Profit_Margin",
         "Revenue"
       ],
+      "dax_measures": [
+        "Revenue"
+      ],
       "field_count": 5
     },
     {
@@ -92,6 +118,7 @@
         "amount",
         "amount"
       ],
+      "dax_measures": [],
       "field_count": 3
     }
   ],

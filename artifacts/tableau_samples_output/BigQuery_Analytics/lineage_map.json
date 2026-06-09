@@ -60,6 +60,30 @@
       "pbi_type": "measure"
     },
     {
+      "tableau_calculation": "Conversion Rate Formatted",
+      "pbi_table": "sessions",
+      "pbi_object": "Conversion Rate Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Total Revenue Formatted",
+      "pbi_table": "sessions",
+      "pbi_object": "Total Revenue Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Revenue per Session Formatted",
+      "pbi_table": "sessions",
+      "pbi_object": "Revenue per Session Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Revenue by Channel Formatted",
+      "pbi_table": "sessions",
+      "pbi_object": "Revenue by Channel Formatted",
+      "pbi_type": "measure"
+    },
+    {
       "tableau_calculation": "Year To Date",
       "pbi_table": "Calendar",
       "pbi_object": "Year To Date",

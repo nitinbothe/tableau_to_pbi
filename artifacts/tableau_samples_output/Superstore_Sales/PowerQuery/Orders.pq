@@ -1,5 +1,5 @@
 let
-    // Source Excel: Sample - Superstore.xlsx
+
     Source = try
 
         let

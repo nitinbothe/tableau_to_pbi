@@ -424,7 +424,10 @@ class TestInferAutoChartType(unittest.TestCase):
         ext, _ = _make_extractor()
         ws = ET.fromstring(xml)
         result = ext.determine_chart_type(ws)
-        self.assertEqual(result, 'bar')
+        # Sprint 79: fallback now returns a valid PBI visualType so callers
+        # never receive a Tableau-side token that ``resolve_visual_type``
+        # would map to ``tableEx`` (empty visual).
+        self.assertEqual(result, 'clusteredBarChart')
 
     def test_auto_french_measures_gives_scatter(self):
         """Two French measure words (Ventes/Profit) on both axes → scatter."""

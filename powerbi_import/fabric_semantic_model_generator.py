@@ -115,18 +115,30 @@ class FabricSemanticModelGenerator:
 
     def _write_item_metadata(self, stats):
         """Write a metadata JSON for the semantic model."""
-        # Make stats JSON-serializable (convert sets to lists)
-        safe_stats = {}
-        for k, v in stats.items():
+
+        def _make_safe(v):
             if isinstance(v, set):
-                safe_stats[k] = list(v)
-            elif isinstance(v, dict):
-                safe_stats[k] = {
-                    sk: list(sv) if isinstance(sv, set) else sv
-                    for sk, sv in v.items()
-                }
-            else:
-                safe_stats[k] = v
+                return list(v)
+            if isinstance(v, tuple):
+                return list(v)
+            if isinstance(v, dict):
+                out = {}
+                for sk, sv in v.items():
+                    # JSON only allows str/int/float/bool/None keys;
+                    # tuple keys (e.g. (table, column) → dataType) are
+                    # rewritten as "table::column" so the metadata
+                    # remains valid JSON and round-trip readable.
+                    if isinstance(sk, tuple):
+                        sk = "::".join(str(p) for p in sk)
+                    elif not isinstance(sk, (str, int, float, bool)) and sk is not None:
+                        sk = str(sk)
+                    out[sk] = _make_safe(sv)
+                return out
+            if isinstance(v, list):
+                return [_make_safe(x) for x in v]
+            return v
+
+        safe_stats = {k: _make_safe(v) for k, v in stats.items()}
 
         meta = {
             "displayName": self.model_name,

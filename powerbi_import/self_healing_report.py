@@ -918,6 +918,261 @@ def _heal_mobile_layout_orphan_visual(state, recovery=None) -> int:
 
 
 # ════════════════════════════════════════════════════════════════════
+#  Preheal — filter literal hygiene (defense-in-depth for visitIn crash)
+# ════════════════════════════════════════════════════════════════════
+#
+# Background: PBI Desktop's SQExprValidationVisitor.visitIn rejects literal
+# values that violate the column/measure type contract. Three known
+# malformations crash the visitor or surface as
+# "Something's wrong with one or more filters":
+#   1. ``%null%`` Tableau sentinel passed through as a literal value.
+#   2. Bare ``null`` token (case-insensitive) used as a string literal.
+#   3. Empty ``In`` expressions left behind after upstream filtering.
+#
+# Generation paths in pbip_generator.py already prevent these, but this
+# healer is a last-line check that scans the persisted ``Where`` clauses
+# and scrubs survivors. Operates JSON-only — no TMDL/column-type lookup.
+
+_NULL_PLACEHOLDERS = ('%null%', "'%null%'")
+
+
+def _literal_is_null_placeholder(lit_value: Any) -> bool:
+    """Return True if a Literal.Value is a Tableau null sentinel."""
+    if not isinstance(lit_value, str):
+        return False
+    v = lit_value.strip()
+    if not v:
+        return False
+    if v.lower() in _NULL_PLACEHOLDERS:
+        return True
+    # Quoted form: literal value is wrapped in single quotes per PBI grammar
+    if (v.startswith("'") and v.endswith("'") and
+            v.strip("'").lower() == 'null'):
+        # Note: legitimate string "null" (e.g. status code) is rare; PBI
+        # accepts it, so only flag the explicit %null% wrapper above.
+        return False
+    return False
+
+
+def _scrub_filter_where(where: Any, owner: str, recovery=None) -> int:
+    """Walk a filter ``Where`` list and drop null-sentinel literals from
+    every ``In.Values`` row. Returns count of removed entries."""
+    if not isinstance(where, list):
+        return 0
+    repairs = 0
+    surviving_where: List[Any] = []
+    for clause in where:
+        if not isinstance(clause, dict):
+            surviving_where.append(clause)
+            continue
+        cond = clause.get('Condition') if isinstance(clause.get('Condition'), dict) else None
+        if not cond:
+            surviving_where.append(clause)
+            continue
+        # Unwrap optional Not wrapper: {Not: {Expression: {In: ...}}}
+        target = cond
+        not_wrapper = cond.get('Not') if isinstance(cond.get('Not'), dict) else None
+        if not_wrapper and isinstance(not_wrapper.get('Expression'), dict):
+            target = not_wrapper['Expression']
+        in_expr = target.get('In') if isinstance(target.get('In'), dict) else None
+        if not in_expr:
+            surviving_where.append(clause)
+            continue
+        values = in_expr.get('Values')
+        if not isinstance(values, list):
+            surviving_where.append(clause)
+            continue
+        kept_rows: List[Any] = []
+        for row in values:
+            if not isinstance(row, list):
+                kept_rows.append(row)
+                continue
+            kept_cells = []
+            row_has_null = False
+            for cell in row:
+                if (isinstance(cell, dict)
+                        and isinstance(cell.get('Literal'), dict)
+                        and _literal_is_null_placeholder(cell['Literal'].get('Value'))):
+                    row_has_null = True
+                    repairs += 1
+                    continue
+                kept_cells.append(cell)
+            if row_has_null and not kept_cells:
+                # Whole row was the null placeholder → drop the row
+                continue
+            kept_rows.append(kept_cells if row_has_null else row)
+        if not kept_rows:
+            # In-expression became empty → drop the whole clause
+            _record(recovery, 'filter_literal_null_placeholder', owner,
+                    'warning',
+                    'Filter In-expression became empty after dropping %null% sentinels',
+                    'Removed entire filter clause to avoid visitIn crash')
+            continue
+        in_expr['Values'] = kept_rows
+        surviving_where.append(clause)
+    if repairs and isinstance(where, list):
+        where[:] = surviving_where
+    return repairs
+
+
+def _heal_filter_literal_null_placeholder(state, recovery=None) -> int:
+    """Scrub Tableau ``%null%`` sentinels from filter ``In`` expressions.
+
+    Defense-in-depth for the visitIn crash. Generation drops these
+    upstream (see pbip_generator._is_null_placeholder); this healer
+    catches anything that slipped through (e.g. report-level filters
+    constructed in another path)."""
+    if not state:
+        return 0
+    repairs = 0
+
+    rj = state.get('report_json') or {}
+    if isinstance(rj.get('filters'), list):
+        for f in rj['filters']:
+            if isinstance(f, dict) and isinstance(f.get('filter'), dict):
+                n = _scrub_filter_where(f['filter'].get('Where'), 'report', recovery)
+                if n:
+                    _mark_dirty(state, os.path.join(state['def_dir'], 'report.json'))
+                    repairs += n
+
+    for page in state['pages']:
+        pj = page['json']
+        if isinstance(pj.get('filters'), list):
+            for f in pj['filters']:
+                if isinstance(f, dict) and isinstance(f.get('filter'), dict):
+                    n = _scrub_filter_where(f['filter'].get('Where'), page['name'], recovery)
+                    if n:
+                        _mark_dirty(state, os.path.join(page['dir'], 'page.json'))
+                        repairs += n
+        for visual in page['visuals']:
+            if isinstance(visual['json'].get('filters'), list):
+                for f in visual['json']['filters']:
+                    if isinstance(f, dict) and isinstance(f.get('filter'), dict):
+                        n = _scrub_filter_where(f['filter'].get('Where'),
+                                                visual['name'], recovery)
+                        if n:
+                            _mark_dirty(state, os.path.join(visual['dir'], 'visual.json'))
+                            repairs += n
+    return repairs
+
+
+def _heal_filter_empty_in_expression(state, recovery=None) -> int:
+    """Drop filter entries whose ``In.Values`` list is empty.
+
+    PBI Desktop logs a "filter has no values" warning and may crash
+    visitIn. Cause: upstream pipelines that prune categorical values
+    (e.g. removing %null%) can leave an empty Values array."""
+    if not state:
+        return 0
+    repairs = 0
+
+    def _prune(filters: List[Any], owner: str, json_path: str) -> int:
+        local = 0
+        keep = []
+        for f in filters:
+            if not isinstance(f, dict) or not isinstance(f.get('filter'), dict):
+                keep.append(f)
+                continue
+            where = f['filter'].get('Where')
+            empty_in = False
+            if isinstance(where, list):
+                for clause in where:
+                    cond = (clause.get('Condition') if isinstance(clause, dict) else None) or {}
+                    target = cond
+                    if isinstance(cond.get('Not'), dict) and isinstance(cond['Not'].get('Expression'), dict):
+                        target = cond['Not']['Expression']
+                    in_expr = target.get('In') if isinstance(target, dict) else None
+                    if isinstance(in_expr, dict):
+                        vals = in_expr.get('Values')
+                        if isinstance(vals, list) and not vals:
+                            empty_in = True
+                            break
+            if empty_in:
+                _record(recovery, 'filter_empty_in_expression', owner,
+                        'warning',
+                        'Filter In-expression has zero Values',
+                        'Removed empty filter to avoid visitIn crash')
+                local += 1
+                continue
+            keep.append(f)
+        if local:
+            filters[:] = keep
+            _mark_dirty(state, json_path)
+        return local
+
+    rj = state.get('report_json') or {}
+    if isinstance(rj.get('filters'), list):
+        repairs += _prune(rj['filters'], 'report',
+                          os.path.join(state['def_dir'], 'report.json'))
+    for page in state['pages']:
+        if isinstance(page['json'].get('filters'), list):
+            repairs += _prune(page['json']['filters'], page['name'],
+                              os.path.join(page['dir'], 'page.json'))
+        for visual in page['visuals']:
+            if isinstance(visual['json'].get('filters'), list):
+                repairs += _prune(visual['json']['filters'], visual['name'],
+                                  os.path.join(visual['dir'], 'visual.json'))
+    return repairs
+
+
+def _heal_invalid_visualtype(state, recovery=None) -> int:
+    """Visuals whose ``visualType`` isn't a recognised PBI visual identifier
+    render as a blank rectangle in PBI Desktop. Common cause: raw Tableau
+    mark names (``'bar'``, ``'Bar'``, ``'Heat Map'``) leaking through the
+    extractor instead of being normalised to a PBI type
+    (``'clusteredBarChart'``, ``'matrix'``, etc.).
+
+    Resolve using :func:`powerbi_import.visual_generator.resolve_visual_type`
+    which canonicalises through ``VISUAL_TYPE_MAP`` / ``APPROXIMATION_MAP``.
+    """
+    try:
+        from visual_generator import (
+            VISUAL_TYPE_MAP,
+            APPROXIMATION_MAP,
+            resolve_visual_type,
+        )
+    except ImportError:
+        return 0
+
+    # Build the set of valid PBI visual types from both maps + a few
+    # legitimately-empty container types the extractor produces.
+    valid = set(VISUAL_TYPE_MAP.values())
+    for _key, _entry in APPROXIMATION_MAP.items():
+        if isinstance(_entry, tuple) and _entry:
+            valid.add(_entry[0])
+    valid.update({
+        'textbox', 'image', 'shape', 'basicShape', 'actionButton',
+        'pageNavigator', 'bookmarkNavigator', 'slicer',
+        'scriptVisual', 'pythonVisual', 'rVisual',
+    })
+
+    repairs = 0
+    for page in state['pages']:
+        for visual in page['visuals']:
+            vj = visual['json']
+            visual_block = vj.get('visual') if isinstance(vj.get('visual'), dict) else None
+            if visual_block is None:
+                continue
+            vt = visual_block.get('visualType')
+            if not vt or vt in valid:
+                continue
+            new_vt = resolve_visual_type(vt)
+            if new_vt == vt:
+                # resolve_visual_type returned the same invalid string —
+                # final fallback to tableEx so the visual still renders.
+                new_vt = 'tableEx'
+            visual_block['visualType'] = new_vt
+            _mark_dirty(state, os.path.join(visual['dir'], 'visual.json'))
+            _record(recovery, 'visual_invalid_visualtype', visual['name'],
+                    'warning',
+                    f"visualType '{vt}' is not a recognised PBI visual",
+                    f"Rewrote to '{new_vt}'",
+                    follow_up='Pick a more appropriate visual type if needed')
+            repairs += 1
+    return repairs
+
+
+# ════════════════════════════════════════════════════════════════════
 #  Healer registry
 # ════════════════════════════════════════════════════════════════════
 
@@ -945,6 +1200,11 @@ _REPORT_HEALERS = (
     _heal_pagesmeta_duplicate_pageorder,     # 19
     _heal_tooltip_page_oversized,            # 20
     _heal_mobile_layout_orphan_visual,       # 21
+    # v3.7 — filter literal preheal (visitIn crash defense)
+    _heal_filter_literal_null_placeholder,   # 22
+    _heal_filter_empty_in_expression,        # 23
+    # Sprint 79 — defensive visualType normalization
+    _heal_invalid_visualtype,                # 24
 )
 
 

@@ -299,14 +299,19 @@ class TestSlicerTypeVariety(unittest.TestCase):
         mode_val = slicer['visual']['objects']['data'][0]['properties']['mode']['expr']['Literal']['Value']
         self.assertEqual(mode_val, "'List'")
 
-    def test_create_slicer_between_mode_has_numeric_input(self):
+    def test_create_slicer_between_mode_sets_mode_property(self):
+        """Between mode emits ``mode='Between'`` without extra blocks.
+
+        Note: ``numericInputStyle`` is intentionally *not* emitted because
+        extra slicer blocks can trigger client-side rendering errors in
+        some Power BI Desktop versions (see ``_create_slicer_visual``).
+        """
         gen = PBIPGenerator.__new__(PBIPGenerator)
         slicer = gen._create_slicer_visual('v3', 0, 0, 200, 60, 'Amount', 'Sales', 1,
                                             slicer_mode='Between')
         mode_val = slicer['visual']['objects']['data'][0]['properties']['mode']['expr']['Literal']['Value']
         self.assertEqual(mode_val, "'Between'")
-        # Between mode should have numericInputStyle
-        self.assertIn('numericInputStyle', slicer['visual']['objects'])
+        self.assertNotIn('numericInputStyle', slicer['visual']['objects'])
 
     def test_detect_slicer_mode_range_param(self):
         gen = PBIPGenerator.__new__(PBIPGenerator)

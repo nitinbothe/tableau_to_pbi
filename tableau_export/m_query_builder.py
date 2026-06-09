@@ -1227,17 +1227,28 @@ def inject_m_steps(m_query, steps):
         lines.pop()
     # Strip trailing comma from the last real step.
     # Must account for // line comments — a comma inside a comment is NOT actual M syntax.
+    # IMPORTANT: Only strip // if it appears AFTER the step's closing paren/comma,
+    # not inside the expression body (e.g., Tableau formulas may contain // comments
+    # embedded in the expression text).
     if lines:
         last_line = lines[-1].rstrip()
-        comment_idx = last_line.find('//')
-        if comment_idx > 0:
-            # Strip the comment; check if the code portion already has a trailing comma
-            code_part = last_line[:comment_idx].rstrip()
-            if not code_part.endswith(','):
-                code_part += ','
-            lines[-1] = code_part
-        elif not last_line.endswith(','):
-            lines[-1] = last_line + ','
+        # Check if line already ends with comma (most common case)
+        if not last_line.endswith(','):
+            # Look for // only at the very end of the line (after closing paren + comma)
+            # Use a conservative approach: find the last '),' or just ')' and check after
+            last_close_paren = last_line.rfind(')')
+            if last_close_paren >= 0:
+                after_paren = last_line[last_close_paren + 1:].strip()
+                if after_paren.startswith('//') or after_paren == '':
+                    # The // is a trailing comment after the expression — safe to strip
+                    code_part = last_line[:last_close_paren + 1].rstrip()
+                    if not code_part.endswith(','):
+                        code_part += ','
+                    lines[-1] = code_part
+                else:
+                    lines[-1] = last_line + ','
+            else:
+                lines[-1] = last_line + ','
     before_in = '\n'.join(lines)
 
     # Find the last step name referenced (skip Result and comments)
@@ -1679,8 +1690,12 @@ def m_transform_add_column(new_col_name, expression, col_type=None):
         col_type: str — optional M type (e.g., 'type number')
     """
     type_arg = f', {col_type}' if col_type else ''
-    return (f'#"Added {new_col_name}"',
-            f'Table.AddColumn({{prev}}, "{new_col_name}", {expression}{type_arg})')
+    # Escape " in step name (M identifier quoting uses "" for literal quotes)
+    safe_step_name = new_col_name.replace('"', '""')
+    # Escape " in column name within the Table.AddColumn expression string
+    safe_col_name = new_col_name.replace('"', '""')
+    return (f'#"Added {safe_step_name}"',
+            f'Table.AddColumn({{prev}}, "{safe_col_name}", {expression}{type_arg})')
 
 
 def m_transform_conditional_column(new_col_name, conditions, default_value=None):

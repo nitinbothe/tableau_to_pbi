@@ -1,39 +1,49 @@
 table Orders
-	lineageTag: aa902d6c-f732-4038-a4d6-04668bf1a305
+	lineageTag: 665bbb78-bf67-43e6-a9fd-936456950f71
 
 	measure 'Is Current User' = MAX('Orders'[CustomerEmail]) = USERPRINCIPALNAME()
 		formatString: True/False
 		displayFolder: Dimensions
-		lineageTag: 337257d4-533b-4df8-bfe4-767b524d5e05
+		lineageTag: 6dc9c398-39e2-4571-b2a9-0564ad1190c0
 		annotation Copilot_Description = Migrated from Tableau: [CustomerEmail] = USERNAME() | DAX: MAX('Orders'[CustomerEmail]) = USERPRINCIPALNAME()
 
 	measure 'Manager Access' = TRUE() /* ISMEMBEROF("Managers"): implement via RLS role */ || TRUE() /* ISMEMBEROF("Executives"): implement via RLS role */
 		formatString: True/False
 		displayFolder: Dimensions
-		lineageTag: ee6e863d-6e49-440b-b6af-1ac1338ed955
+		lineageTag: 4ef3c91b-14ea-47e9-99f9-05647f9a604f
 		annotation Copilot_Description = Migrated from Tableau: ISMEMBEROF("Managers") OR ISMEMBEROF("Executives") | DAX: TRUE() /* ISMEMBEROF("Managers"): implement via RLS role */ || TRUE() /* ISMEMBEROF("Executives"): implement via RLS role */
 
 	measure 'Region Match' = SUM('Regions'[RegionManager]) = USERPRINCIPALNAME()
 		formatString: True/False
 		displayFolder: Dimensions
-		lineageTag: 83b0a4b8-d5fa-45f7-85e3-f9fa1313f7e5
+		lineageTag: 58f6af17-c133-4244-8169-5c30ba5d2e75
 		annotation Copilot_Description = Migrated from Tableau: [RegionManager] = FULLNAME() | DAX: SUM('Regions'[RegionManager]) = USERPRINCIPALNAME()
 
 	measure 'Total Sales' = SUM('Orders'[Sales])
 		formatString: #,0.00
 		displayFolder: Measures
-		lineageTag: 708ca384-14d3-4396-b418-070036267ad9
+		lineageTag: 4981c58a-fea1-4a6b-8660-b9c8620cf38c
 		annotation Copilot_Description = Migrated from Tableau: SUM([Sales]) | DAX: SUM('Orders'[Sales])
 
 	measure 'Profit Ratio' = SUM('Orders'[Profit]) / SUM('Orders'[Sales])
 		formatString: #,0.00
 		displayFolder: Measures
-		lineageTag: 25da8b91-cab2-453b-8378-4e005b2961f5
+		lineageTag: fb4f76b9-2be0-46fa-aae3-1a9a1ada1607
 		annotation Copilot_Description = Migrated from Tableau: SUM([Profit]) / SUM([Sales]) | DAX: SUM('Orders'[Profit]) / SUM('Orders'[Sales])
+
+	measure 'Total Sales Formatted' = VAR _val = [Total Sales] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+		displayFolder: Formatted
+		lineageTag: dc4e810b-63fa-4dc9-8955-048ac620e7f1
+		annotation Copilot_Description = Dynamic numeric abbreviation for Total Sales (K/M/B)
+
+	measure 'Profit Ratio Formatted' = VAR _val = [Profit Ratio] RETURN IF(ABS(_val) >= 1E9, FORMAT(_val / 1E9, "#,0.0") & "B", IF(ABS(_val) >= 1E6, FORMAT(_val / 1E6, "#,0.0") & "M", IF(ABS(_val) >= 1E3, FORMAT(_val / 1E3, "#,0.0") & "K", FORMAT(_val, "#,0.00"))))
+		displayFolder: Formatted
+		lineageTag: 3f377b80-d664-4df9-b733-0c37062e1a6f
+		annotation Copilot_Description = Dynamic numeric abbreviation for Profit Ratio (K/M/B)
 
 	column OrderID
 		dataType: int64
-		lineageTag: 74eea274-30fc-4afe-aca5-b482cc22751a
+		lineageTag: a3c58357-3534-4bea-b5d6-0b69af7f933d
 		summarizeBy: sum
 		sourceColumn: OrderID
 		annotation Copilot_Hidden = true
@@ -42,7 +52,7 @@ table Orders
 
 	column Region
 		dataType: string
-		lineageTag: f0217b5e-2107-4c79-b2ad-851601cab4cb
+		lineageTag: b729b776-4f31-4450-84df-f24e6dd3874b
 		summarizeBy: none
 		sourceColumn: Region
 		dataCategory: StateOrProvince
@@ -52,7 +62,7 @@ table Orders
 	column Sales
 		dataType: double
 		formatString: #,0.00
-		lineageTag: e427d36e-a762-4cd3-81fb-f7dd928f059e
+		lineageTag: 038adbde-60db-454f-af0e-e56e9630853d
 		summarizeBy: sum
 		sourceColumn: Sales
 
@@ -61,7 +71,7 @@ table Orders
 	column Profit
 		dataType: double
 		formatString: #,0.00
-		lineageTag: 8ea20ce1-f815-4c34-ad8d-2b652f49c69d
+		lineageTag: efe167e0-eca6-44ec-a8fe-749adae7ca54
 		summarizeBy: sum
 		sourceColumn: Profit
 
@@ -69,7 +79,7 @@ table Orders
 
 	column CustomerEmail
 		dataType: string
-		lineageTag: 5725f322-7c24-418d-81ce-9af648b23db2
+		lineageTag: 721cdc96-77f3-4029-b5c3-438be5e914f1
 		summarizeBy: none
 		sourceColumn: CustomerEmail
 
@@ -77,7 +87,7 @@ table Orders
 
 	column Category
 		dataType: string
-		lineageTag: 50d5f04a-f691-45f0-b8bd-b4a6623b2099
+		lineageTag: e7523255-2ffa-4ddc-b7c3-d59e63d95641
 		summarizeBy: none
 		sourceColumn: Category
 
@@ -86,17 +96,17 @@ table Orders
 	column OrderDate
 		dataType: dateTime
 		formatString: General Date
-		lineageTag: 131c16e5-2713-4bf6-a7a5-2e58069f4f4a
+		lineageTag: 503d9e87-76c2-4db9-a95f-f7d9949a5c81
 		summarizeBy: none
 		sourceColumn: OrderDate
 
 		annotation SummarizationSetBy = Automatic
 
-	partition 'Orders-33e82d98-d27f-489c-9560-a28c3c71e798' = m
+	partition 'Orders-ba528c21-8f0f-4a26-ae3d-00183fc07319' = m
 		mode: import
 		source =
 				let
-				    // Source SQL Server
+				    
 				    Source = try
 				
 				        let
@@ -116,5 +126,5 @@ table Orders
 				    Result
 
 	annotation PBI_ResultType = Table
-	annotation Copilot_TableDescription = Contains 7 columns and 5 measures: OrderID, Region, Sales, Profit, CustomerEmail, Category, OrderDate.
+	annotation Copilot_TableDescription = Contains 7 columns and 7 measures: OrderID, Region, Sales, Profit, CustomerEmail, Category, OrderDate.
 

@@ -681,6 +681,16 @@ class TableauExtractor:
         When the mark class is 'Automatic', infers the visual type from
         field shelf assignments (columns/rows/color) instead of defaulting
         to 'table'.
+
+        Handles three XML formats for the mark type:
+          1. ``<mark class="Bar" />`` inside ``<pane>`` (standard)
+          2. ``<mark class="Bar" />`` inside ``<style>`` (standard)
+          3. ``<mark-type>bar</mark-type>`` element text (minimal/test fixtures)
+
+        The fallback returns a *valid* Power BI visualType (never the raw
+        Tableau name) so downstream visual.json files always parse in
+        PBI Desktop. (Bug fix: previously returned ``'bar'`` which is not
+        a valid PBI visual type and renders as a blank rectangle.)
         """
         mark_class = None
         # Search for the mark class in panes
@@ -696,15 +706,22 @@ class TableauExtractor:
                 if mark.get('class'):
                     mark_class = mark.get('class')
                     break
+
+        # Search for <mark-type>X</mark-type> element-text format
+        # (used by minimal Tableau XML and some test fixtures)
+        if mark_class is None:
+            mt_elem = worksheet.find('.//mark-type')
+            if mt_elem is not None and mt_elem.text:
+                mark_class = mt_elem.text.strip()
         
-        # Fallback: map encoding
+        # Fallback: map encoding → use a *valid* PBI visual type
         if mark_class is None:
             if worksheet.find('.//encoding/map') is not None:
                 return 'map'
-            return 'bar'
+            return 'clusteredBarChart'
         
         # For explicit mark types, use the mapping directly
-        if mark_class != 'Automatic':
+        if mark_class.lower() != 'automatic':
             pbi_type = self._map_tableau_mark_to_type(mark_class)
             # Bar orientation: dimension on cols + measure on rows = vertical column chart
             if pbi_type == 'clusteredBarChart':
@@ -837,6 +854,9 @@ class TableauExtractor:
 
         Covers all Tableau mark classes and maps them to the closest
         Power BI visual type string expected by PBIR v4.0.
+
+        Lookup is case-insensitive so both ``'Bar'`` (standard XML attribute)
+        and ``'bar'`` (``<mark-type>`` element text) resolve correctly.
         """
         mark_map = {
             # ── Standard mark classes ──────────────────────────────
@@ -900,7 +920,16 @@ class TableauExtractor:
             'Speedometer': 'gauge',
             'Image': 'image',
         }
-        return mark_map.get(mark_class, 'clusteredBarChart')
+        if not mark_class:
+            return 'clusteredBarChart'
+        # Case-insensitive lookup: try exact key first, then lowercase
+        if mark_class in mark_map:
+            return mark_map[mark_class]
+        lower = mark_class.lower()
+        for key, val in mark_map.items():
+            if key.lower() == lower:
+                return val
+        return 'clusteredBarChart'
     
     def extract_worksheet_fields(self, worksheet):
         """Extracts fields used in the worksheet"""
@@ -912,15 +941,41 @@ class TableauExtractor:
         # Quick table calc prefixes (pcto = % of total, pctd = % difference, running_*)
         table_calc_re = r'^(pcto|pctd|diff|running_sum|running_avg|running_count|running_min|running_max|rank|rank_unique|rank_dense):(sum|avg|count|min|max|countd)?:?'
         
+        # ── Non-standard shelf format ─────────────────────────────
+        # Some Tableau exports (and minimal test fixtures) use
+        # ``<shelf-columns><field>[ds].[col]</field></shelf-columns>``
+        # instead of the standard ``<table><cols>[ds].[col]</cols>``.
+        # Normalise by collecting their text into a synthetic shelf string
+        # so the loop below sees the same format.
+        non_standard_shelves = {}
+        for shelf_name, elem_name in [('columns', 'shelf-columns'),
+                                       ('rows', 'shelf-rows')]:
+            shelf_elem = worksheet.find(f'.//{elem_name}')
+            if shelf_elem is None:
+                continue
+            # Collect text from child <field> elements (and any direct text)
+            parts = []
+            if shelf_elem.text and shelf_elem.text.strip():
+                parts.append(shelf_elem.text.strip())
+            for child in shelf_elem.findall('./field'):
+                if child.text and child.text.strip():
+                    parts.append(child.text.strip())
+            if parts:
+                non_standard_shelves[shelf_name] = ' '.join(parts)
+
         # Extract from <table><rows> and <table><cols> (text content with field refs)
         for shelf_name, shelf_tag in [('columns', 'cols'), ('rows', 'rows')]:
             shelf = worksheet.find(f'./table/{shelf_tag}')
-            if shelf is not None and shelf.text:
+            shelf_text = shelf.text if shelf is not None and shelf.text else None
+            # Fall back to non-standard <shelf-columns>/<shelf-rows> if standard absent
+            if not shelf_text:
+                shelf_text = non_standard_shelves.get(shelf_name)
+            if shelf_text:
                 # Text contains refs like [datasource].[field:type]
                 # or three-part [datasource].[column].[aggregation:instance:suffix]
                 # Use a regex that captures 2 or 3 bracket groups.
                 three_part_re = r'\[([^\]]+)\]\.\[([^\]]+)\](?:\.\[([^\]]+)\])?'
-                refs = re.findall(three_part_re, shelf.text)
+                refs = re.findall(three_part_re, shelf_text)
                 for match in refs:
                     ds_ref, field_ref, instance_ref = match[0], match[1], match[2]
 
@@ -980,9 +1035,9 @@ class TableauExtractor:
                         field_data['aggregation'] = shelf_agg
                     fields.append(field_data)
         
-        # Extract from encodings (color, size, detail, tooltip, label, text)
+        # Extract from encodings (color, size, shape, detail, tooltip, label, text)
         for encoding in worksheet.findall('.//encodings'):
-            for enc_type in ['color', 'size', 'detail', 'tooltip', 'label', 'text']:
+            for enc_type in ['color', 'size', 'shape', 'detail', 'tooltip', 'label', 'text']:
                 for enc_elem in encoding.findall(f'./{enc_type}'):
                     column = enc_elem.get('column', '')
                     if column:
@@ -996,6 +1051,38 @@ class TableauExtractor:
                                 'shelf': enc_type,
                                 'datasource': col_refs[0][0]
                             })
+
+        # â”€â”€ Slice fields (Detail shelf of Marks card) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        # ``<slices><column>[ds].[derivation:Field:suffix]</column></slices>``
+        # enumerates dimensions placed on the Detail (or Marks) shelf that
+        # are not encoded via color/size/shape/text.  Without these, tableEx
+        # and Text-mark visuals render empty because the only field they
+        # know about is the one in the `<text>`/`<label>` encoding.
+        existing_for_slices = {(f.get('name', ''), f.get('datasource', ''))
+                               for f in fields}
+        for slice_elem in worksheet.findall('.//slices/column'):
+            ref = (slice_elem.text or '').strip()
+            if not ref:
+                continue
+            col_refs = re.findall(r'\[([^\]]+)\]\.\[([^\]]+)\]', ref)
+            if not col_refs:
+                continue
+            ds_ref, field_ref = col_refs[0]
+            # Detect aggregation prefix (cnt:, sum:, etc.)
+            agg_prefix_match = re.match(r'^(cnt|sum|avg|min|max|countd|median|attr|stdev|stdevp|var|varp):', field_ref)
+            shelf_agg = agg_prefix_match.group(1) if agg_prefix_match else None
+            clean = re.sub(derivation_re, '', field_ref)
+            clean = re.sub(suffix_re, '', clean)
+            if not clean or clean.startswith('__tableau_internal'):
+                continue
+            if (clean, ds_ref) in existing_for_slices:
+                continue
+            existing_for_slices.add((clean, ds_ref))
+            entry = {'name': clean, 'shelf': 'detail', 'datasource': ds_ref}
+            if shelf_agg:
+                entry['aggregation'] = shelf_agg
+            fields.append(entry)
+
 
         # ── LOD (Level of Detail) fields ──────────────────────────
         # <lod column="[ds].[none:FieldName:nk]"/> elements set the mark
@@ -1037,6 +1124,7 @@ class TableauExtractor:
             }
             # Collect existing field names to avoid duplicates
             existing_names = {f.get('name', '') for f in fields}
+            expanded_any = False
             for dep in worksheet.findall('.//datasource-dependencies'):
                 ds_ref = dep.get('datasource', '')
                 # Build a set of column names with role='measure'
@@ -1060,6 +1148,7 @@ class TableauExtractor:
                     if col_name in existing_names:
                         continue
                     existing_names.add(col_name)
+                    expanded_any = True
                     # Map derivation to aggregation key for PBI
                     agg_key = deriv.lower() if deriv != 'User' else ''
                     field_entry = {
@@ -1070,6 +1159,28 @@ class TableauExtractor:
                     if agg_key:
                         field_entry['aggregation'] = agg_key
                     fields.append(field_entry)
+
+            # Fallback: if no <column-instance> entries provided explicit
+            # aggregations (common for minimal/hand-authored TWBs), expand
+            # every <column role='measure'> directly with a default Sum.
+            if not expanded_any:
+                for dep in worksheet.findall('.//datasource-dependencies'):
+                    ds_ref = dep.get('datasource', '')
+                    for col_elem in dep.findall('column'):
+                        if col_elem.get('role', '') != 'measure':
+                            continue
+                        col_name = col_elem.get('name', '').strip('[]')
+                        if not col_name or col_name.startswith('__tableau_internal'):
+                            continue
+                        if col_name in existing_names:
+                            continue
+                        existing_names.add(col_name)
+                        fields.append({
+                            'name': col_name,
+                            'shelf': 'measure_value',
+                            'datasource': ds_ref,
+                            'aggregation': 'sum',
+                        })
 
         return fields
     

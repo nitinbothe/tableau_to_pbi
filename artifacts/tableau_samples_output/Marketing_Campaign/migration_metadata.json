@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-13T17:41:45.076307",
+  "generated_at": "2026-06-09T09:33:50.123630",
   "source": "Tableau Migration",
   "report_name": "Marketing_Campaign",
   "objects_converted": {
@@ -29,10 +29,34 @@
   },
   "tmdl_stats": {
     "tables": 4,
-    "measures": 15,
-    "columns": 50,
+    "measures": 22,
+    "columns": 54,
     "relationships": 2
   },
+  "dax_measure_names": [
+    "Avg Deal by Channel",
+    "Budget Deal Correlation",
+    "Budget Deal Correlation Formatted",
+    "Campaign ROI",
+    "Campaign ROI Formatted",
+    "Conversion Rate",
+    "Conversion Rate Formatted",
+    "Cost Per Lead",
+    "Cost Per Lead Formatted",
+    "Cumulative Leads",
+    "Min Budget",
+    "Non-Blank Leads",
+    "Previous Year",
+    "Spend Engagement Covar",
+    "Spend Engagement Covar Formatted",
+    "Target Channel",
+    "Window Best ROI",
+    "Window Best ROI Formatted",
+    "Window Worst ROI",
+    "Window Worst ROI Formatted",
+    "Year Over Year %",
+    "Year To Date"
+  ],
   "visual_type_mappings": {
     "Campaign Performance": "Automatic",
     "Lead Funnel": "Automatic",
@@ -53,6 +77,7 @@
         "Calc_ROI",
         "Calc_ROI"
       ],
+      "dax_measures": [],
       "field_count": 4
     },
     {
@@ -66,6 +91,7 @@
       "measures": [
         "Calc_NonBlankLeads"
       ],
+      "dax_measures": [],
       "field_count": 3
     },
     {
@@ -78,6 +104,7 @@
       "measures": [
         "Calc_ConvRate"
       ],
+      "dax_measures": [],
       "field_count": 2
     },
     {
@@ -92,6 +119,7 @@
         "deal_value",
         "spend"
       ],
+      "dax_measures": [],
       "field_count": 4
     },
     {
@@ -101,8 +129,11 @@
       "dimensions": [
         "company"
       ],
-      "measures": [],
-      "field_count": 1
+      "measures": [
+        "deal_value"
+      ],
+      "dax_measures": [],
+      "field_count": 2
     }
   ],
   "approximations": []

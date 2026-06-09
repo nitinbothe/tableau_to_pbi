@@ -133,7 +133,11 @@ class TestHyperInliningInTMDL(unittest.TestCase):
             )
             self.assertEqual(stats['tables'], 1)
             content = self._read_all_tmdl(tmpdir)
-            self.assertIn('TODO', content)
+            # Without hyper files we fall back to an empty #table literal
+            # ("schema-only" partition) rather than the inline data path.
+            self.assertIn('#table', content)
+            self.assertNotIn('Alice', content)
+            self.assertNotIn('Bob', content)
 
     def test_hyper_inlining_skipped_when_prep_override_exists(self):
         from tmdl_generator import generate_tmdl

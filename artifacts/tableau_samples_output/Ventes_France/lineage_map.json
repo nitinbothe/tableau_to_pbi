@@ -135,6 +135,66 @@
       "pbi_type": "measure"
     },
     {
+      "tableau_calculation": "Chiffre d'Affaires Brut Formatted",
+      "pbi_table": "Commandes",
+      "pbi_object": "Chiffre d'Affaires Brut Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Chiffre d'Affaires Net Formatted",
+      "pbi_table": "Commandes",
+      "pbi_object": "Chiffre d'Affaires Net Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Marge Brute Formatted",
+      "pbi_table": "Commandes",
+      "pbi_object": "Marge Brute Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Montant Remises Formatted",
+      "pbi_table": "Commandes",
+      "pbi_object": "Montant Remises Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "CA par Client Formatted",
+      "pbi_table": "Commandes",
+      "pbi_object": "CA par Client Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "CA R\u00e9gional par Cat\u00e9gorie Formatted",
+      "pbi_table": "Commandes",
+      "pbi_object": "CA R\u00e9gional par Cat\u00e9gorie Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "CA hors Produit Formatted",
+      "pbi_table": "Commandes",
+      "pbi_object": "CA hors Produit Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Moyenne Mobile 3M Formatted",
+      "pbi_table": "Commandes",
+      "pbi_object": "Moyenne Mobile 3M Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Classement CA Formatted",
+      "pbi_table": "Commandes",
+      "pbi_object": "Classement CA Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "CA Ann\u00e9e en Cours Formatted",
+      "pbi_table": "Commandes",
+      "pbi_object": "CA Ann\u00e9e en Cours Formatted",
+      "pbi_type": "measure"
+    },
+    {
       "tableau_calculation": "Objectif Marge",
       "pbi_table": "Objectif Marge",
       "pbi_object": "Objectif Marge",

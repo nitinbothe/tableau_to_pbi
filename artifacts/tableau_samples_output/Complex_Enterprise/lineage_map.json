@@ -219,6 +219,102 @@
       "pbi_type": "measure"
     },
     {
+      "tableau_calculation": "Gross Revenue Formatted",
+      "pbi_table": "fact_sales",
+      "pbi_object": "Gross Revenue Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Net Revenue Formatted",
+      "pbi_table": "fact_sales",
+      "pbi_object": "Net Revenue Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "COGS Formatted",
+      "pbi_table": "fact_sales",
+      "pbi_object": "COGS Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Gross Profit Formatted",
+      "pbi_table": "fact_sales",
+      "pbi_object": "Gross Profit Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Tax Amount Formatted",
+      "pbi_table": "fact_sales",
+      "pbi_object": "Tax Amount Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Return Rate Formatted",
+      "pbi_table": "fact_sales",
+      "pbi_object": "Return Rate Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Revenue per Customer Formatted",
+      "pbi_table": "fact_sales",
+      "pbi_object": "Revenue per Customer Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Revenue per Product Formatted",
+      "pbi_table": "fact_sales",
+      "pbi_object": "Revenue per Product Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Revenue by Region-Channel Formatted",
+      "pbi_table": "fact_sales",
+      "pbi_object": "Revenue by Region-Channel Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Revenue excl Territory Formatted",
+      "pbi_table": "fact_sales",
+      "pbi_object": "Revenue excl Territory Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Revenue incl Subcategory Formatted",
+      "pbi_table": "fact_sales",
+      "pbi_object": "Revenue incl Subcategory Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Revenue Rank Formatted",
+      "pbi_table": "fact_sales",
+      "pbi_object": "Revenue Rank Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Revenue Rank Dense Formatted",
+      "pbi_table": "fact_sales",
+      "pbi_object": "Revenue Rank Dense Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Moving Avg 3-Period Formatted",
+      "pbi_table": "fact_sales",
+      "pbi_object": "Moving Avg 3-Period Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Window Max Revenue Formatted",
+      "pbi_table": "fact_sales",
+      "pbi_object": "Window Max Revenue Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "YTD Revenue Formatted",
+      "pbi_table": "fact_sales",
+      "pbi_object": "YTD Revenue Formatted",
+      "pbi_type": "measure"
+    },
+    {
       "tableau_calculation": "Target Margin %",
       "pbi_table": "Target Margin %",
       "pbi_object": "Target Margin %",

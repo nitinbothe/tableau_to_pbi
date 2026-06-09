@@ -136,6 +136,66 @@
       "pbi_type": "measure"
     },
     {
+      "tableau_calculation": "Gross Revenue Formatted",
+      "pbi_table": "Orders",
+      "pbi_object": "Gross Revenue Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Net Revenue Formatted",
+      "pbi_table": "Orders",
+      "pbi_object": "Net Revenue Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Total Discount Formatted",
+      "pbi_table": "Orders",
+      "pbi_object": "Total Discount Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Profit Formatted",
+      "pbi_table": "Orders",
+      "pbi_object": "Profit Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Revenue per Customer Formatted",
+      "pbi_table": "Orders",
+      "pbi_object": "Revenue per Customer Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Regional Channel Revenue Formatted",
+      "pbi_table": "Orders",
+      "pbi_object": "Regional Channel Revenue Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Revenue Excl Category Formatted",
+      "pbi_table": "Orders",
+      "pbi_object": "Revenue Excl Category Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Moving Avg Revenue Formatted",
+      "pbi_table": "Orders",
+      "pbi_object": "Moving Avg Revenue Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "Revenue Rank Formatted",
+      "pbi_table": "Orders",
+      "pbi_object": "Revenue Rank Formatted",
+      "pbi_type": "measure"
+    },
+    {
+      "tableau_calculation": "YTD Revenue Formatted",
+      "pbi_table": "Orders",
+      "pbi_object": "YTD Revenue Formatted",
+      "pbi_type": "measure"
+    },
+    {
       "tableau_calculation": "Year To Date",
       "pbi_table": "Calendar",
       "pbi_object": "Year To Date",
