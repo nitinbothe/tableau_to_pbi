@@ -773,6 +773,45 @@ class PowerBIProjectGenerator:
             if not has_measure:
                 visual_type = 'table'
             else:
+                # Scatter X/Y require numeric measures. If every measure on
+                # the worksheet is a BIM measure that returns a string,
+                # boolean, or other non-numeric type (Tableau icon/badge
+                # marks using string-literal measures like `"i"` or
+                # `IF(..., "Erreur", "OK")`), PBI Desktop rejects the
+                # scatter with DataViewMappingError_ScatterXIncorrectAggregate.
+                # Downgrade to multiRowCard (multiple values) or card (single).
+                _bim_meas_types = getattr(self, '_actual_bim_measure_types', {}) or {}
+                _non_numeric = {'string', 'boolean', 'text', 'datetime', 'date', 'binary'}
+                if _bim_meas_types:
+                    measure_fields = [
+                        f for f in fields
+                        if self._clean_field_name(f.get('name', '')) not in skip_names
+                        and self._is_measure_field(
+                            self._clean_field_name(f.get('name', '')))
+                    ]
+                    if measure_fields:
+                        def _measure_is_numeric(mf):
+                            clean = self._clean_field_name(mf.get('name', ''))
+                            # Look up (entity, prop) via field map / resolver
+                            entity = None
+                            prop = clean
+                            if hasattr(self, '_field_map') and clean in self._field_map:
+                                entity, prop = self._field_map[clean]
+                            # When we can't resolve, assume numeric (don't downgrade)
+                            if not entity:
+                                return True
+                            t = _bim_meas_types.get((entity, prop))
+                            if t is None:
+                                t = _bim_meas_types.get((entity, prop.strip()))
+                            # Unknown type → assume numeric (safe default)
+                            if t is None:
+                                return True
+                            return t.lower() not in _non_numeric
+                        if not any(_measure_is_numeric(mf) for mf in measure_fields):
+                            visual_type = (
+                                'multiRowCard' if len(measure_fields) > 1
+                                else 'card'
+                            )
                 # Detect :Measure Names + Multiple Values pattern (strip/dot plot)
                 # â†’ clusteredBarChart shows multiple measures per category better
                 has_measure_names = any(
@@ -918,6 +957,8 @@ class PowerBIProjectGenerator:
                 title_props["fontSize"] = _L(f"{int(title_fmt['font_size'])}D")
             except (ValueError, TypeError):
                 pass
+        if title_fmt.get('font_family'):
+            title_props["fontFamily"] = _L(f"'{title_fmt['font_family']}'")
         if title_fmt.get('font_color'):
             title_props["fontColor"] = {"solid": {"color": _L(f"'{title_fmt['font_color']}'")}}
         if title_fmt.get('bold'):
@@ -1135,6 +1176,8 @@ class PowerBIProjectGenerator:
                 style['fontSize'] = f"{float(fmt['font_size'])}pt"
             except (ValueError, TypeError):
                 pass
+        if fmt.get('font_family'):
+            style['fontFamily'] = fmt['font_family']
         if fmt.get('font_color'):
             color = fmt['font_color']
             if color.startswith('#') and len(color) == 9:
@@ -2201,11 +2244,17 @@ class PowerBIProjectGenerator:
             zone_hierarchy = db.get('zone_hierarchy', {})
             layout_map = self._build_zone_layout_map(zone_hierarchy, page_width, page_height)
 
-            # Compute scale factor from Tableau to Power BI pixels (fallback)
+            # Compute scale factor from Tableau to Power BI pixels (fallback).
+            # Tableau dashboard size IS the canvas — zone coords are absolute
+            # pixels within that canvas. Since page_width/height already match
+            # the dashboard size, the natural scale is 1.0 (pixel-perfect).
+            # We only DOWNSCALE when an object overflows past the page bounds;
+            # we never UPSCALE, because that would distort positions when
+            # objects don't fully fill the canvas.
             max_x = max((o.get('position', {}).get('x', 0) + o.get('position', {}).get('w', 0) for o in db_objects), default=page_width)
             max_y = max((o.get('position', {}).get('y', 0) + o.get('position', {}).get('h', 0) for o in db_objects), default=page_height)
-            scale_x = page_width / max(max_x, 1)
-            scale_y = page_height / max(max_y, 1)
+            scale_x = min(1.0, page_width / max(max_x, 1))
+            scale_y = min(1.0, page_height / max(max_y, 1))
 
             for obj in db_objects:
                 # Resolve position: grid layout map (preferred) or proportional (fallback)
@@ -2417,6 +2466,42 @@ class PowerBIProjectGenerator:
                             for f in row_meas
                         ):
                             visual_type = 'multiRowCard'
+
+                    # Downgrade scatter when ALL measures return non-numeric
+                    # values (string/boolean/date). PBI would otherwise raise
+                    # DataViewMappingError_ScatterXIncorrectAggregate because
+                    # X/Y axes require numeric aggregation.
+                    if visual_type == 'scatterChart':
+                        _bim_meas_types = getattr(self, '_actual_bim_measure_types', {}) or {}
+                        _non_numeric = {'string', 'boolean', 'text',
+                                        'datetime', 'date', 'binary'}
+                        if _bim_meas_types:
+                            measure_fields = [
+                                f for f in fields
+                                if self._clean_field_name(f.get('name', '')) not in skip_names
+                                and self._is_measure_field(
+                                    self._clean_field_name(f.get('name', '')))
+                            ]
+                            if measure_fields:
+                                def _measure_is_numeric(mf):
+                                    raw = self._clean_field_name(mf.get('name', ''))
+                                    entity, prop = None, raw
+                                    if hasattr(self, '_field_map') and raw in self._field_map:
+                                        entity, prop = self._field_map[raw]
+                                    # Try direct lookup; if no entity, scan all entries
+                                    if entity:
+                                        t = _bim_meas_types.get((entity, prop))
+                                    else:
+                                        t = None
+                                        for (te, tp), tt in _bim_meas_types.items():
+                                            if tp == prop:
+                                                t = tt
+                                                break
+                                    if t is None:
+                                        return True  # unknown → assume numeric
+                                    return t.lower() not in _non_numeric
+                                if not any(_measure_is_numeric(mf) for mf in measure_fields):
+                                    visual_type = 'multiRowCard' if len(measure_fields) > 1 else 'card'
 
             visual_json = {
                 "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
@@ -2731,6 +2816,12 @@ class PowerBIProjectGenerator:
         # These parameters have their own table in the semantic model named
         # after their caption, with a SELECTEDVALUE measure of the same name.
         # Override the Phase 4b mapping (which put them on the main table).
+        # Track parameter-table names so visual filters whose target is a
+        # parameter measure can be skipped (PBI rejects such filters with
+        # "primary projections must have set equality with the corresponding
+        # subset in the filter target" because parameter tables have no
+        # relationships to fact tables).
+        self._parameter_table_names = set()
         parameters = converted_objects.get('parameters', [])
         for param in parameters:
             domain = param.get('domain_type', '')
@@ -2744,6 +2835,7 @@ class PowerBIProjectGenerator:
                     self._bim_measure_names.add(caption)
                     self._measure_names.add(raw_name)
                     self._measure_names.add(caption)
+                    self._parameter_table_names.add(caption)
 
         # Phase 6: Detect synthetic "Number of Records" fields in worksheets.
         # These are generated by the extractor when Tableau uses COUNT(*) on
@@ -2877,6 +2969,22 @@ class PowerBIProjectGenerator:
             'size_fields': [], 'tooltip_fields': [], 'text_fields': [],
             'expanded_meas': [], 'other_dims': [], 'other_meas': [],
         }
+        def _as_dim(f):
+            """Return a copy of `f` stripped of any shelf aggregation.
+
+            Tableau encodes pills like ``sum:Ps Id`` even on the Color shelf,
+            but PBI dimension wells (Series/Legend, Category, Group, Rows,
+            Columns, Location, Breakdown) reject aggregations and would
+            render the field as ``Sum of Ps Id``. When we route a field into
+            a dimension bucket we drop the aggregation so the projection
+            emits a plain ``Column`` wrapper.
+            """
+            if 'aggregation' not in f:
+                return f
+            clean = dict(f)
+            clean.pop('aggregation', None)
+            return clean
+
         for f in cleaned_fields:
             shelf = f.get('shelf', '')
             is_mea = (shelf == 'measure_value'
@@ -2891,13 +2999,25 @@ class PowerBIProjectGenerator:
             elif shelf == 'text':
                 result['text_fields'].append(f)
             elif shelf == 'color':
-                (result['color_meas'] if is_mea else result['color_dims']).append(f)
+                if is_mea:
+                    result['color_meas'].append(f)
+                else:
+                    result['color_dims'].append(_as_dim(f))
             elif shelf == 'rows':
-                (result['rows_meas'] if is_mea else result['rows_dims']).append(f)
+                if is_mea:
+                    result['rows_meas'].append(f)
+                else:
+                    result['rows_dims'].append(_as_dim(f))
             elif shelf == 'columns':
-                (result['cols_meas'] if is_mea else result['cols_dims']).append(f)
+                if is_mea:
+                    result['cols_meas'].append(f)
+                else:
+                    result['cols_dims'].append(_as_dim(f))
             else:
-                (result['other_meas'] if is_mea else result['other_dims']).append(f)
+                if is_mea:
+                    result['other_meas'].append(f)
+                else:
+                    result['other_dims'].append(_as_dim(f))
         return result
 
     def _build_visual_query(self, ws_data):
@@ -3830,6 +3950,19 @@ class PowerBIProjectGenerator:
             ds_ref = f.get('datasource', '')
             entity, prop = self._resolve_field_entity(clean_field, datasource=ds_ref)
 
+            # Skip filters whose target is a measure on a What-If parameter
+            # table.  Parameter tables are dimensionless (no relationship to
+            # fact tables), so PBI cannot reconcile a parameter-measure
+            # filter with the visual's projection set and rejects the query
+            # with "primary projections must have set equality with the
+            # corresponding subset in the filter target."  These filters
+            # come from Tableau worksheets where a calculated field that
+            # references a parameter was used as a filter — the resulting
+            # filter is semantically a no-op in PBI's data model.
+            _param_tables = getattr(self, '_parameter_table_names', set()) or set()
+            if entity in _param_tables:
+                continue
+
             # Skip filter if the resolved (entity, prop) pair doesn't exist
             # in the semantic model — prevents PBI Desktop "deleted columns" errors.
             _bim_sym = getattr(self, '_actual_bim_symbols', None) or set()
@@ -3977,6 +4110,43 @@ class PowerBIProjectGenerator:
                 # Measures require Advanced type with Comparison conditions —
                 # PBI cannot apply Categorical/In filters on measures.
                 if _is_measure:
+                    # Boolean-valued measure filter — DROP.
+                    #
+                    # Tableau may filter on a measure that returns a boolean
+                    # expression (e.g. ``CALCULATE(COUNT(...) > 0)`` or
+                    # ``[col] = [param]``) and set the value to TRUE/FALSE.
+                    # An earlier fix attempted to convert this to
+                    # ``measure > 0`` / ``measure <= 0``, but that crashes
+                    # PBI Desktop's ``SQExprValidationVisitor.visitCompare``
+                    # with ``a.accept is not a function`` when the measure's
+                    # actual return type is boolean (or string), because PBI
+                    # rejects ``boolean > numeric`` and ``string > numeric``
+                    # at filter-validation time.
+                    #
+                    # The measure return-type heuristic in tmdl_generator
+                    # cannot reliably detect boolean returns inside
+                    # CALCULATE wrappers, so the only safe action is to
+                    # drop boolean-valued measure filters universally.
+                    # The Tableau filter semantic (``where condition holds``)
+                    # is typically already encoded in the measure's own DAX
+                    # expression, so removing the filter is a no-op for the
+                    # visual's data shape.
+                    _measure_lits = [_pbi_literal(v, _col_type) for v in values]
+                    _all_bool = bool(_measure_lits) and all(
+                        lit in ('true', 'false') for lit in _measure_lits
+                    )
+                    if _all_bool:
+                        logger.info(
+                            "Dropping boolean-valued measure filter on "
+                            "'%s'.'%s' (values=%s, exclude=%s) — PBI Desktop "
+                            "cannot validate boolean/string measure "
+                            "comparisons against numeric literals; the "
+                            "filter semantic should be encoded in the "
+                            "measure DAX expression instead.",
+                            entity, prop, _measure_lits, is_exclude
+                        )
+                        continue
+
                     pbi_filter = {
                         "name": f"Filter_{uuid.uuid4().hex[:12]}",
                         "type": "Advanced",
@@ -4011,43 +4181,30 @@ class PowerBIProjectGenerator:
                     visual_filters.append(pbi_filter)
                     continue
 
-                # Check if all values resolve to boolean literals —
-                # PBI's SQExprValidationVisitor.visitIn crashes on boolean
-                # literals inside In expressions.  Use Advanced/Comparison instead.
+                # Boolean column filters are unsupported by PBI Desktop's
+                # query engine: both In(boolean) and Comparison==boolean
+                # forms trigger SQExprValidationVisitor crashes
+                # (visitIn / visitCompare → "a.accept is not a function"),
+                # producing a "Broken_Filters" or report-render error.
+                # The Tableau semantic ("show rows where boolean is TRUE")
+                # is typically already encoded in the boolean column's M
+                # expression itself, so the filter is redundant.
+                # Drop boolean column filters with a migration note rather
+                # than emit a JSON form that PBI cannot render.
                 pbi_literals = [_pbi_literal(v, _col_type) for v in values]
-                all_boolean = all(lit in ('true', 'false') for lit in pbi_literals)
+                all_boolean = bool(pbi_literals) and all(
+                    lit in ('true', 'false') for lit in pbi_literals
+                )
 
                 if all_boolean:
-                    pbi_filter = {
-                        "name": f"Filter_{uuid.uuid4().hex[:12]}",
-                        "type": "Advanced",
-                        "field": {
-                            _field_kind: {
-                                "Expression": {"SourceRef": {"Entity": entity}},
-                                "Property": prop
-                            }
-                        },
-                        "filter": {
-                            "Version": 2,
-                            "From": [{"Name": "t", "Entity": entity, "Type": 0}],
-                            "Where": []
-                        }
-                    }
-                    comparisons = []
-                    for lit in pbi_literals:
-                        comparisons.append({
-                            "Condition": {
-                                "Comparison": {
-                                    "ComparisonKind": 0,
-                                    "Left": {_field_kind: {"Expression": {"SourceRef": {"Source": "t"}}, "Property": prop}},
-                                    "Right": {"Literal": {"Value": lit}}
-                                }
-                            }
-                        })
-                    if is_exclude:
-                        comparisons = [{"Condition": {"Not": {"Expression": c["Condition"]}}} for c in comparisons]
-                    pbi_filter["filter"]["Where"] = comparisons
-                    visual_filters.append(pbi_filter)
+                    logger.info(
+                        "Skipping boolean column filter on '%s.%s' "
+                        "(values=%s, exclude=%s) — PBI Desktop does not "
+                        "support boolean-literal column filters; the "
+                        "filter semantic should be encoded in the M "
+                        "column expression instead.",
+                        entity, prop, pbi_literals, is_exclude
+                    )
                     continue
 
                 pbi_filter = {
@@ -4143,6 +4300,8 @@ class PowerBIProjectGenerator:
             label_info = mark_encoding.get('label', {})
             if label_info.get('font_size'):
                 label_props["fontSize"] = _L(f"{label_info['font_size']}D")
+            if label_info.get('font_family'):
+                label_props["fontFamily"] = _L(f"'{label_info['font_family']}'")
             if label_info.get('font_color'):
                 label_props["color"] = {
                     "solid": {"color": _L(f"'{label_info['font_color']}'")}

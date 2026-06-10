@@ -2948,6 +2948,112 @@ def _apply_visual_decorations(worksheet, visual_type, pbi_type, visual_name, ctm
                 ca_props["showAxisTitle"] = _L("true")
             visual_obj["objects"]["categoryAxis"] = [{"properties": ca_props}]
 
+    # ── Pixel-perfect: propagate Tableau worksheet font formatting ──
+    # When Tableau provides explicit font-size or font-family on the
+    # worksheet, override the template defaults so the PBI visual matches
+    # the source pixel-by-pixel.
+    _apply_tableau_font_overrides(worksheet, visual_obj)
+    _apply_tableau_background_border(worksheet, visual_obj)
+
+
+def _apply_tableau_font_overrides(worksheet, visual_obj):
+    """Override template fontSize/fontFamily defaults with Tableau worksheet formatting.
+
+    Reads ``worksheet['formatting']['worksheet_style']`` (font-size, font-family)
+    and propagates them to the visual's labels, categoryAxis, valueAxis, and legend
+    objects. Only writes properties that are missing — never overwrites values
+    already set by other decoration steps.
+    """
+
+    fmt = worksheet.get('formatting') or {}
+    ws_style = fmt.get('worksheet_style') or {}
+    raw_size = ws_style.get('font-size', '').strip()
+    font_family = ws_style.get('font-family', '').strip()
+
+    # Convert Tableau font-size (e.g. "12" or "12pt") to PBI numeric pt
+    font_size_pt = None
+    if raw_size:
+        try:
+            cleaned = raw_size.replace('pt', '').replace('px', '').strip()
+            font_size_pt = float(cleaned)
+        except (ValueError, TypeError):
+            font_size_pt = None
+
+    if font_size_pt is None and not font_family:
+        return  # nothing to apply
+
+    visual_obj.setdefault("objects", {})
+    objs = visual_obj["objects"]
+
+    # Targets that accept fontSize/fontFamily in PBIR
+    targets = ("labels", "categoryAxis", "valueAxis", "legend",
+               "rowHeaders", "columnHeaders", "values",
+               "dataLabels", "cardTitle", "group", "tree")
+
+    for target in targets:
+        if target not in objs:
+            continue
+        entries = objs[target]
+        if not entries:
+            continue
+        props = entries[0].setdefault("properties", {})
+        if font_size_pt is not None and "fontSize" not in props:
+            props["fontSize"] = _L(f"{font_size_pt}D")
+        if font_family and "fontFamily" not in props:
+            props["fontFamily"] = _L(f"'{font_family}'")
+
+
+def _apply_tableau_background_border(worksheet, visual_obj):
+    """Propagate Tableau worksheet background and border formatting to PBIR.
+
+    Reads ``formatting.background_color`` (pane fill) and
+    ``formatting.worksheet_style.border-*`` (border style/color/width) and writes
+    PBIR ``background`` and ``border`` visualContainer objects when missing.
+    Idempotent: never overwrites existing values from other decorators.
+    """
+
+    fmt = worksheet.get('formatting') or {}
+    if not fmt:
+        return
+
+    bg_color = (fmt.get('background_color') or '').strip()
+    ws_style = fmt.get('worksheet_style') or {}
+    border_style = (ws_style.get('border-style') or '').strip().lower()
+    border_color = (ws_style.get('border-color') or '').strip()
+    border_width = (ws_style.get('border-width') or '').strip()
+
+    # Apply background fill on visualContainer (not on data points)
+    if bg_color and bg_color.startswith('#'):
+        visual_obj.setdefault("objects", {})
+        if "background" not in visual_obj["objects"]:
+            visual_obj["objects"]["background"] = [{
+                "properties": {
+                    "show": _L("true"),
+                    "color": {"solid": {"color": _L(f"'{bg_color}'")}},
+                    "transparency": _L("0D"),
+                }
+            }]
+
+    # Apply border when Tableau specifies a non-trivial style
+    has_border = (
+        border_style and border_style not in ("none", "")
+    ) or (border_color and border_color.startswith('#'))
+    if has_border:
+        visual_obj.setdefault("objects", {})
+        if "border" not in visual_obj["objects"]:
+            border_props = {"show": _L("true")}
+            if border_color and border_color.startswith('#'):
+                border_props["color"] = {
+                    "solid": {"color": _L(f"'{border_color}'")}
+                }
+            if border_width:
+                try:
+                    cleaned = border_width.replace('pt', '').replace('px', '').strip()
+                    border_props["radius"] = _L(f"{float(cleaned)}D")
+                except (ValueError, TypeError):
+                    pass
+            visual_obj["objects"]["border"] = [{"properties": border_props}]
+
 
 def _build_visual_filters(viz_filters, col_table_map):
     """Build visual-level filter entries including TopN support.
@@ -2961,10 +3067,11 @@ def _build_visual_filters(viz_filters, col_table_map):
     """
     filter_list = []
     for vf in viz_filters:
-        field_name = vf.get('field', '')
+        raw_field_name = vf.get('field', '')
+        field_name = (raw_field_name or '').strip()
         filter_type = vf.get('type', 'basic')
         values = vf.get('values', [])
-        table_name = col_table_map.get(field_name, 'Table')
+        table_name = col_table_map.get(raw_field_name, '') or col_table_map.get(field_name, 'Table')
 
         if filter_type == 'topN':
             # TopN filter
@@ -3074,10 +3181,14 @@ def build_query_state(pbi_type, dimensions, measures, col_table_map,
     dim_roles, meas_roles = roles
 
     # ── Resolve dimension projections ─────────────────────────
+    def _norm_name(value):
+        return (value or '').strip()
+
     dim_projections = []
     for dim in (dimensions or []):
-        field_name = dim.get('field', '') or dim.get('name', '')
-        table_name = col_table_map.get(field_name, '')
+        raw_field_name = dim.get('field', '') or dim.get('name', '')
+        field_name = _norm_name(raw_field_name)
+        table_name = col_table_map.get(raw_field_name, '') or col_table_map.get(field_name, '')
         if not table_name and col_table_map:
             table_name = next(iter(col_table_map.values()), 'Table')
         if table_name and field_name:
@@ -3100,10 +3211,11 @@ def build_query_state(pbi_type, dimensions, measures, col_table_map,
     # ── Resolve measure projections ───────────────────────────
     meas_projections = []
     for meas in (measures or []):
-        measure_label = meas.get('label') or meas.get('name', 'Measure')
+        raw_measure_label = meas.get('label') or meas.get('name', 'Measure')
+        measure_label = _norm_name(raw_measure_label)
 
         # Try named measure from BIM model
-        bim_info = measure_lookup.get(measure_label)
+        bim_info = measure_lookup.get(raw_measure_label) or measure_lookup.get(measure_label)
         if bim_info:
             tbl_name, _dax_expr = bim_info
             proj = {
@@ -3125,9 +3237,9 @@ def build_query_state(pbi_type, dimensions, measures, col_table_map,
         expr = meas.get('expression', '')
         m = re.match(r'(\w+)\((\w+)\)', expr.strip()) if expr else None
         if m:
-            func_name, col_name = m.group(1).lower(), m.group(2)
+            func_name, col_name = m.group(1).lower(), _norm_name(m.group(2))
         else:
-            func_name, col_name = '', expr.strip() if expr else ''
+            func_name, col_name = '', _norm_name(expr.strip() if expr else '')
 
         func_id = _AGG_FUNC_MAP.get(func_name, 1)
         table_name = col_table_map.get(col_name, '')

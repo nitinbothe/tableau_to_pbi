@@ -1662,6 +1662,35 @@ class TestCreateVisualFilters(unittest.TestCase):
         self.assertIn("datetime'2001-12-07T00:00:00'", filt_str)
         self.assertIn("datetime'2012-12-01T00:00:00'", filt_str)
 
+    def test_skip_filter_on_parameter_table_measure(self):
+        """Filters whose target is a measure on a What-If parameter table
+        must be dropped — PBI rejects them with 'primary projections must
+        have set equality with the corresponding subset in the filter
+        target' because parameter tables have no relationship to fact
+        tables. Regression for UC80 page 'Observations - Suivi général'.
+        """
+        # Parameter named "Inadequate" with its own table + measure.
+        _init_field_map(self.gen, {
+            'Inadequate': ('Inadequate', 'Inadequate'),
+            'Region': ('Sales', 'Region'),
+        }, bim_measure_names=['Inadequate'])
+        self.gen._parameter_table_names = {'Inadequate'}
+        filters = [
+            # Filter on parameter measure → must be skipped
+            {'field': 'Inadequate', 'values': ['false']},
+            # Filter on regular column → must be kept
+            {'field': 'Region', 'values': ['East']},
+        ]
+        result = self.gen._create_visual_filters(filters)
+        # Only the Region filter survives
+        self.assertEqual(len(result), 1)
+        col = (result[0].get('field', {}).get('Column')
+               or result[0].get('field', {}).get('Measure', {}))
+        self.assertEqual(
+            col.get('Expression', {}).get('SourceRef', {}).get('Entity'),
+            'Sales',
+        )
+
 
 # ─── _create_report_filters ─────────────────────────────────────────
 

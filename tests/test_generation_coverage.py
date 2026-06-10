@@ -278,6 +278,86 @@ class TestDaxToMConverterExtended(unittest.TestCase):
         self.assertIn("Text.Upper", result)
 
 
+class TestDaxToMTopLevelBinops(unittest.TestCase):
+    """Regression tests for top-level boolean / comparison splits.
+
+    These cover the UC80 pattern where a calc column has the shape
+    ``DATE([X]) >= DATE(y,m,d) && DATE([X]) <= DATE(y,m,d)``.  Without
+    the binop splitter the converter falls back to DAX (because the leaf
+    handler bails on any remaining ``FUNC(`` token), which leaves the
+    column as a DAX calculated column and prevents M-time materialisation.
+    """
+
+    def test_date_range_and_pattern_converts_to_m(self):
+        """UC80: DATE(col) >= DATE(...) && DATE(col) <= DATE(...)."""
+        expr = (
+            "DATE([Date Signature Surveillant]) >= DATE(2025, 1, 3) "
+            "&& DATE([Date Signature Surveillant]) <= DATE(2026, 5, 29)"
+        )
+        result = _dax_to_m_expression(expr, table_name='T')
+        self.assertIsNotNone(result, "expected M conversion to succeed")
+        self.assertIn("Date.From([Date Signature Surveillant])", result)
+        self.assertIn("#date(2025, 1, 3)", result)
+        self.assertIn("#date(2026, 5, 29)", result)
+        self.assertIn(" and ", result)
+        # Must not retain any DAX function calls
+        self.assertNotIn("DATE(", result)
+
+    def test_self_table_qualified_date_range_pattern(self):
+        """Self-table prefix 'T'[col] should be stripped before conversion."""
+        expr = (
+            "DATE('T'[Date Signature Surveillant]) >= DATE(2025, 1, 3) "
+            "&& DATE('T'[Date Signature Surveillant]) <= DATE(2026, 5, 29)"
+        )
+        result = _dax_to_m_expression(expr, table_name='T')
+        self.assertIsNotNone(result)
+        self.assertNotIn("'T'", result)
+        self.assertIn("Date.From([Date Signature Surveillant])", result)
+
+    def test_year_month_compound_predicate(self):
+        """Mixed top-level &&, =, >= with date functions on both sides."""
+        result = _dax_to_m_expression("YEAR([D]) = 2025 && MONTH([D]) >= 6")
+        self.assertIsNotNone(result)
+        self.assertIn("Date.Year([D])", result)
+        self.assertIn("Date.Month([D])", result)
+        self.assertIn(" and ", result)
+
+    def test_or_with_function_calls(self):
+        """|| splits at top level when function calls are on each side."""
+        result = _dax_to_m_expression("YEAR([D]) = 2025 || YEAR([D]) = 2026")
+        self.assertIsNotNone(result)
+        self.assertIn(" or ", result)
+        self.assertNotIn("YEAR(", result)
+
+    def test_date_single_arg_to_date_from(self):
+        """DATE(col) with one arg → Date.From(col)."""
+        result = _dax_to_m_expression("DATE([Col])")
+        self.assertEqual(result, "Date.From([Col])")
+
+    def test_if_with_top_level_date_predicate(self):
+        """IF(DATE(...) >= DATE(...), ...) recurses through nested ops."""
+        result = _dax_to_m_expression(
+            "IF(DATE([D]) >= DATE(2025,1,1), 1, 0)"
+        )
+        self.assertIsNotNone(result)
+        self.assertIn("if", result)
+        self.assertIn("Date.From([D])", result)
+        self.assertIn("#date(2025, 1, 1)", result)
+
+    def test_cross_table_in_predicate_returns_none(self):
+        """Cross-table column ref inside binop should still bail."""
+        result = _dax_to_m_expression(
+            "DATE('Other'[D]) >= DATE(2025,1,1)"
+        )
+        self.assertIsNone(result)
+
+    def test_datevalue_to_date_from(self):
+        """DATEVALUE(text) → Date.From(text)."""
+        result = _dax_to_m_expression('DATEVALUE("2025-01-15")')
+        self.assertIsNotNone(result)
+        self.assertIn("Date.From", result)
+
+
 # ═══════════════════════════════════════════════════════════════════════
 # Helper Functions
 # ═══════════════════════════════════════════════════════════════════════

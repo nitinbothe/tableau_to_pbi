@@ -288,11 +288,20 @@ def convert_tableau_formula_to_dax(formula, column_name='Measure', table_name='T
     
     dax = formula.strip()
     
-    # === Phase 0: Strip federated datasource prefixes ===
+    # === Phase 0: Strip secondary-datasource prefixes ===
     # Tableau data blends use [federated.xxxID].[Column] references.
-    # Strip the federated prefix so the column resolves normally.
-    dax = re.sub(r'\[federated\.[^\]]*\]\.', '', dax)
-    
+    # Published (sqlproxy) datasource cross-refs use [sqlproxy.xxxID].[Calculation_yyy].
+    # Strip the prefix so the column/calc resolves against sibling tables/measures.
+    dax = re.sub(r'\[(?:federated|sqlproxy)\.[^\]]*\]\.', '', dax)
+    # Collapse cross-datasource row-id refs: [__tableau_internal_object_id__].[X]
+    # represents the row-id of a secondary blended source. Drop the trailing
+    # ".[X]" so any wrapping COUNT(...) still produces valid DAX.
+    dax = re.sub(
+        r'\[__tableau_internal_object_id__\]\.\[[^\]]+\]',
+        '[__tableau_internal_object_id__]',
+        dax,
+    )
+
     # === Phase 1: Resolve Tableau references ===
     dax = _resolve_references(dax, calc_map, param_map, is_calc_column, param_values)
     
@@ -485,8 +494,14 @@ def _resolve_references(dax, calc_map, param_map, is_calc_column, param_values):
             # to avoid replacing inside "strings" or [column names].
             parts = re.split(r'("(?:[^"\\]|\\.)*"|\[[^\]]*\])', dax)
             for i in range(0, len(parts), 2):
+                # Negative lookahead: don't substitute if the bare token is
+                # immediately followed by '(' — that means it's being used
+                # as a function call (e.g. `Index()`), and replacing the
+                # name with a literal value would yield broken DAX like
+                # `1()`.  Such call-style references must be left intact for
+                # the dedicated function converters (e.g. `_convert_index`).
                 parts[i] = re.sub(
-                    r'\b' + re.escape(pname) + r'\b',
+                    r'\b' + re.escape(pname) + r'\b(?!\s*\()',
                     repl, parts[i]
                 )
             dax = ''.join(parts)
@@ -1092,12 +1107,14 @@ def _convert_index(dax):
     """INDEX() → row number within partition.
 
     Tableau INDEX() returns the sequential row number in the partition.
-    Uses ROWNUMBER() (DAX 2024+) when available, falls back to RANKX pattern.
-    Resolves sort column from context when possible.
+    Power BI PBIP targets in this project cannot reliably materialize
+    ROWNUMBER() without explicit ORDERBY/PARTITIONBY context, which leads to
+    invalid measures in generated reports. Emit a stable compatibility fallback
+    instead so visuals remain loadable.
     """
     pattern = re.compile(r'\bINDEX\s*\(\s*\)', re.IGNORECASE)
     return pattern.sub(
-        'ROWNUMBER() /* INDEX: row number within partition (DAX 2024+, verify sort order) */',
+        '1 /* INDEX fallback: constant for visual compatibility */',
         dax
     )
 
@@ -1874,7 +1891,39 @@ def _wrap_cross_table_related(inner_expr, iter_table):
     Inside ``SUMX('T', ...)``, references to ``'Other'[col]`` need
     ``RELATED('Other'[col])`` to navigate via the relationship.
     Already-wrapped references (``RELATED('Other'[col])``) are skipped.
+
+    Refs that appear as **direct arguments** to DAX functions that require
+    bare ``Table[Column]`` references (``ALLEXCEPT``, ``REMOVEFILTERS``,
+    ``ALL``, ``VALUES``, ``DISTINCT``) are also skipped — wrapping them in
+    ``RELATED()`` would produce invalid DAX.
     """
+    # Functions whose arguments must be bare column refs (not RELATED-wrapped).
+    _BARE_REF_FUNCS = ('ALLEXCEPT', 'REMOVEFILTERS', 'ALL', 'VALUES', 'DISTINCT')
+
+    def _enclosing_func(text, pos):
+        """Return the uppercase name of the innermost enclosing function call
+        whose ``(`` is to the left of *pos*, or ``''`` if none.
+        """
+        depth = 0
+        for i in range(pos - 1, -1, -1):
+            ch = text[i]
+            if ch == ')':
+                depth += 1
+            elif ch == '(':
+                if depth > 0:
+                    depth -= 1
+                else:
+                    # Found the unmatched '('. Extract the function name
+                    # immediately before it.
+                    j = i - 1
+                    while j >= 0 and text[j].isspace():
+                        j -= 1
+                    end = j + 1
+                    while j >= 0 and (text[j].isalnum() or text[j] in '_.'):
+                        j -= 1
+                    return text[j + 1:end].upper()
+        return ''
+
     def _replacer(m):
         full = m.group(0)
         tbl = m.group(1)
@@ -1885,9 +1934,29 @@ def _wrap_cross_table_related(inner_expr, iter_table):
         prefix = inner_expr[prefix_start:m.start()].rstrip()
         if prefix.upper().endswith('RELATED('):
             return full
+        # Skip if the ref is a direct argument to a function that requires
+        # bare 'T'[col] refs (ALLEXCEPT, REMOVEFILTERS, ALL, ...).
+        if _enclosing_func(inner_expr, m.start()) in _BARE_REF_FUNCS:
+            return full
         return f"RELATED({full})"
 
     return re.sub(r"'([^']+)'\[([^\]]*(?:\]\][^\]]*)*)\]", _replacer, inner_expr)
+
+
+_BARE_COL_REF_RE = re.compile(r"^\s*'[^']+'\[[^\[\]]+\]\s*$")
+
+
+def _is_bare_column_ref(ref):
+    """Return True if `ref` is a simple ``'Table'[Column]`` reference.
+
+    DAX filter-modifier functions like ``ALLEXCEPT`` and ``REMOVEFILTERS``
+    require bare column references as args 2+. Complex expressions
+    (function calls, IF/SWITCH, nested brackets, embedded commas/parens)
+    must be rejected to keep the generated DAX valid.
+    """
+    if not ref:
+        return False
+    return bool(_BARE_COL_REF_RE.match(ref))
 
 
 def _convert_lod_expressions(dax, table_name, column_table_map):
@@ -1907,10 +1976,21 @@ def _convert_lod_expressions(dax, table_name, column_table_map):
         return dims, refs
 
     def _convert_single_lod(keyword, dims_str, agg_str):
-        """Convert one LOD node into its DAX CALCULATE equivalent."""
+        """Convert one LOD node into its DAX CALCULATE equivalent.
+
+        When a LOD dimension is itself a calculation that resolved to a
+        non-bare-column expression (e.g. ``LOOKUPVALUE(...)``,
+        ``IF/SWITCH``, parameter-driven branch), ``ALLEXCEPT`` /
+        ``REMOVEFILTERS`` cannot accept it. We fall back to a coarser
+        ``ALL('table')`` filter (FIXED) or drop the partition (EXCLUDE)
+        to preserve DAX validity. The grand-total semantic may differ
+        from per-group partitioning, but the model will load.
+        """
         dims, dim_refs = _resolve_dims(dims_str, table_name)
         if keyword == 'FIXED':
             if dim_refs:
+                if not all(_is_bare_column_ref(r) for r in dim_refs):
+                    return f"CALCULATE({agg_str}, ALL('{table_name}'))"
                 allexcept_table = column_table_map.get(dims[0], table_name)
                 dim_tables = set(column_table_map.get(d, table_name) for d in dims)
                 if len(dim_tables) == 1:
@@ -1924,6 +2004,8 @@ def _convert_lod_expressions(dax, table_name, column_table_map):
             return f"CALCULATE({agg_str})"
         elif keyword == 'EXCLUDE':
             if dim_refs:
+                if not all(_is_bare_column_ref(r) for r in dim_refs):
+                    return f"CALCULATE({agg_str})"
                 return f"CALCULATE({agg_str}, REMOVEFILTERS({', '.join(dim_refs)}))"
             else:
                 return f"CALCULATE({agg_str})"

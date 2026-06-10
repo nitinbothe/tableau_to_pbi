@@ -289,6 +289,51 @@ class TestClassifyShelfFields(unittest.TestCase):
         for key in result:
             self.assertEqual(len(result[key]), 0)
 
+    def test_dim_buckets_strip_aggregation(self):
+        """Fields routed to dimension buckets must lose any shelf aggregation.
+
+        Tableau encodes pills like ``sum:Ps Id`` even on the Color shelf;
+        Power BI dimension wells (Series/Legend, Category, Group, Rows,
+        Columns) reject aggregations and would render ``Sum of Ps Id``.
+        """
+        gen = self._get_generator()
+        # Identifier-style fields with a shelf-side aggregation
+        fields = [
+            {'name': 'Ps Id', 'shelf': 'color', 'aggregation': 'sum'},
+            {'name': 'Region', 'shelf': 'rows', 'aggregation': 'cnt'},
+            {'name': 'Code', 'shelf': 'columns', 'aggregation': 'cntd'},
+            {'name': 'Bucket', 'shelf': '', 'aggregation': 'sum'},
+        ]
+        result = gen._classify_shelf_fields(fields)
+        self.assertEqual(len(result['color_dims']), 1)
+        self.assertEqual(len(result['rows_dims']), 1)
+        self.assertEqual(len(result['cols_dims']), 1)
+        self.assertEqual(len(result['other_dims']), 1)
+        # Aggregation must have been stripped on every dimension bucket
+        for bucket in ('color_dims', 'rows_dims', 'cols_dims', 'other_dims'):
+            for f in result[bucket]:
+                self.assertNotIn(
+                    'aggregation', f,
+                    f'aggregation must be stripped from {bucket}, got {f}'
+                )
+        # The original input dicts must not be mutated
+        self.assertEqual(fields[0].get('aggregation'), 'sum')
+        self.assertEqual(fields[1].get('aggregation'), 'cnt')
+
+    def test_measure_buckets_keep_aggregation(self):
+        """Fields routed to measure buckets must retain their aggregation."""
+        gen = self._get_generator()
+        gen._measure_names = {'Sales', 'Profit'}
+        fields = [
+            {'name': 'Sales', 'shelf': 'color', 'aggregation': 'sum'},
+            {'name': 'Profit', 'shelf': 'rows', 'aggregation': 'avg'},
+        ]
+        result = gen._classify_shelf_fields(fields)
+        self.assertEqual(len(result['color_meas']), 1)
+        self.assertEqual(len(result['rows_meas']), 1)
+        self.assertEqual(result['color_meas'][0].get('aggregation'), 'sum')
+        self.assertEqual(result['rows_meas'][0].get('aggregation'), 'avg')
+
 
 # ── import_shared_model refactoring tests ────────────────────────────────────
 

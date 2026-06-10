@@ -161,6 +161,68 @@ from powerbi_import.calc_column_utils import (
 )
 
 
+def _split_top_level_binop(expr, ops):
+    """Find the *rightmost* top-level occurrence of any operator in ``ops``.
+
+    Returns ``(left, op, right)`` on first match (rightmost match position so
+    splits are left-associative), or ``None`` if no top-level match exists.
+    Operators are checked longest-first at each position so multi-char ops
+    like ``>=`` win over ``>``.  Respects parens, brackets, and string
+    literals.
+    """
+    if not expr or not ops:
+        return None
+    sorted_ops = sorted(ops, key=len, reverse=True)
+    n = len(expr)
+    depth = 0
+    bracket_depth = 0
+    in_str = False
+    matches = []  # list of (start_pos, op) at depth 0
+    i = 0
+    while i < n:
+        ch = expr[i]
+        if in_str:
+            if ch == '"':
+                in_str = False
+            i += 1
+            continue
+        if ch == '"':
+            in_str = True
+            i += 1
+            continue
+        if ch == '(':
+            depth += 1
+            i += 1
+            continue
+        if ch == ')':
+            depth -= 1
+            i += 1
+            continue
+        if ch == '[':
+            bracket_depth += 1
+            i += 1
+            continue
+        if ch == ']':
+            bracket_depth -= 1
+            i += 1
+            continue
+        if depth == 0 and bracket_depth == 0:
+            matched = None
+            for op in sorted_ops:
+                if expr[i:i + len(op)] == op:
+                    matched = op
+                    break
+            if matched:
+                matches.append((i, matched))
+                i += len(matched)
+                continue
+        i += 1
+    if not matches:
+        return None
+    pos, op = matches[-1]  # rightmost → left-associative outermost split
+    return (expr[:pos].strip(), op, expr[pos + len(op):].strip())
+
+
 def _dax_to_m_expression(dax_expr, table_name=''):
     """Convert a DAX calculated-column expression to Power Query M.
 
@@ -332,7 +394,7 @@ def _dax_to_m_expression(dax_expr, table_name=''):
                 return None
         return None
 
-    # ── DATE(y, m, d) → #date(y, m, d) ─────────────────────────────
+    # ── DATE(y, m, d) → #date(y, m, d)  |  DATE(col) → Date.From(col) ──
     body = _extract_function_body(expr, 'DATE')
     if body is not None:
         args = _split_dax_args(body)
@@ -342,6 +404,20 @@ def _dax_to_m_expression(dax_expr, table_name=''):
             d = _dax_to_m_expression(args[2], table_name)
             if y is not None and mo is not None and d is not None:
                 return f'#date({y}, {mo}, {d})'
+        elif len(args) == 1:
+            inner = _dax_to_m_expression(args[0], table_name)
+            if inner is not None:
+                return f'Date.From({inner})'
+        return None
+
+    # ── DATEVALUE(text) → Date.From(text) ──────────────────────────
+    body = _extract_function_body(expr, 'DATEVALUE')
+    if body is not None:
+        args = _split_dax_args(body)
+        if len(args) == 1:
+            inner = _dax_to_m_expression(args[0], table_name)
+            if inner is not None:
+                return f'Date.From({inner})'
         return None
 
     # ── [expr] IN {val1, val2, …} → List.Contains({…}, expr) ───────
@@ -353,6 +429,35 @@ def _dax_to_m_expression(dax_expr, table_name=''):
             # single-quoted literals like {'High', 'Low'} to {"High", "Low"}
             set_expr = re.sub(r"'([^']*)'", r'"\1"', in_match.group(2))
             return f'List.Contains({set_expr}, {col_m})'
+        return None
+
+    # ── Top-level boolean operators (lowest precedence first) ──────
+    # Try ||/OR before &&/AND so OR forms the outermost split.
+    # Recursing on each side lets embedded function calls (DATE(), IF(), …)
+    # be re-matched by the function-body handlers above.
+    for op_set, m_join in (
+        (['||'], ' or '),
+        (['&&'], ' and '),
+    ):
+        split = _split_top_level_binop(expr, op_set)
+        if split:
+            left, _op, right = split
+            l_m = _dax_to_m_expression(left, table_name)
+            r_m = _dax_to_m_expression(right, table_name)
+            if l_m is not None and r_m is not None:
+                return f'{l_m}{m_join}{r_m}'
+            return None
+
+    # ── Top-level comparison operators ─────────────────────────────
+    # DAX and M share the same comparison syntax (=, <>, <, >, <=, >=).
+    cmp_ops = ['<=', '>=', '<>', '=', '<', '>']
+    split = _split_top_level_binop(expr, cmp_ops)
+    if split:
+        left, op, right = split
+        l_m = _dax_to_m_expression(left, table_name)
+        r_m = _dax_to_m_expression(right, table_name)
+        if l_m is not None and r_m is not None:
+            return f'{l_m} {op} {r_m}'
         return None
 
     # ── Leaf expression (literals, column refs, operators) ──────────
@@ -1524,11 +1629,83 @@ def generate_tmdl(datasources, report_name, extra_objects, output_dir,
         total_hierarchies += len(t.get('hierarchies', []))
     # Second pass: infer measure return types — especially for parameter
     # measures (SELECTEDVALUE('Tbl'[Col], default)) — needed so filter
-    # literals on those measures are quoted/typed correctly.
+    # literals on those measures are quoted/typed correctly.  Also detects
+    # string/boolean-returning measures so visual routing can avoid
+    # placing them on numeric-only roles (e.g. scatter X/Y).
     _sv_re = re.compile(
         r"SELECTEDVALUE\s*\(\s*'?([^'\[]+)'?\s*\[\s*([^\]]+)\s*\]",
         re.IGNORECASE
     )
+    _str_literal_re = re.compile(r'^"[^"]*"\s*$')
+    _numeric_func_re = re.compile(
+        r"\b(?:SUM|SUMX|AVERAGE|AVERAGEX|COUNT|COUNTA|COUNTAX|COUNTX|COUNTROWS|"
+        r"DISTINCTCOUNT|MIN|MINX|MAX|MAXX|DIVIDE|RANKX|CALCULATE|"
+        r"ROUND|CEILING|FLOOR|ABS|POWER|SQRT|LOG|LN|EXP|"
+        r"YEAR|MONTH|DAY|HOUR|MINUTE|SECOND|WEEKDAY|WEEKNUM|QUARTER|DATEDIFF|"
+        r"VAR\.S|VAR\.P|STDEV\.S|STDEV\.P|MEDIAN|PERCENTILE\.INC|PERCENTILE\.EXC)\b",
+        re.IGNORECASE
+    )
+    _bool_op_re = re.compile(r"(?:<=|>=|<>|!=|==|\|\||&&)")
+    _string_func_re = re.compile(
+        r"\b(?:FORMAT|CONCATENATE|CONCATENATEX|LEFT|RIGHT|MID|UPPER|LOWER|"
+        r"PROPER|TRIM|SUBSTITUTE|REPT|REPLACE|UNICHAR)\s*\(",
+        re.IGNORECASE
+    )
+
+    def _infer_return_type(expr_str):
+        """Best-effort static return-type inference for DAX measures.
+        Returns 'string', 'boolean', or None when undetermined.
+
+        Designed to be conservative — only commits to a type when the
+        expression's *return value* is unambiguously string or boolean.
+        Numeric calls used only inside conditions (e.g.
+        ``IF(MAX([Date]) > x, "Erreur", "")``) do not block string inference
+        as long as no numeric *return* slot is present.
+        """
+        if not expr_str:
+            return None
+        s = expr_str.strip()
+        # 1. Pure string literal
+        if _str_literal_re.match(s):
+            return 'string'
+        # Strip out string literals so we can analyze operators safely
+        no_strings = re.sub(r'"[^"]*"', '""', s)
+        # 2. Top-level boolean — comparison or logical operators present
+        #    and no numeric/aggregation function call
+        if _bool_op_re.search(no_strings) and not _numeric_func_re.search(no_strings):
+            return 'boolean'
+        # Cheap return-position signals
+        has_string_literal = bool(re.search(r'"[^"]*"', s))
+        # A numeric *return* slot: a bare number immediately before , or )
+        # (after stripping strings so we don't match digits inside quoted text)
+        has_numeric_return = bool(
+            re.search(r',\s*-?\d+(?:\.\d+)?\s*[,)]', no_strings)
+        )
+        # 3. IF/SWITCH chain returning only string literals.  We allow numeric
+        #    functions in the *condition* portion (DATEDIFF, MAX, TODAY ...) as
+        #    long as no numeric value ever appears in a return slot.
+        if re.match(r'^(?:IF|SWITCH)\s*\(', s, re.IGNORECASE):
+            if has_string_literal and not has_numeric_return:
+                return 'string'
+        # 4. Top-level string concatenation (``"x" & "y"`` or
+        #    ``IF(...) & IF(...)``) — `&` is the DAX string-concat operator.
+        if has_string_literal and not has_numeric_return:
+            if re.search(r'"\s*&|&\s*"|\)\s*&\s*[A-Z_"(]', s):
+                return 'string'
+        # 5. Pure string-function call (FORMAT/CONCATENATE/...) with no
+        #    numeric-return slot inside its arguments.
+        if (_string_func_re.search(s)
+                and not _numeric_return_only(no_strings)):
+            return 'string'
+        return None
+
+    def _numeric_return_only(no_strings_expr):
+        # Helper: a numeric return slot exists.  Kept as a closure so it
+        # can evolve independently from the regex flags above.
+        return bool(
+            re.search(r',\s*-?\d+(?:\.\d+)?\s*[,)]', no_strings_expr)
+        )
+
     for t in tables:
         tname = t.get('name', '')
         for m in t.get('measures', []):
@@ -1548,6 +1725,10 @@ def generate_tmdl(datasources, report_name, extra_objects, output_dir,
                       or actual_bim_column_types.get((tname, ref_col)))
                 if ct:
                     actual_bim_measure_types[(tname, mname)] = ct
+                    continue
+            inferred = _infer_return_type(expr)
+            if inferred:
+                actual_bim_measure_types[(tname, mname)] = inferred
         total_measures += len(t.get('measures', []))
 
     # Step 2b: Build lineage map BEFORE writing — _write_tmdl_files clears
@@ -2025,6 +2206,24 @@ def _collect_semantic_context(datasources, extra_objects):
         (re.compile(r'\bMAKEDATETIME\s*\(', re.IGNORECASE), 'DATE('),
         (re.compile(r'\bMAKETIME\s*\(', re.IGNORECASE), 'TIME('),
     ]
+    # Literal-only filter: only inline real constants (numbers, strings,
+    # booleans, DATE()/TIME() literals).  Function calls like INDEX(),
+    # FIRST(), LAST(), or arbitrary expressions must NOT be inlined as bare
+    # references — doing so corrupts downstream calc bodies that legitimately
+    # use the same identifier (e.g. a calc named "Index()" whose body is
+    # "Index()" must remain intact for the INDEX() converter).
+    _literal_re = re.compile(
+        r'^(?:'
+        r'[-+]?\d+(?:\.\d+)?'                            # number
+        r'|"(?:[^"\\]|\\.)*"'                            # double-quoted string
+        r"|'(?:[^'\\]|\\.)*'"                            # single-quoted string
+        r'|true|false'                                   # boolean
+        r'|DATE\s*\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)'     # DATE literal
+        r'|TIME\s*\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)'     # TIME literal
+        r'|#\d{4}-\d{2}-\d{2}(?:\s+\d{2}:\d{2}:\d{2})?#' # Tableau date literal
+        r')$',
+        re.IGNORECASE,
+    )
     for calc in all_calculations:
         caption = calc.get('caption', calc.get('name', '').replace('[', '').replace(']', ''))
         formula = calc.get('formula', '').strip()
@@ -2033,7 +2232,8 @@ def _collect_semantic_context(datasources, extra_objects):
             # don't contain unconverted function names (e.g. MAKEDATE→DATE).
             for pattern, repl in _inline_replacements:
                 formula = pattern.sub(repl, formula)
-            param_values[caption] = formula
+            if _literal_re.match(formula):
+                param_values[caption] = formula
     for param in extra_objects.get('parameters', []):
         caption = param.get('caption', '')
         value = param.get('value', '').strip('"')
@@ -3559,7 +3759,14 @@ def _infer_cross_table_relationships(model):
 
     # Pass 2: Proactive key-column matching for unconnected tables
     # Looks for columns with identical names that look like keys (ID, Key, Code, etc.)
-    _KEY_SUFFIXES = {'id', 'key', 'code', 'no', 'number', 'num', 'pk', 'fk', 'sk'}
+    # Includes English + French business-key vocabulary so shared dimensions
+    # like "Numéro d'affaire" are recognized as natural join keys.
+    _KEY_SUFFIXES = {
+        # English
+        'id', 'key', 'code', 'no', 'number', 'num', 'pk', 'fk', 'sk',
+        # French (common shared business keys in Tableau data blends)
+        'numéro', 'numero', 'identifiant', 'matricule', 'réf', 'ref',
+    }
     all_table_names = list(table_columns.keys())
 
     for i, t1 in enumerate(all_table_names):
@@ -5780,10 +5987,13 @@ def _add_date_table(model):
 def _quote_name(name):
     """Quote a TMDL name if needed (spaces, special characters).
     Internal apostrophes are escaped by doubling them ('')."""
-    if re.search(r'[^a-zA-Z0-9_]', name):
-        escaped = name.replace("'", "''")
-        return f"'{escaped}'"
-    return name
+    name = (name or '').strip()
+    # Keep bare identifiers only when they follow standard identifier rules.
+    # This avoids emitting invalid names like numeric-only identifiers (e.g. 0).
+    if re.match(r'^[A-Za-z_][A-Za-z0-9_]*$', name):
+        return name
+    escaped = name.replace("'", "''")
+    return f"'{escaped}'"
 
 
 def _tmdl_datatype(bim_type):

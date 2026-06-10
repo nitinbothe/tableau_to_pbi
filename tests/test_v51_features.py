@@ -71,6 +71,36 @@ class TestIndexConversion(unittest.TestCase):
         result = convert_tableau_formula_to_dax('INDEX()')
         self.assertIn('INDEX', result.upper() if '/*' in result else result)
 
+    def test_index_no_stray_parens_after_fallback(self):
+        """Regression: a calc named "Index" with formula "INDEX()" must not
+        pollute param_values with a function-call value, otherwise a downstream
+        calc whose body is just `Index()` (a bare-name call style) would have
+        its `Index` token replaced by `INDEX()` to yield `INDEX()()`, which
+        the INDEX→fallback regex only partially consumes — leaving stray `()`
+        and producing invalid DAX (`1 /* INDEX fallback ... */()`).
+
+        Both layers of defense are tested here:
+          1. param_values must accept only literal values (not function calls)
+          2. Even if a non-literal sneaks in, _resolve_references must not
+             substitute a bare token immediately followed by `(`.
+        """
+        # Defense layer 2: function-call lookahead in _resolve_references
+        result = convert_tableau_formula_to_dax(
+            'Index()',
+            param_values={'Index': 'INDEX()'},  # simulate pollution
+        )
+        self.assertNotIn('*/()', result)
+        self.assertNotIn('()()', result)
+        self.assertIn('INDEX fallback', result)
+
+        # Same with a numeric literal — should still not corrupt `Index()`
+        result2 = convert_tableau_formula_to_dax(
+            'Index()',
+            param_values={'Index': '5'},
+        )
+        self.assertNotIn('5()', result2)
+        self.assertIn('INDEX fallback', result2)
+
 
 class TestSizeConversion(unittest.TestCase):
     """SIZE() → COUNTROWS(ALLSELECTED())."""

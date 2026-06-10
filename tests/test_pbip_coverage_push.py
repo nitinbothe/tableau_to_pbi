@@ -409,6 +409,126 @@ class TestFallbackPageScatterNoMeasure(unittest.TestCase):
         self.assertEqual(vj['visual']['visualType'], 'table')
 
 
+class TestScatterStringMeasureDowngrade(unittest.TestCase):
+    """Scatter chart with only string/boolean BIM measures must be
+    downgraded (PBI rejects non-numeric measures on X/Y with
+    DataViewMappingError_ScatterXIncorrectAggregate).
+    """
+
+    def test_string_measure_downgrades_to_card(self):
+        gen = _make_generator()
+        _init_gen(
+            gen,
+            field_map={'Info': ('T', 'Info')},
+            measure_names=['Info'],
+        )
+        # Tag Info as a string-returning BIM measure
+        gen._actual_bim_measure_types = {('T', 'Info'): 'string'}
+        gen._actual_bim_symbols = {('T', 'Info')}
+
+        project_dir = tempfile.mkdtemp()
+        _TEMP_DIRS.append(project_dir)
+        pages_dir = tempfile.mkdtemp()
+        _TEMP_DIRS.append(pages_dir)
+
+        worksheets = [
+            {'name': 'WS_Icon', 'chart_type': 'scatterChart',
+             'fields': [{'name': 'Info', 'shelf': 'rows',
+                         'aggregation': 'sum'}]},
+        ]
+        converted = {
+            'datasources': [{'name': 'ds',
+                             'tables': [{'name': 'T',
+                                         'columns': [{'name': 'Info'}]}]}],
+            'calculations': [{'name': 'Info', 'formula': '"i"'}],
+        }
+        # NOTE: do NOT call _build_field_mapping — it would reset
+        # _measure_names; keep the manual setup from _init_gen.
+        result = gen._create_fallback_page(pages_dir, worksheets, converted)
+        self.assertEqual(result, ['ReportSection'])
+        vis_root = os.path.join(pages_dir, 'ReportSection', 'visuals')
+        vid = os.listdir(vis_root)[0]
+        with open(os.path.join(vis_root, vid, 'visual.json')) as f:
+            vj = json.load(f)
+        # Must NOT be scatterChart (PBI would reject Sum on a string measure)
+        self.assertNotEqual(vj['visual']['visualType'], 'scatterChart')
+        # Single non-numeric measure → 'card'
+        self.assertEqual(vj['visual']['visualType'], 'card')
+
+    def test_multiple_string_measures_downgrade_to_multirowcard(self):
+        gen = _make_generator()
+        _init_gen(
+            gen,
+            field_map={'Info': ('T', 'Info'), 'Alert': ('T', 'Alert')},
+            measure_names=['Info', 'Alert'],
+        )
+        gen._actual_bim_measure_types = {
+            ('T', 'Info'): 'string',
+            ('T', 'Alert'): 'boolean',
+        }
+        gen._actual_bim_symbols = {('T', 'Info'), ('T', 'Alert')}
+
+        pages_dir = tempfile.mkdtemp()
+        _TEMP_DIRS.append(pages_dir)
+        worksheets = [
+            {'name': 'WS_Badges', 'chart_type': 'scatterChart',
+             'fields': [
+                 {'name': 'Info', 'shelf': 'cols', 'aggregation': 'sum'},
+                 {'name': 'Alert', 'shelf': 'rows', 'aggregation': 'sum'},
+             ]},
+        ]
+        converted = {
+            'datasources': [{'name': 'ds',
+                             'tables': [{'name': 'T',
+                                         'columns': [{'name': 'Info'},
+                                                     {'name': 'Alert'}]}]}],
+            'calculations': [],
+        }
+        # Keep manual _measure_names setup; skip _build_field_mapping.
+        gen._create_fallback_page(pages_dir, worksheets, converted)
+        vis_root = os.path.join(pages_dir, 'ReportSection', 'visuals')
+        vid = os.listdir(vis_root)[0]
+        with open(os.path.join(vis_root, vid, 'visual.json')) as f:
+            vj = json.load(f)
+        self.assertEqual(vj['visual']['visualType'], 'multiRowCard')
+
+    def test_numeric_measure_keeps_scatter(self):
+        """Regression guard: numeric BIM measures must stay on scatter."""
+        gen = _make_generator()
+        _init_gen(
+            gen,
+            field_map={'Sales': ('T', 'Sales'), 'Profit': ('T', 'Profit')},
+            measure_names=['Sales', 'Profit'],
+        )
+        # No entries → unknown type → assumed numeric → no downgrade
+        gen._actual_bim_measure_types = {}
+        gen._actual_bim_symbols = {('T', 'Sales'), ('T', 'Profit')}
+
+        pages_dir = tempfile.mkdtemp()
+        _TEMP_DIRS.append(pages_dir)
+        worksheets = [
+            {'name': 'WS_Scatter', 'chart_type': 'scatterChart',
+             'fields': [
+                 {'name': 'Sales', 'shelf': 'cols', 'aggregation': 'sum'},
+                 {'name': 'Profit', 'shelf': 'rows', 'aggregation': 'sum'},
+             ]},
+        ]
+        converted = {
+            'datasources': [{'name': 'ds',
+                             'tables': [{'name': 'T',
+                                         'columns': [{'name': 'Sales'},
+                                                     {'name': 'Profit'}]}]}],
+            'calculations': [],
+        }
+        # Keep manual _measure_names setup; skip _build_field_mapping.
+        gen._create_fallback_page(pages_dir, worksheets, converted)
+        vis_root = os.path.join(pages_dir, 'ReportSection', 'visuals')
+        vid = os.listdir(vis_root)[0]
+        with open(os.path.join(vis_root, vid, 'visual.json')) as f:
+            vj = json.load(f)
+        self.assertEqual(vj['visual']['visualType'], 'scatterChart')
+
+
 # ─── Tooltip pages (lines 1203-1235) ────────────────────────────────
 
 class TestTooltipPages(unittest.TestCase):

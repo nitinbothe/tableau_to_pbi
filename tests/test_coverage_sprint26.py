@@ -544,6 +544,84 @@ class TestDaxRoundTrip(unittest.TestCase):
         self.assertIn('CALCULATE', result)
         self.assertIn('REMOVEFILTERS', result)
 
+    def test_lod_fixed_dim_is_calculation_falls_back_to_all(self):
+        """When a FIXED LOD's dimension is a calculation that resolves to a
+        non-bare-column expression (e.g. LOOKUPVALUE, IF/SWITCH), the
+        converter must NOT emit ``ALLEXCEPT('T', LOOKUPVALUE(...))`` which
+        is invalid DAX. It must fall back to a coarser ``ALL('T')`` filter.
+        Regression for UC80 measure ``Observations_par_confo_%_total``.
+        """
+        # Simulate Tableau formula: {FIXED [Calculation_X] : COUNT([ID])}
+        # where Calculation_X is a string-returning calc (resolves to a
+        # function call, not a bare column reference).
+        calc_map = {
+            'Calculation_5345': (
+                "IF([Parameters].[Param 12]=1, [Ps Service], "
+                "[Entreprises Titulaire])"
+            ),
+        }
+        formula = (
+            'COUNT([ID]) / SUM({FIXED [Calculation_5345] : COUNT([ID])})'
+        )
+        result = self._convert(
+            formula,
+            table_name='EDH_OBSERVATION_UC80 (2)',
+            calc_map=calc_map,
+        )
+        # Must NOT contain ALLEXCEPT(table, IF(...)) / ALLEXCEPT(table, LOOKUPVALUE(...)).
+        # Verify every ALLEXCEPT call receives only bare 'T'[col] args (args 2+).
+        import re as _re
+        for m in _re.finditer(r"ALLEXCEPT\s*\(([^)]*)\)", result, _re.IGNORECASE):
+            args = m.group(1)
+            parts = [a.strip() for a in args.split(',')]
+            for arg in parts[1:]:
+                self.assertRegex(
+                    arg,
+                    r"^'[^']+'\[[^\[\]]+\]$",
+                    f"ALLEXCEPT received non-bare-column arg: {arg!r} in {result!r}",
+                )
+        # The full DAX must remain valid: balanced parens
+        self.assertTrue(self._is_balanced(result), f"unbalanced parens: {result!r}")
+
+    def test_lod_fixed_cross_table_dim_not_wrapped_with_related(self):
+        """When a FIXED LOD's dimension is a real column on a DIFFERENT
+        table than the measure's host, and the LOD lives inside a SUMX
+        iterator, the cross-table column ref inside ALLEXCEPT must NOT
+        be wrapped with RELATED() (which tmdl_generator would later
+        rewrite to LOOKUPVALUE — both invalid as ALLEXCEPT args).
+        Regression for UC80 measure ``Observations_par_confo_%_total``.
+        """
+        # Calculation_5345's caption is "Service ou Entreprise"; the calc
+        # column lives on table 'EDH_OBSERVATION_UC80 (2)' but the measure
+        # is hosted on table 'EDH_OBSERVABLES_UC80 (2)'.
+        calc_map = {'Calculation_5345139495278407692': 'Service ou Entreprise'}
+        column_table_map = {
+            'Service ou Entreprise': 'EDH_OBSERVATION_UC80 (2)',
+            'ID': 'EDH_OBSERVABLES_UC80 (2)',
+        }
+        formula = (
+            'COUNT([ID]) / '
+            'SUM({FIXED [Calculation_5345139495278407692] : COUNT([ID])})'
+        )
+        result = self._convert(
+            formula,
+            table_name='EDH_OBSERVATION_UC80 (2)',
+            calc_map=calc_map,
+            column_table_map=column_table_map,
+        )
+        # No RELATED or LOOKUPVALUE inside ALLEXCEPT
+        import re as _re
+        for m in _re.finditer(r"ALLEXCEPT\s*\(([^)]*)\)", result, _re.IGNORECASE):
+            args = m.group(1)
+            self.assertNotIn(
+                'RELATED', args.upper(),
+                f"ALLEXCEPT wraps cross-table ref in RELATED: {result!r}",
+            )
+            self.assertNotIn(
+                'LOOKUPVALUE', args.upper(),
+                f"ALLEXCEPT wraps cross-table ref in LOOKUPVALUE: {result!r}",
+            )
+
     def test_running_sum(self):
         result = self._convert('RUNNING_SUM(SUM([Sales]))')
         self.assertIn('CALCULATE', result)

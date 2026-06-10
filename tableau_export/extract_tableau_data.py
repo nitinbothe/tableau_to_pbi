@@ -123,6 +123,39 @@ def _split_sql_values(values_str):
     return result
 
 
+# Tableau Desktop emits unstyled <run>Æ&#10;</run> elements inside
+# <formatted-text> blocks as soft line-break sentinels. The literal U+00C6
+# is invisible in Tableau itself but renders as "Æ" in downstream
+# consumers (Power BI, browsers, plain-text exports). Pattern: text is the
+# Tableau line-break sentinel char (Æ or non-breaking space) optionally
+# surrounded by whitespace, AND the run carries no font/style attributes.
+_TABLEAU_LB_SENTINEL_RE = re.compile(r'^[\s]*[\u00c6\u00a0]+[\s]*$')
+_TABLEAU_RUN_STYLE_ATTRS = (
+    'fontname', 'fontsize', 'fontcolor', 'color',
+    'bold', 'italic', 'underline', 'href', 'url',
+    'font-family', 'font-size', 'font-color',
+    'fontstyle', 'fontweight',
+)
+
+
+def _clean_tableau_run_text(run_elem):
+    """Return run text with Tableau line-break sentinel artifacts stripped.
+
+    If a ``<run>`` has no font/style attributes and its text consists solely
+    of Tableau's line-break sentinel character(s) (``Æ`` U+00C6 or
+    non-breaking space U+00A0) plus surrounding whitespace, the sentinel
+    characters are dropped (newlines are preserved so paragraph splitting
+    still works downstream). Styled runs and runs with mixed content are
+    returned unchanged.
+    """
+    text = run_elem.text or ''
+    if not text or not _TABLEAU_LB_SENTINEL_RE.match(text):
+        return text
+    if any(run_elem.get(a) for a in _TABLEAU_RUN_STYLE_ATTRS):
+        return text
+    return text.replace('\u00c6', '').replace('\u00a0', '')
+
+
 def _scan_delimited_sample(text_chunk, col_names, max_rows):
     """Attempt to extract sample rows from tab- or comma-delimited blocks.
 
@@ -1367,9 +1400,10 @@ class TableauExtractor:
                 parts = []
                 runs = []
                 for run in formatted.findall('.//run'):
-                    if run.text:
-                        parts.append(run.text)
-                        run_data = {'text': run.text}
+                    run_text = _clean_tableau_run_text(run)
+                    if run_text:
+                        parts.append(run_text)
+                        run_data = {'text': run_text}
                         bold = run.get('bold', run.get('fontweight', ''))
                         if bold and bold.lower() in ('true', 'bold'):
                             run_data['bold'] = True
@@ -1380,7 +1414,7 @@ class TableauExtractor:
                         if font_size:
                             run_data['font_size'] = font_size
                         # Detect field references <run>[field]</run>
-                        field_match = re.match(r'^\s*\[([^\]]+)\]\s*$', run.text)
+                        field_match = re.match(r'^\s*\[([^\]]+)\]\s*$', run_text)
                         if field_match:
                             run_data['field_ref'] = field_match.group(1)
                         runs.append(run_data)
@@ -1447,9 +1481,10 @@ class TableauExtractor:
                 if formatted is not None:
                     parts = []
                     for run in formatted.findall('.//run'):
-                        if run.text:
-                            parts.append(run.text)
-                            run_data = {'text': run.text}
+                        run_text = _clean_tableau_run_text(run)
+                        if run_text:
+                            parts.append(run_text)
+                            run_data = {'text': run_text}
                             if run.get('bold', run.get('fontweight', '')).lower() in ('true', 'bold'):
                                 run_data['bold'] = True
                             if run.get('italic', run.get('fontstyle', '')).lower() in ('true', 'italic'):
@@ -1979,6 +2014,7 @@ class TableauExtractor:
                     'position': label.get('label-position', ''),  # top, center, bottom, left, right
                     'orientation': label.get('label-orientation', ''),  # horizontal, vertical, diagonal
                     'font_size': label.get('font-size', ''),
+                    'font_family': label.get('font-family', '') or label.get('font-name', ''),
                     'font_weight': label.get('font-weight', ''),  # bold, normal
                     'font_color': label.get('font-color', ''),
                     'content_type': label.get('content-type', ''),  # value, percent, category
@@ -2117,14 +2153,18 @@ class TableauExtractor:
             if formatted is not None:
                 parts = []
                 for run in formatted.findall('.//run'):
-                    if run.text:
-                        parts.append(run.text)
+                    run_text = _clean_tableau_run_text(run)
+                    if run_text:
+                        parts.append(run_text)
                     # Extract font formatting from the first run
                     if not ann_data['formatting']:
                         fmt = {}
                         font_size = run.get('fontsize', run.get('font-size', ''))
                         if font_size:
                             fmt['font_size'] = font_size
+                        font_family = run.get('fontname', run.get('font-family', ''))
+                        if font_family:
+                            fmt['font_family'] = font_family
                         font_color = run.get('fontcolor', run.get('font-color', ''))
                         if font_color:
                             fmt['font_color'] = font_color
@@ -3408,6 +3448,8 @@ class TableauExtractor:
                 continue
             if run.get('fontsize'):
                 fmt['font_size'] = run.get('fontsize')
+            if run.get('fontname'):
+                fmt['font_family'] = run.get('fontname')
             if run.get('fontcolor'):
                 fmt['font_color'] = run.get('fontcolor')
             if run.get('bold') == 'true':

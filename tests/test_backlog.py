@@ -111,6 +111,110 @@ class TestMultiDatasourceContext(unittest.TestCase):
             cleanup_dir(tmp)
 
 
+class TestMeasureReturnTypeInference(unittest.TestCase):
+    """generate_tmdl populates actual_bim_measure_types for string/boolean
+    measures so scatter X/Y routing can avoid PBI's
+    DataViewMappingError_ScatterXIncorrectAggregate."""
+
+    def test_string_literal_measure_inferred(self):
+        tmp = make_temp_dir()
+        try:
+            datasources = [{
+                'name': 'DS',
+                'connection': {'type': 'SQL Server',
+                               'details': {'server': 's', 'database': 'd'}},
+                'connection_map': {},
+                'tables': [{
+                    'name': 'T1',
+                    'columns': [{'name': 'A', 'datatype': 'integer'}],
+                }],
+                'calculations': [
+                    # Matches UC80's 'Info' calc shape: dimension role +
+                    # Tableau single-quoted string literal.
+                    {'name': '[Calculation_111]', 'caption': 'InfoBadge',
+                     'formula': "'i'", 'role': 'dimension',
+                     'datatype': 'string', 'datasource_name': 'DS'},
+                ],
+            }]
+            sm_dir = os.path.join(tmp, 'Test.SemanticModel')
+            stats = generate_tmdl(datasources, 'Test', {}, sm_dir)
+            types = stats.get('actual_bim_measure_types', {})
+            # Find the (table, 'InfoBadge') entry
+            string_entries = [
+                k for k, v in types.items()
+                if k[1] == 'InfoBadge' and v == 'string'
+            ]
+            self.assertTrue(string_entries,
+                            f"Expected 'InfoBadge' inferred as string, got {types}")
+
+        finally:
+            cleanup_dir(tmp)
+
+    def test_boolean_measure_inferred(self):
+        tmp = make_temp_dir()
+        try:
+            datasources = [{
+                'name': 'DS',
+                'connection': {'type': 'SQL Server',
+                               'details': {'server': 's', 'database': 'd'}},
+                'connection_map': {},
+                'tables': [{
+                    'name': 'T1',
+                    'columns': [{'name': 'A', 'datatype': 'integer'}],
+                }],
+                'calculations': [
+                    # Matches UC80 'User Access' shape: USERNAME-based
+                    # boolean expression with no column refs.
+                    {'name': '[Calculation_222]', 'caption': 'AccessFlag',
+                     'formula': 'LEN(USERNAME()) <= 6 '
+                                'OR USERNAME()="PP0F98CL"',
+                     'role': 'measure',
+                     'datatype': 'boolean',
+                     'datasource_name': 'DS'},
+                ],
+            }]
+            sm_dir = os.path.join(tmp, 'Test.SemanticModel')
+            stats = generate_tmdl(datasources, 'Test', {}, sm_dir)
+            types = stats.get('actual_bim_measure_types', {})
+            bool_entries = [
+                k for k, v in types.items()
+                if k[1] == 'AccessFlag' and v == 'boolean'
+            ]
+            self.assertTrue(bool_entries,
+                            f"Expected 'AccessFlag' inferred as boolean, got {types}")
+        finally:
+            cleanup_dir(tmp)
+
+    def test_numeric_measure_not_inferred_as_string(self):
+        tmp = make_temp_dir()
+        try:
+            datasources = [{
+                'name': 'DS',
+                'connection': {'type': 'SQL Server',
+                               'details': {'server': 's', 'database': 'd'}},
+                'connection_map': {},
+                'tables': [{
+                    'name': 'T1',
+                    'columns': [{'name': 'Sales', 'datatype': 'integer'}],
+                }],
+                'calculations': [
+                    {'name': 'TotalSales', 'caption': 'TotalSales',
+                     'formula': 'SUM([Sales])', 'role': 'measure',
+                     'datatype': 'integer'},
+                ],
+            }]
+            sm_dir = os.path.join(tmp, 'Test.SemanticModel')
+            stats = generate_tmdl(datasources, 'Test', {}, sm_dir)
+            types = stats.get('actual_bim_measure_types', {})
+            # SUM-based numeric measure must NOT be flagged string/boolean
+            for k, v in types.items():
+                if k[1] == 'TotalSales':
+                    self.assertNotIn(v, ('string', 'boolean'),
+                                     f"Numeric measure misclassified: {k}={v}")
+        finally:
+            cleanup_dir(tmp)
+
+
 class TestIncrementalMigration(unittest.TestCase):
     """Tests for IncrementalMerger diff and merge."""
 

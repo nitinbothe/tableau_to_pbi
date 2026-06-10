@@ -138,6 +138,31 @@ class TestFederatedPrefixStrip(unittest.TestCase):
         self.assertIn('A', result)
         self.assertIn('B', result)
 
+    def test_sqlproxy_prefix_removed(self):
+        """sqlproxy.<id>.[Calc] (published datasource cross-ref) → [Calc]."""
+        result = convert_tableau_formula_to_dax(
+            'IF [sqlproxy.abc123].[Calculation_999] = TRUE THEN 1 ELSE 0 END',
+            table_name='T',
+        )
+        self.assertNotIn('sqlproxy', result)
+
+    def test_internal_object_id_blend_collapsed(self):
+        """[__tableau_internal_object_id__].[Migrated Data] → row-id only.
+
+        This collapse keeps any wrapping COUNT(...) valid; without it the
+        emitted DAX contained `T[a].T[b]` which Power BI rejects with
+        "Something's wrong with one or more fields".
+        """
+        result = convert_tableau_formula_to_dax(
+            'COUNT([__tableau_internal_object_id__].[Migrated Data])',
+            table_name='T',
+        )
+        # The trailing .[Migrated Data] reference must be gone.
+        self.assertNotIn('Migrated Data', result)
+        # And the result should not contain the invalid `].[` measure-style
+        # chain on the internal id (which would be illegal DAX).
+        self.assertNotIn('].[', result)
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  3. CASE/WHEN → SWITCH body (L452-485)
