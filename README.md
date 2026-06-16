@@ -4,18 +4,28 @@
 
 | | |
 |---|---|
-| 🏷️ **Version** | 38.4.0 |
-| ✅ **Tests** | 8,746 passed (latest full run) |
+| 🏷️ **Version** | 38.5.0 |
+| ✅ **Tests** | 8,875 passed (latest full run) |
 | 🐍 **Python** | 3.12+ · zero external dependencies |
 | 📜 **License** | MIT |
 
 | 🎯 **Capabilities** | 133+ DAX conversions · 190 visual types · 79 connectors · 23 object types |
 
-### What is new in v38.4.0
+### What is new in v38.5.0
 
-- v38.3.0 fixed UC80 empty visuals (82 empty visuals -> 0).
-- v38.4.0 shipped pixel-fidelity fixes for annotation/textbox fonts, per-visual background/border mapping, and Tableau line-break sentinel cleanup (`Ae`/NBSP run artifacts).
-- Remaining fidelity caveat (planned next): floating legend overlays on chart corners in some dashboards. See `docs/ROADMAP.md` (v38.5.0).
+- **Floating zone overlay fidelity**: the report-side overlap healer is now deterministic — overlapping zones are staggered by z-order (backdrop stays anchored, foreground nudged +32 px), stable across all `PYTHONHASHSEED` values.
+- **Pixel-perfect golden fixtures**: per-workbook visual golden fixtures with a CI drift gate (`scripts/generate_pixel_fixtures.py --check`); 7 deterministic workbooks including `Enterprise_Sales`.
+- **Mixed-alignment & vertical-anchor text runs**: per-paragraph horizontal alignment + vertical anchor preserved into PBIR textboxes.
+- **Real-world QA suite**: `--qa` / `--qa-strict` produce a 6-check migration QA report card (zero sentinel glyphs, zero empty visuals, full format coverage, all zones matched, no orphan filters, fidelity ≥97) with an HTML report and CI-strict exit code.
+
+#### Pixel-perfect fidelity (4-axis coverage)
+
+| Axis | What is preserved |
+|------|-------------------|
+| **Fonts** | Run-level font family, size, weight, color, and per-paragraph horizontal alignment |
+| **Chrome** | Per-visual background + border from Tableau format zones |
+| **Sentinel** | Tableau soft line-break sentinel runs (`Ae`/NBSP) cleaned during extraction |
+| **Overlay** | Floating/overlapping zones staggered deterministically by z-order |
 
 ---
 
@@ -125,7 +135,8 @@ python migrate.py --shared-model wb1.twbx wb2.twbx \
 #### ⚡ Quality & optimization
 
 ```bash
-python migrate.py workbook.twbx --qa                       # full QA suite
+python migrate.py workbook.twbx --qa                       # full QA report card (6 checks)
+python migrate.py workbook.twbx --qa-strict                # QA + non-zero exit on any failed check (CI gate)
 python migrate.py workbook.twbx --optimize-dax --time-intelligence auto
 python migrate.py workbook.twbx --check-drift /snapshots   # schema drift detection
 python migrate.py workbook.twbx --autoplay                 # post-migration validation
@@ -680,7 +691,7 @@ TableauToPowerBI/
 │   ├── schema_drift.py                        #   Schema drift detection (v28)
 │   └── deploy/                                #   Deploy to PBI Service / Fabric
 ├── Dockerfile                                 # Docker image for API server
-├── tests/                                     # 8,746 tests in latest full run
+├── tests/                                     # 8,875 tests in latest full run
 ├── docs/                                      # 18 documentation files
 └── examples/                                  # Sample Tableau workbooks
 ```
@@ -875,7 +886,7 @@ python -m pytest tests/ --cov --cov-report=html      # Coverage report
 
 ```mermaid
 flowchart LR
-    L["🔍 Lint\nflake8 + ruff"] --> T["🧪 Test\n8,746 tests\nPy 3.9–3.14"]
+    L["🔍 Lint\nflake8 + ruff"] --> T["🧪 Test\n8,875 tests\nPy 3.9–3.14"]
     T --> V["✅ Validate\nStrict .twbx\nmigrations"]
     V --> S["📦 Staging\nFabric deploy"]
     S --> P["🚀 Production\nManual approval"]

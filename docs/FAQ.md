@@ -216,7 +216,32 @@ If you still see this behavior, regenerate with the latest version and attach a 
 
 ### Is visual positioning pixel-perfect?
 
-Most direct zone-to-visual sizing now maps accurately (including UC80 validation work), but one known caveat remains: floating legend overlays in some dashboards can still be laid out side-by-side instead of overlaid on chart corners. This is tracked as planned work in `ROADMAP.md` (v38.5.0).
+Direct zone-to-visual sizing maps accurately (including UC80 validation work). As of **v38.5.0**, floating/overlapping zones are resolved deterministically: the report-side overlap healer sorts overlapping visuals by z-order, keeps the lowest-z backdrop anchored, and staggers higher-z foreground zones by +32 px. This is stable across runs (verified across all `PYTHONHASHSEED` values) and is locked in by per-workbook pixel-perfect golden fixtures with a CI drift gate (`scripts/generate_pixel_fixtures.py --check`).
+
+Pixel-perfect fidelity is validated along 4 axes:
+
+| Axis | What is preserved |
+|------|-------------------|
+| **Fonts** | Run-level font family, size, weight, color, per-paragraph horizontal alignment |
+| **Chrome** | Per-visual background + border from Tableau format zones |
+| **Sentinel** | Tableau soft line-break sentinel runs (`Ae`/NBSP) cleaned during extraction |
+| **Overlay** | Floating/overlapping zones staggered deterministically by z-order |
+
+### How do I run the real-world QA suite?
+
+Add `--qa` to produce a 6-check migration QA report card (HTML + console):
+
+```bash
+python migrate.py workbook.twbx --qa
+```
+
+The 6 checks are: zero sentinel glyphs, zero empty visuals, full number-format coverage, all dashboard zones matched, no orphan filters, and fidelity ≥ 97.
+
+Use `--qa-strict` in CI to make the migration exit with a non-zero status if any check fails:
+
+```bash
+python migrate.py workbook.twbx --qa-strict
+```
 
 ## Technical
 

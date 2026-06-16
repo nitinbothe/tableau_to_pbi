@@ -1,5 +1,24 @@
 # Changelog
 
+## v38.5.0 — Floating-Overlay Fidelity & Real-World QA
+
+### Highlights
+- **Floating zone overlay fidelity (Sprint 204)**: the report-side self-healing overlap pass is now deterministic. `_heal_visual_overlap_full` iterates visuals sorted by z-order (`_overlap_sort_key`: `z`, `tabOrder`, `name`) so the lowest-z backdrop stays anchored and higher-z foreground zones are staggered by +32 px. Previously the iteration order came from `sorted(os.listdir())` over random `uuid4` directory names, making which overlapping visual moved non-deterministic across `PYTHONHASHSEED` values.
+- **Pixel-perfect golden fixtures (Sprint 205)**: per-workbook visual golden fixtures with a CI drift gate (`scripts/generate_pixel_fixtures.py --check`). Now 7 deterministic workbooks including the previously-excluded `Enterprise_Sales`.
+- **Mixed-alignment & vertical-anchor text runs (Sprint 206)**: per-paragraph horizontal alignment (`fontalignment` 1→left/2→center/3→right/4→justify) plus zone-level text-align and vertical anchor are preserved into PBIR textbox payloads.
+- **Real-world QA suite (Sprint 207)**: `--qa` / `--qa-strict` produce a 6-check migration QA report card (zero sentinel glyphs, zero empty visuals, full format coverage, all zones matched, no orphan filters, fidelity ≥97) with an HTML report and CI-strict exit code. Autoplay QA step added (Sprint 207.4).
+
+### Affected Areas
+- `powerbi_import/self_healing_report.py` (deterministic overlap stagger)
+- `powerbi_import/pbip_generator.py`, `tableau_export/extract_tableau_data.py` (text alignment)
+- `scripts/generate_pixel_fixtures.py`, `tests/golden/` (golden fixtures)
+- `tests/test_pixel_perfect_fidelity.py`, `tests/test_qa_suite.py`
+
+### Validation
+- Floating-overlap determinism verified across 7 `PYTHONHASHSEED` values (textbox at 0,108; staggered worksheet at 32,140).
+- Full regression suite: **8,875 passed, 66 skipped, 1 xfailed** (11 pre-existing DAX `INDEX→ROWNUMBER` / `_quote_name` failures tracked separately).
+- `TestFloatingOverlap` (10 tests) and `--check` golden drift gate green.
+
 ## v38.4.0 — Pixel-Perfect Text & Visual Fidelity
 
 ### Highlights
