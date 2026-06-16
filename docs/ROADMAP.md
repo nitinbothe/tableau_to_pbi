@@ -2108,9 +2108,19 @@ No new CLI flags. No schema changes. This patch is fully backward-compatible wit
 
 ---
 
-## v38.5.0 — Floating-Overlay Fidelity & Real-World QA (Sprints 204–208 — Planned, Next)
+## v38.5.0 — Floating-Overlay Fidelity & Real-World QA (Sprints 204–208 — In Progress)
 
 **Theme:** The v38.4 sizing audit confirmed that page dimensions, direct-zone visuals (textbox/image), and per-axis scaling are all faithful. One layout caveat remains: **floating worksheet zones overlaid on top of tiled chart zones** (e.g. legends pinned to a chart's corner) are currently flattened to a side-by-side layout by `_build_zone_layout_map`. v38.5 closes this loop, codifies the manual UC80 QA into an automated suite, and adds per-workbook golden fixtures to lock in the v38.4 wins.
+
+**Sprint status:**
+
+| Sprint | Title | Status |
+|--------|-------|--------|
+| 204 | Floating Zone Overlay Fidelity | ⬜ Planned |
+| 205 | Per-Workbook Pixel-Perfect Golden Fixtures | ⬜ Planned (recommended next — additive, @tester-owned, low regression risk) |
+| 206 | Mixed-Alignment & Vertical-Anchor Text Runs | ⬜ Planned |
+| 207 | Real-World Migration QA Suite | ✅ Done (207.4 autoplay pending) |
+| 208 | v38.5.0 Release & Hardening | ⬜ Blocked on 204–206 |
 
 **Motivation:**
 - UC80's `N_1`/`N_X`/`N_4`/`N_7` chart groups all have a chart at `x=2083 w=95834` with a legend floating at `x≈85k–89k w≈8.7k` — Tableau renders the legend overlaid on the chart's right corner, but the current grid layout puts them side-by-side, shrinking the chart from `~1880px → 1240px`.
