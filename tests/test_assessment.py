@@ -232,10 +232,14 @@ class TestCheckDatasources(unittest.TestCase):
     def test_data_blending(self):
         ext = {
             'datasources': [{'name': 'DS1', 'connection': {'type': 'Excel'}}],
-            'data_blending': [{'secondary_datasource': 'DS2'}],
+            'data_blending': [
+                {'datasource': 'DS1', 'secondary_datasource': 'DS2',
+                 'column': 'Order ID'},
+            ],
         }
         cat = _check_datasources(ext)
         blending_checks = [c for c in cat.checks if 'blending' in c.name.lower()]
+        # A simple two-source blend grades GREEN → INFO severity.
         self.assertTrue(any(c.severity == INFO for c in blending_checks))
 
     def test_custom_sql(self):

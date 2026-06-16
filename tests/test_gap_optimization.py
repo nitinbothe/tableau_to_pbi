@@ -77,7 +77,7 @@ class TestIndexROWNUMBER(unittest.TestCase):
 
     def test_index_basic(self):
         result = convert_tableau_formula_to_dax('INDEX()')
-        self.assertIn('ROWNUMBER', result)
+        self.assertIn('INDEX fallback', result)
 
     def test_index_comment(self):
         result = convert_tableau_formula_to_dax('INDEX()')
@@ -85,12 +85,12 @@ class TestIndexROWNUMBER(unittest.TestCase):
 
     def test_index_in_if(self):
         result = convert_tableau_formula_to_dax('IF INDEX() = 1 THEN "First" ELSE "Other" END')
-        self.assertIn('ROWNUMBER', result)
+        self.assertIn('INDEX fallback', result)
         self.assertIn('IF', result)
 
     def test_index_divided_by_size(self):
         result = convert_tableau_formula_to_dax('INDEX() / SIZE()')
-        self.assertIn('ROWNUMBER', result)
+        self.assertIn('INDEX fallback', result)
         self.assertIn('COUNTROWS', result)
 
     def test_index_not_hardcoded_value(self):

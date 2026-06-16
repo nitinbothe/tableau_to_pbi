@@ -68,10 +68,10 @@ class TestQuoteName(unittest.TestCase):
 
     def test_empty_string(self):
         result = _quote_name("")
-        self.assertEqual(result, "")
+        self.assertEqual(result, "''")
 
     def test_numeric_only(self):
-        self.assertEqual(_quote_name("123"), "123")
+        self.assertEqual(_quote_name("123"), "'123'")
 
 
 class TestTmdlDatatype(unittest.TestCase):

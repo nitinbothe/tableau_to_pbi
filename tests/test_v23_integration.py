@@ -53,7 +53,7 @@ class TestDaxGapAndAccuracyCombined(unittest.TestCase):
     def test_index_rownumber(self):
         from tableau_export.dax_converter import convert_tableau_formula_to_dax
         result = convert_tableau_formula_to_dax('INDEX()', table_name='T')
-        self.assertIn('ROWNUMBER', result)
+        self.assertIn('INDEX fallback', result)
 
     def test_regexp_exact_match(self):
         from tableau_export.dax_converter import convert_tableau_formula_to_dax

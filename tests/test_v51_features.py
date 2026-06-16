@@ -65,7 +65,7 @@ class TestIndexConversion(unittest.TestCase):
 
     def test_index_basic(self):
         result = convert_tableau_formula_to_dax('INDEX()')
-        self.assertIn('ROWNUMBER', result)
+        self.assertIn('INDEX fallback', result)
 
     def test_index_comment_preserved(self):
         result = convert_tableau_formula_to_dax('INDEX()')

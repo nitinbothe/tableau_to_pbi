@@ -332,19 +332,34 @@ def _check_datasources(extracted: Dict) -> CategoryResult:
                 "Verify manually whether Power BI supports this connector type.",
             ))
 
-    # Data blending — filter out virtual "Parameters" datasource links
-    blending = [
-        b for b in extracted.get("data_blending", [])
-        if b.get("secondary_datasource", "") != "Parameters"
-           and b.get("datasource", "") != "Parameters"
-    ]
-    if blending:
+    # Data blending — build a structured blend graph and grade its complexity
+    from tableau_export.blend_graph import build_blend_graph, assess_blend_graph
+    blend_graph = build_blend_graph(
+        extracted.get("data_blending", []),
+        extracted.get("datasources", []),
+    )
+    if blend_graph:
+        summary = assess_blend_graph(blend_graph)
+        grade = summary["grade"]
+        sev = {"GREEN": INFO, "YELLOW": WARN, "RED": FAIL}.get(grade, INFO)
+        detail = (
+            f"{summary['primary_count']} primary datasource(s) blended with "
+            f"{summary['secondary_count']} secondary source(s) on "
+            f"{summary['link_field_count']} link field(s). "
+            "Auto-converted: merge queries + single-direction relationships "
+            "generated in the Semantic Model."
+        )
+        if summary["missing_link_key_count"]:
+            detail += (
+                f" {summary['missing_link_key_count']} secondary source(s) have "
+                "no explicit link key — Power BI will match on field name."
+            )
         cat.checks.append(CheckItem(
-            cat.name, "Data blending", INFO,
-            f"{len(blending)} cross-datasource blending link(s) detected. "
-            "Auto-converted: relationships generated in Semantic Model.",
+            cat.name, "Data blending", sev, detail,
             "Review generated relationships in the Semantic Model "
-            "to confirm join keys match original blending links.",
+            "to confirm join keys match the original blending links."
+            + (" Circular blend detected — verify direction manually."
+               if grade == "RED" else ""),
         ))
     else:
         cat.checks.append(CheckItem(
