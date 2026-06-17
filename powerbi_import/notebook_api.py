@@ -21,6 +21,7 @@ import copy
 import json
 import logging
 import os
+import re
 import sys
 
 logger = logging.getLogger(__name__)
@@ -97,9 +98,12 @@ class MigrationSession:
         """
         self._require_loaded()
 
-        from powerbi_import.assessment import AssessmentReport
+        from powerbi_import.assessment import run_assessment
 
-        report = AssessmentReport(self._extracted)
+        workbook_name = (self._config.get('workbook_name')
+                         or self._extracted.get('workbook_name')
+                         or 'Workbook')
+        report = run_assessment(self._extracted, workbook_name=workbook_name)
         self._assessment = report.to_dict()
         return self._assessment
 
@@ -381,6 +385,140 @@ class MigrationSession:
         )
         return result.to_dict()
 
+    # ── Interactive widgets (v2) ──────────────────────────────
+
+    def assess_interactive(self):
+        """Render the assessment as an inline HTML radar chart.
+
+        Returns a rich-display object that renders an SVG radar chart of the
+        9 assessment categories in Jupyter (via ``_repr_html_``) and degrades
+        to a plain dict elsewhere. Each category axis is scored from its
+        pass/warn/fail check ratio.
+
+        Returns:
+            _NotebookDisplay: inline widget; ``.to_dict()`` returns raw scores.
+        """
+        assessment = self._assessment or self.assess()
+        scores = _category_scores(assessment)
+        html = _render_radar_svg(scores, title='Migration Readiness')
+        return _NotebookDisplay(html, {'scores': scores, 'assessment': assessment})
+
+    def explore_dax(self, status=None):
+        """Explore all DAX conversions as a filterable inline table.
+
+        Each row carries the Tableau formula, converted DAX, a numeric
+        ``confidence`` (1.0 exact / 1.0 overridden / 0.5 approximated /
+        0.0 unsupported) and a ``migration_note``. Renders as an HTML table
+        in Jupyter; ``.to_dict()`` / ``.to_frame()`` expose the raw rows.
+
+        Args:
+            status: optional filter — 'exact', 'approximated', 'overridden'.
+
+        Returns:
+            _DaxExplorer: inline table widget over the conversion rows.
+        """
+        previews = self.preview_dax()
+        rows = []
+        for p in previews:
+            st = p['status']
+            confidence = {
+                'exact': 1.0, 'overridden': 1.0,
+                'approximated': 0.5, 'unsupported': 0.0,
+            }.get(st, 0.75)
+            note = ''
+            if st == 'approximated':
+                note = 'Manual review recommended — placeholder/partial DAX'
+            elif st == 'overridden':
+                note = 'User override active'
+            rows.append({
+                'name': p['name'],
+                'tableau_formula': p['tableau_formula'],
+                'dax_formula': p['dax_formula'],
+                'status': st,
+                'confidence': confidence,
+                'migration_note': note,
+            })
+        if status:
+            rows = [r for r in rows if r['status'] == status]
+        return _DaxExplorer(rows)
+
+    def show_relationships(self):
+        """Render the model relationships as an inline Mermaid ER diagram.
+
+        Builds a Mermaid ``erDiagram`` from extracted datasource
+        relationships, flagging cross-table cardinality. Renders inline in
+        Jupyter (Mermaid-enabled front-ends) and exposes the diagram source
+        via ``.to_dict()['mermaid']``.
+
+        Returns:
+            _NotebookDisplay: inline diagram widget.
+        """
+        self._require_loaded()
+        rels = _collect_relationships(self._extracted)
+        mermaid = _render_mermaid_er(rels)
+        html = _render_mermaid_html(mermaid)
+        return _NotebookDisplay(html, {'mermaid': mermaid, 'relationships': rels},
+                                text=mermaid)
+
+    # ── Step-by-step migration (v2) ───────────────────────────
+
+    def step_extract(self, workbook_path=None):
+        """Run only the extraction phase (idempotent).
+
+        Args:
+            workbook_path: optional path; reuses the loaded workbook if omitted.
+
+        Returns:
+            dict: per-type extraction counts.
+        """
+        if workbook_path:
+            return self.load(workbook_path)
+        if self._extracted is None:
+            raise RuntimeError("No workbook loaded — pass workbook_path or call load() first")
+        return {k: (len(v) if isinstance(v, (list, dict)) else 1)
+                for k, v in self._extracted.items()}
+
+    def step_convert(self):
+        """Run only the DAX/M/visual conversion phase for inspection.
+
+        Returns:
+            dict: {'dax', 'm', 'visuals'} preview lists plus summary counts.
+        """
+        self._require_loaded()
+        dax = self.preview_dax()
+        try:
+            m = self.preview_m()
+        except Exception as exc:  # noqa: BLE001 — preview-only
+            logger.warning("M preview failed during step_convert: %s", exc)
+            m = []
+        visuals = self.preview_visuals()
+        self._converted_objects = {'dax': dax, 'm': m, 'visuals': visuals}
+        return {
+            'dax': dax,
+            'm': m,
+            'visuals': visuals,
+            'dax_count': len(dax),
+            'm_count': len(m),
+            'visual_count': len(visuals),
+            'approximated': sum(1 for d in dax if d['status'] == 'approximated'),
+        }
+
+    def step_generate(self, output_dir=None):
+        """Run only the generation phase. Alias of :meth:`generate`.
+
+        Returns:
+            dict: generation summary.
+        """
+        return self.generate(output_dir=output_dir)
+
+    def step_validate(self):
+        """Run only the validation phase. Alias of :meth:`validate`.
+
+        Returns:
+            dict: validation results.
+        """
+        return self.validate()
+
     # ── Notebook Generation ───────────────────────────────────
 
     def generate_notebook(self, workbook_path, output_path=None):
@@ -527,3 +665,232 @@ def _make_code_cell(source):
         'outputs': [],
         'execution_count': None,
     }
+
+
+# ── Rich display objects (v2) ─────────────────────────────────
+
+class _NotebookDisplay:
+    """Rich-display wrapper that renders HTML in Jupyter, dict elsewhere."""
+
+    def __init__(self, html, data, text=None):
+        self._html = html
+        self._data = data
+        self._text = text or ''
+
+    def _repr_html_(self):  # noqa: N802 — Jupyter protocol
+        return self._html
+
+    def __repr__(self):
+        return self._text or repr(self._data)
+
+    def to_dict(self):
+        return self._data
+
+
+class _DaxExplorer:
+    """Filterable table of DAX conversion rows with inline HTML rendering."""
+
+    def __init__(self, rows):
+        self._rows = list(rows)
+
+    @property
+    def rows(self):
+        return list(self._rows)
+
+    def filter(self, status):
+        """Return a new explorer filtered by conversion status."""
+        return _DaxExplorer([r for r in self._rows if r['status'] == status])
+
+    def to_dict(self):
+        return list(self._rows)
+
+    def to_frame(self):
+        """Return a pandas DataFrame if pandas is installed, else the rows."""
+        try:
+            import pandas as pd  # noqa: WPS433 — optional dependency
+            return pd.DataFrame(self._rows)
+        except Exception:  # noqa: BLE001 — pandas optional
+            return list(self._rows)
+
+    def __len__(self):
+        return len(self._rows)
+
+    def __iter__(self):
+        return iter(self._rows)
+
+    def _repr_html_(self):  # noqa: N802 — Jupyter protocol
+        if not self._rows:
+            return '<p><em>No DAX conversions.</em></p>'
+        head = ('<tr>'
+                '<th>Name</th><th>Tableau</th><th>DAX</th>'
+                '<th>Status</th><th>Confidence</th><th>Note</th></tr>')
+        body = []
+        colors = {'exact': '#107c10', 'overridden': '#0078d4',
+                  'approximated': '#d29200', 'unsupported': '#a4262c'}
+        for r in self._rows:
+            c = colors.get(r['status'], '#605e5c')
+            body.append(
+                '<tr>'
+                f'<td><b>{_html_escape(r["name"])}</b></td>'
+                f'<td><code>{_html_escape(r["tableau_formula"])}</code></td>'
+                f'<td><code>{_html_escape(r["dax_formula"])}</code></td>'
+                f'<td style="color:{c};font-weight:600">{r["status"]}</td>'
+                f'<td>{r["confidence"]:.2f}</td>'
+                f'<td>{_html_escape(r["migration_note"])}</td>'
+                '</tr>'
+            )
+        return (
+            '<table style="border-collapse:collapse;font-family:Segoe UI,sans-serif;'
+            'font-size:12px" border="1" cellpadding="4">'
+            f'{head}{"".join(body)}</table>'
+        )
+
+    def __repr__(self):
+        return f'<_DaxExplorer rows={len(self._rows)}>'
+
+
+# ── Rendering helpers (v2) ────────────────────────────────────
+
+def _html_escape(text):
+    """Minimal HTML escaping for inline rendering."""
+    return (str(text).replace('&', '&amp;').replace('<', '&lt;')
+            .replace('>', '&gt;').replace('"', '&quot;'))
+
+
+def _category_scores(assessment):
+    """Reduce an assessment dict to {category: 0.0-1.0} readiness scores."""
+    sev_score = {
+        'pass': 1.0, 'info': 0.85, 'warn': 0.5, 'fail': 0.0,
+        'PASS': 1.0, 'INFO': 0.85, 'WARN': 0.5, 'FAIL': 0.0,
+    }
+    scores = {}
+    categories = assessment.get('categories', assessment.get('checks', []))
+    if isinstance(categories, dict):
+        categories = list(categories.values())
+    for cat in categories or []:
+        name = cat.get('name', cat.get('category', 'Category'))
+        checks = cat.get('checks', cat.get('items', []))
+        if not checks:
+            # fall back to a category-level severity/status
+            sev = str(cat.get('worst_severity', cat.get('status', 'pass')))
+            scores[name] = sev_score.get(sev, sev_score.get(sev.upper(), 0.5))
+            continue
+        total = 0.0
+        for chk in checks:
+            sev = str(chk.get('severity', chk.get('status', 'pass')))
+            total += sev_score.get(sev, sev_score.get(sev.upper(), 0.5))
+        scores[name] = round(total / len(checks), 3) if checks else 1.0
+    return scores
+
+
+def _render_radar_svg(scores, title='Readiness', size=320):
+    """Render a simple SVG radar chart from {label: 0.0-1.0} scores."""
+    import math
+    labels = list(scores.keys())
+    n = len(labels)
+    if n == 0:
+        return '<p><em>No assessment categories.</em></p>'
+    cx = cy = size / 2
+    radius = size / 2 - 60
+    # Grid rings
+    rings = []
+    for frac in (0.25, 0.5, 0.75, 1.0):
+        pts = []
+        for i in range(n):
+            ang = (2 * math.pi * i / n) - math.pi / 2
+            x = cx + radius * frac * math.cos(ang)
+            y = cy + radius * frac * math.sin(ang)
+            pts.append(f'{x:.1f},{y:.1f}')
+        rings.append(f'<polygon points="{" ".join(pts)}" fill="none" '
+                     f'stroke="#e1dfdd" stroke-width="1"/>')
+    # Data polygon
+    data_pts, label_tags = [], []
+    for i, lbl in enumerate(labels):
+        ang = (2 * math.pi * i / n) - math.pi / 2
+        val = max(0.0, min(1.0, scores[lbl]))
+        x = cx + radius * val * math.cos(ang)
+        y = cy + radius * val * math.sin(ang)
+        data_pts.append(f'{x:.1f},{y:.1f}')
+        lx = cx + (radius + 24) * math.cos(ang)
+        ly = cy + (radius + 24) * math.sin(ang)
+        anchor = 'middle'
+        if math.cos(ang) > 0.3:
+            anchor = 'start'
+        elif math.cos(ang) < -0.3:
+            anchor = 'end'
+        label_tags.append(
+            f'<text x="{lx:.1f}" y="{ly:.1f}" font-size="10" '
+            f'text-anchor="{anchor}" fill="#323130">{_html_escape(lbl)}</text>'
+        )
+    poly = (f'<polygon points="{" ".join(data_pts)}" '
+            'fill="rgba(0,120,212,0.25)" stroke="#0078d4" stroke-width="2"/>')
+    return (
+        f'<svg width="{size}" height="{size}" '
+        f'xmlns="http://www.w3.org/2000/svg" '
+        'style="font-family:Segoe UI,sans-serif">'
+        f'<text x="{cx}" y="16" text-anchor="middle" font-size="13" '
+        f'font-weight="600" fill="#201f1e">{_html_escape(title)}</text>'
+        f'{"".join(rings)}{poly}{"".join(label_tags)}</svg>'
+    )
+
+
+def _collect_relationships(extracted):
+    """Collect relationship descriptors from extracted datasources."""
+    rels = []
+    seen = set()
+    for ds in extracted.get('datasources', []) or []:
+        for rel in ds.get('relationships', []) or []:
+            frm = rel.get('from_table', rel.get('from', ''))
+            to = rel.get('to_table', rel.get('to', ''))
+            if not frm or not to:
+                continue
+            key = (frm, to)
+            if key in seen:
+                continue
+            seen.add(key)
+            rels.append({
+                'from_table': frm,
+                'to_table': to,
+                'cardinality': rel.get('cardinality', 'manyToOne'),
+                'from_column': rel.get('from_column', rel.get('left_column', '')),
+                'to_column': rel.get('to_column', rel.get('right_column', '')),
+            })
+    return rels
+
+
+def _mermaid_id(name):
+    """Sanitise a table name into a Mermaid identifier."""
+    ident = re.sub(r'\W+', '_', str(name)).strip('_')
+    return ident or 'T'
+
+
+def _render_mermaid_er(relationships):
+    """Render a Mermaid erDiagram source from relationship descriptors."""
+    if not relationships:
+        return 'erDiagram\n    %% No relationships detected'
+    card_map = {
+        'manyToOne': '}o--||',
+        'oneToMany': '||--o{',
+        'oneToOne': '||--||',
+        'manyToMany': '}o--o{',
+    }
+    lines = ['erDiagram']
+    for rel in relationships:
+        frm = _mermaid_id(rel['from_table'])
+        to = _mermaid_id(rel['to_table'])
+        conn = card_map.get(rel.get('cardinality', 'manyToOne'), '}o--||')
+        col = rel.get('from_column') or rel.get('to_column') or 'key'
+        label = re.sub(r'\W+', '_', str(col)).strip('_') or 'key'
+        lines.append(f'    {frm} {conn} {to} : {label}')
+    return '\n'.join(lines)
+
+
+def _render_mermaid_html(mermaid_src):
+    """Wrap a Mermaid source in an HTML block for Jupyter front-ends."""
+    return (
+        '<div class="mermaid" '
+        'style="font-family:Segoe UI,sans-serif">'
+        f'{_html_escape(mermaid_src)}</div>'
+        '<pre style="display:none">' + _html_escape(mermaid_src) + '</pre>'
+    )
+
