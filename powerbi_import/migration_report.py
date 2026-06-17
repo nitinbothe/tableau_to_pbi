@@ -104,6 +104,18 @@ class MigrationReport:
             calculations: List of calculation dicts from calculations.json
             calc_map: Dict mapping calculation ID/name → generated DAX formula
         """
+        # Build a normalized (whitespace-trimmed, case-folded) lookup so that
+        # cosmetic name differences between extraction and the generated TMDL
+        # (trailing spaces, casing such as 'index()' vs 'Index()') do not
+        # produce false "No DAX output generated" skips.
+        def _norm(key):
+            return key.strip().casefold() if isinstance(key, str) else key
+
+        calc_map_norm = {}
+        for k, v in calc_map.items():
+            calc_map_norm.setdefault(_norm(k), v)
+            calc_map_norm.setdefault(_norm(k.replace('[', '').replace(']', '')), v)
+
         for calc in calculations:
             name = calc.get('caption') or calc.get('name', 'Unknown')
             source = calc.get('formula', '')
@@ -116,6 +128,10 @@ class MigrationReport:
                    calc_map.get(name) or
                    calc_map.get(calc_id_clean) or
                    calc_map.get(name.replace('[', '').replace(']', '')) or
+                   calc_map_norm.get(_norm(calc_id)) or
+                   calc_map_norm.get(_norm(name)) or
+                   calc_map_norm.get(_norm(calc_id_clean)) or
+                   calc_map_norm.get(_norm(name.replace('[', '').replace(']', ''))) or
                    '')
 
             if not dax:

@@ -798,9 +798,11 @@ class TestDistinctcountIfConversion(unittest.TestCase):
 
 
 class TestStringLiteralMeasureSkip(unittest.TestCase):
-    """Formulas that are pure quoted strings should be skipped as measures."""
+    """Pure quoted-string formulas should be emitted as constant-string
+    measures (not silently dropped), eliminating false 'No DAX output
+    generated' skips."""
 
-    def test_string_formula_skipped(self):
+    def test_string_formula_emitted_as_constant_measure(self):
         from powerbi_import.tmdl_generator import _build_table
         table = {
             'name': 'T',
@@ -821,9 +823,15 @@ class TestStringLiteralMeasureSkip(unittest.TestCase):
             'col_metadata_map': {}, 'compute_using_map': {},
         }
         result = _build_table(table, {}, calcs, {}, ctx)
-        measure_names = [m.get('name') for m in result.get('measures', [])]
-        self.assertNotIn('KPI_Calc', measure_names)
-        self.assertIn('Real Measure', measure_names)
+        measures = {m.get('name'): m.get('expression')
+                    for m in result.get('measures', [])}
+        self.assertIn('KPI_Calc', measures,
+                      "Pure string-literal formula should be emitted as a measure")
+        self.assertEqual(
+            measures['KPI_Calc'],
+            '"Count Distinct of IF [Flag]=""Y"" THEN [Id] END"',
+            "Constant-string measure should preserve doubled-quote DAX escaping")
+        self.assertIn('Real Measure', measures)
 
 
 class TestPublicCustomVisualsInReportJson(unittest.TestCase):
@@ -920,16 +928,18 @@ class TestMutationConfig(unittest.TestCase):
 
 
 class TestStringLiteralParameterSkip(unittest.TestCase):
-    """KPI-style parameters with embedded quotes in values should be skipped
-    by _create_parameter_tables; simple string params should create measures."""
+    """KPI-style 'any-domain' string parameters whose values carry embedded
+    quotes (backslash- or doubled-escaped) should be emitted as constant
+    measures with normalized DAX doubled-quote escaping — eliminating false
+    'No DAX output generated' skips."""
 
-    def test_kpi_string_param_with_embedded_quotes_skipped(self):
+    def test_kpi_string_param_with_embedded_quotes_emitted(self):
         from powerbi_import.tmdl_generator import _create_parameter_tables
         model = {'model': {'tables': [
             {'name': 'Main', 'columns': [], 'measures': []}
         ]}}
         params = [
-            # Value has embedded quotes (e.g. IF [Col]="Y") — skip
+            # Value has embedded quotes (e.g. IF [Col]="Y") — emit normalized
             {'caption': 'KPI_Calc', 'datatype': 'string',
              'value': '"Average of IF [Won Flag]="Y" THEN [Amount] END"',
              'domain_type': 'any', 'allowable_values': []},
@@ -937,11 +947,37 @@ class TestStringLiteralParameterSkip(unittest.TestCase):
              'value': '42', 'domain_type': 'any', 'allowable_values': []},
         ]
         _create_parameter_tables(model, params, 'Main')
-        measure_names = [m['name'] for m in model['model']['tables'][0].get('measures', [])]
-        self.assertNotIn('KPI_Calc', measure_names,
-                         "String param with embedded quotes should be skipped")
-        self.assertIn('Real Param', measure_names,
+        measures = {m['name']: m['expression']
+                    for m in model['model']['tables'][0].get('measures', [])}
+        self.assertIn('KPI_Calc', measures,
+                      "Embedded-quote string param should be emitted as a measure")
+        self.assertEqual(
+            measures['KPI_Calc'],
+            '"Average of IF [Won Flag]=""Y"" THEN [Amount] END"',
+            "Embedded quotes should be normalized to DAX doubled-quote escaping")
+        self.assertIn('Real Param', measures,
                       "Real numeric parameter should be kept")
+
+    def test_kpi_string_param_with_backslash_escaped_quotes_emitted(self):
+        """Tableau serializes embedded quotes as backslash-escaped (\\") in the
+        parameter value field. These must normalize to DAX doubled quotes."""
+        from powerbi_import.tmdl_generator import _create_parameter_tables
+        model = {'model': {'tables': [
+            {'name': 'Main', 'columns': [], 'measures': []}
+        ]}}
+        params = [
+            {'caption': 'KPI_TotalSales_Calculation', 'datatype': 'string',
+             'value': '"Sum of IF [Won Flag]=\\"Y\\" THEN [Amount] END"',
+             'domain_type': 'any', 'allowable_values': []},
+        ]
+        _create_parameter_tables(model, params, 'Main')
+        measures = {m['name']: m['expression']
+                    for m in model['model']['tables'][0].get('measures', [])}
+        self.assertIn('KPI_TotalSales_Calculation', measures)
+        self.assertEqual(
+            measures['KPI_TotalSales_Calculation'],
+            '"Sum of IF [Won Flag]=""Y"" THEN [Amount] END"',
+            "Backslash-escaped quotes should normalize to DAX doubled quotes")
 
     def test_simple_string_param_creates_measure(self):
         """Simple string params like pOpportunityOwner_Champions='CHAMPIONS'

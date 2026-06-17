@@ -3111,12 +3111,34 @@ def _build_table(table, connection, calculations, columns_metadata, dax_context=
         if not formula:
             continue
 
-        # Skip pure string-literal formulas (e.g. Tableau KPI descriptions
-        # like "Count Distinct of IF...").  These are text metadata, not
-        # computable DAX expressions, and embedded double-quotes cause
-        # TMDL parsing errors.
+        # Pure string-literal formulas (e.g. Tableau constant fields like
+        # "AIP", "Tout", or a free-text KPI label such as
+        # "Average of IF [Won Flag]=""Y"" THEN [Amount] END").  These are
+        # valid constant measures — Tableau escapes embedded quotes by
+        # doubling them ("") which is exactly DAX's escaping — so they are
+        # emitted directly as constant-string measures instead of being
+        # silently dropped.  Emitting here (rather than through the normal
+        # column-ref classifier) avoids misreading [brackets] that appear
+        # *inside* the string literal as real column references.
         _stripped = formula.strip()
         if _stripped.startswith('"') and _stripped.endswith('"') and len(_stripped) > 2:
+            # Well-formed iff every interior double-quote is doubled (escaped):
+            # removing the doubled pairs must leave no stray quote.
+            if _stripped[1:-1].replace('""', '').count('"') == 0:
+                _lit_measure = {
+                    "name": caption,
+                    "expression": _stripped,
+                    "formatString": _get_format_string('string'),
+                    "displayFolder": _get_display_folder('string', role),
+                }
+                _orig_lit = calc.get('formula', '')
+                if _orig_lit:
+                    _lit_measure['_original_formula'] = _orig_lit
+                if not any(m.get("name", "").lower() == caption.lower()
+                           for m in result_table["measures"]):
+                    result_table["measures"].append(_lit_measure)
+            # Malformed/unbalanced text metadata: leave out (cannot be a
+            # valid DAX literal).  Either way, do not fall through.
             continue
 
         # Determine if it's a simple literal (parameter) -> measure
@@ -4685,23 +4707,30 @@ def _create_parameter_tables(model, parameters, main_table_name):
             continue
 
         if domain_type == 'any' or not allowable_values:
-            # Skip string-literal values only when the inner text contains
-            # embedded quotes (which would break DAX/TMDL string syntax).
-            # Simple quoted values like "CHAMPIONS" must still produce a
-            # measure so that DAX formulas referencing [ParamCaption] work.
+            # Determine the constant-value DAX expression for the parameter.
+            # Tableau may escape embedded quotes either by doubling them ("")
+            # or with a backslash (\"). Both are normalized and re-escaped to
+            # the DAX doubled-quote convention so that constant-string values
+            # (e.g. an "Average of IF [Won Flag]=\"Y\" THEN [Amount] END" KPI
+            # description) are emitted verbatim as a constant-string measure
+            # rather than being dropped. Simple quoted values like "CHAMPIONS"
+            # keep the re-wrapped default_expr so DAX formulas referencing
+            # [ParamCaption] still resolve.
+            _measure_expr = default_expr
             _raw_val = param.get('value', '').strip()
             if (_raw_val.startswith('"') and _raw_val.endswith('"')
                     and len(_raw_val) > 2):
                 _inner = _raw_val[1:-1]
-                if '"' in _inner:
-                    continue
+                if '"' in _inner or '\\' in _inner:
+                    _norm = _inner.replace('\\"', '"').replace('""', '"')
+                    _measure_expr = '"' + _norm.replace('"', '""') + '"'
             for table in model["model"]["tables"]:
                 if table.get("name") == main_table_name:
                     if "measures" not in table:
                         table["measures"] = []
                     table["measures"].append({
                         "name": caption,
-                        "expression": default_expr,
+                        "expression": _measure_expr,
                         "annotations": [
                             {"name": "displayFolder", "value": "Parameters"}
                         ]
