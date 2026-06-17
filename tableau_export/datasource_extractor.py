@@ -1633,6 +1633,7 @@ def extract_relationships(datasource_elem):
 from dax_converter import (              # noqa: E402
     convert_tableau_formula_to_dax,
     map_tableau_to_powerbi_type,
+    sanitize_param_brackets,
 )
 
 from m_query_builder import (            # noqa: E402

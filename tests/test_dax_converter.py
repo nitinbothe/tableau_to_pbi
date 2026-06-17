@@ -514,6 +514,31 @@ class TestReferenceResolution(unittest.TestCase):
         )
         self.assertIn("100", result)
 
+    def test_parameter_with_literal_brackets_resolves_to_valid_dax(self):
+        # Tableau parameter names can embed literal '[' and escaped ']]'.
+        # The reference must resolve and emit a bracket-free DAX identifier
+        # that matches the sanitized What-If table/measure name.
+        formula = (
+            'IF([Parameters].[AIP [Indicateur nationaux]][detail]] '
+            '(copie)_934778459520655361]="NC", [Evaluation]="NC", true)'
+        )
+        param_map = {
+            "AIP Indicateur nationauxdetail (copie)_934778459520655361":
+                "Evaluation NC [Indicateur nationaux][detail] ",
+        }
+        result = convert_tableau_formula_to_dax(
+            formula,
+            param_map=param_map,
+            is_calc_column=False,
+        )
+        # No leftover literal brackets from the param name leaking through.
+        self.assertNotIn("[Indicateur nationaux]", result)
+        self.assertNotIn("(copie)_934778459520655361", result)
+        # Sanitized, bracket-free identifier present.
+        self.assertIn("Evaluation NC Indicateur nationaux detail", result)
+        # Brackets must be balanced (no mismatched-bracket cascade).
+        self.assertEqual(result.count("["), result.count("]"))
+
 
 # ═══════════════════════════════════════════════════════════════════════
 # Math / Statistics Functions

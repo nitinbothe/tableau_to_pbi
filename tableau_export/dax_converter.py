@@ -32,6 +32,23 @@ def _reverse_tableau_bracket_escape(name):
     return ''.join(result)
 
 
+def sanitize_param_brackets(name):
+    """Strip '[' and ']' from a Tableau parameter/identifier name.
+
+    Tableau parameter captions may contain literal brackets (e.g.
+    "AIP [Indicateur nationaux][detail]").  A DAX/TMDL bracketed identifier
+    cannot contain a raw '[' and encodes ']' only via doubling, so emitting
+    such a caption verbatim breaks bracket parsing.  Removing the brackets
+    (and collapsing the resulting whitespace) yields a safe, stable name that
+    is used consistently both when emitting a parameter reference in DAX and
+    when naming the What-If parameter table/measure, so the two still match.
+    """
+    if not name or ('[' not in name and ']' not in name):
+        return name
+    cleaned = name.replace('[', ' ').replace(']', ' ')
+    return re.sub(r'\s+', ' ', cleaned).strip()
+
+
 # ── Tableau → DAX simple function mappings (table-driven) ─────────────────────
 # Each tuple: (Tableau regex pattern, DAX replacement)
 # Order matters — more specific patterns first
@@ -192,7 +209,11 @@ _RE_ISMEMBEROF = re.compile(
 _RE_OR = re.compile(r'\bor\b', re.IGNORECASE)
 _RE_AND = re.compile(r'\band\b', re.IGNORECASE)
 _RE_NEWLINES = re.compile(r'[\r\n]+\s*')
-_RE_PARAM_REF = re.compile(r'\[Parameters\]\.\[([^\]]+)\]')
+# Escape-aware: a Tableau bracketed identifier may contain a literal ']'
+# encoded as ']]' and literal '[' characters (e.g. a parameter caption like
+# "AIP [Indicateur nationaux][detail]").  Match the full span so the whole
+# reference is captured instead of truncating at the first ']'.
+_RE_PARAM_REF = re.compile(r'\[Parameters\]\.\[((?:[^\]]|\]\])*)\]')
 _RE_CALC_REF = re.compile(r'\[([^\]]+)\]')
 _RE_ELSEIF = re.compile(r'\bELSEIF\b', re.IGNORECASE)
 _RE_FINDNTH = re.compile(r'\bFINDNTH\s*\(', re.IGNORECASE)
@@ -464,10 +485,17 @@ def _resolve_references(dax, calc_map, param_map, is_calc_column, param_values):
     # [Parameters].[Parameter X] → [caption] or inline value
     def resolve_param(m):
         param_id = m.group(1)
-        caption = param_map.get(param_id, param_id)
+        if param_id in param_map:
+            caption = param_map[param_id]
+        else:
+            # param_map keys are typically stored with all brackets stripped;
+            # normalize the captured id (which may retain literal '[' and the
+            # ']]' escape) the same way before falling back to the raw id.
+            normalized = param_id.replace('[', '').replace(']', '')
+            caption = param_map.get(normalized, param_id)
         if is_calc_column and caption in param_values:
             return param_values[caption]
-        return f'[{caption}]'
+        return f'[{sanitize_param_brackets(caption)}]'
     dax = _RE_PARAM_REF.sub(resolve_param, dax)
     
     # [Calculation_xxx] → [caption]

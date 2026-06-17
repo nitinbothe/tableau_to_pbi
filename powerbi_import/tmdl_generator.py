@@ -41,7 +41,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'tableau_export
 from datasource_extractor import (
     generate_power_query_m,
     convert_tableau_formula_to_dax,
-    map_tableau_to_powerbi_type
+    map_tableau_to_powerbi_type,
+    sanitize_param_brackets,
 )
 from m_query_builder import (
     inject_m_steps,
@@ -4630,6 +4631,12 @@ def _create_parameter_tables(model, parameters, main_table_name):
         if not caption:
             continue
 
+        # Parameter captions may contain literal brackets (e.g.
+        # "AIP [Indicateur nationaux][detail]") which break DAX/TMDL bracketed
+        # identifiers.  Use a bracket-free name for the table/measure so it
+        # matches the reference emitted by convert_tableau_formula_to_dax.
+        safe_caption = sanitize_param_brackets(caption)
+
         datatype = param.get('datatype', 'string')
         default_value = param.get('value', '').strip('"')
         domain_type = param.get('domain_type', 'any')
@@ -4668,7 +4675,7 @@ def _create_parameter_tables(model, parameters, main_table_name):
 
             col_name = "Value"
             param_table = {
-                "name": caption,
+                "name": safe_caption,
                 "columns": [{
                     "name": col_name,
                     "dataType": pbi_type,
@@ -4678,8 +4685,8 @@ def _create_parameter_tables(model, parameters, main_table_name):
                     ]
                 }],
                 "measures": [{
-                    "name": caption,
-                    "expression": f"SELECTEDVALUE('{caption.replace(chr(39), chr(39)*2)}'[{col_name}], {default_expr})",
+                    "name": safe_caption,
+                    "expression": f"SELECTEDVALUE('{safe_caption.replace(chr(39), chr(39)*2)}'[{col_name}], {default_expr})",
                     "annotations": [
                         {"name": "displayFolder", "value": "Parameters"},
                         {"name": "MigrationNote",
@@ -4687,7 +4694,7 @@ def _create_parameter_tables(model, parameters, main_table_name):
                     ]
                 }],
                 "partitions": [{
-                    "name": caption,
+                    "name": safe_caption,
                     "mode": "import",
                     "source": {
                         "type": "m",
@@ -4729,7 +4736,7 @@ def _create_parameter_tables(model, parameters, main_table_name):
                     if "measures" not in table:
                         table["measures"] = []
                     table["measures"].append({
-                        "name": caption,
+                        "name": safe_caption,
                         "expression": _measure_expr,
                         "annotations": [
                             {"name": "displayFolder", "value": "Parameters"}
@@ -4739,7 +4746,7 @@ def _create_parameter_tables(model, parameters, main_table_name):
             continue
 
         table_expr = None
-        col_name = caption
+        col_name = safe_caption
         has_aliases = False
 
         if domain_type == 'range':
@@ -4803,10 +4810,10 @@ def _create_parameter_tables(model, parameters, main_table_name):
             continue
 
         # Escape apostrophes in caption for DAX table references
-        dax_caption = caption.replace("'", "''")
+        dax_caption = safe_caption.replace("'", "''")
 
         param_table = {
-            "name": caption,
+            "name": safe_caption,
             "columns": [{
                 "name": col_name,
                 "dataType": pbi_type,
@@ -4816,14 +4823,14 @@ def _create_parameter_tables(model, parameters, main_table_name):
                 ]
             }],
             "measures": [{
-                "name": caption,
+                "name": safe_caption,
                 "expression": f"SELECTEDVALUE('{dax_caption}'[{col_name}], {default_expr})",
                 "annotations": [
                     {"name": "displayFolder", "value": "Parameters"}
                 ]
             }],
             "partitions": [{
-                "name": caption,
+                "name": safe_caption,
                 "mode": "import",
                 "source": {
                     "type": "calculated",
@@ -4856,7 +4863,7 @@ def _create_parameter_tables(model, parameters, main_table_name):
         caption = param.get('caption', '')
         domain_type = param.get('domain_type', 'any')
         if caption and domain_type in ('range', 'list') and param.get('allowable_values'):
-            param_table_names.add(caption)
+            param_table_names.add(sanitize_param_brackets(caption))
 
     if param_table_names:
         for table in model["model"]["tables"]:
