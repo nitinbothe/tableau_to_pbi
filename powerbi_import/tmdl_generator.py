@@ -256,7 +256,7 @@ def _dax_to_m_expression(dax_expr, table_name=''):
     # Catches `IF cond THEN val ELSE val2 END` (not a function call).
     # Must be checked before the IF() function-call branch below.
     _itee = re.match(
-        r'^\s*IF\s+(.+?)\s+THEN\s+(.+?)\s+ELSE\s+(.+?)\s+END\s*$',
+        r'^\s*IF\s+(.+?)\s+THEN\s*(.+?)\s+ELSE\s*(.+?)\s+END\s*$',
         expr, re.IGNORECASE | re.DOTALL,
     )
     if _itee:

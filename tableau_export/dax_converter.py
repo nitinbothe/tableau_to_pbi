@@ -230,6 +230,17 @@ _RE_NEWLINES = re.compile(r'[\r\n]+\s*')
 _RE_PARAM_REF = re.compile(r'\[Parameters\]\.\[((?:[^\]]|\]\])*)\]')
 _RE_CALC_REF = re.compile(r'\[([^\]]+)\]')
 _RE_ELSEIF = re.compile(r'\bELSEIF\b', re.IGNORECASE)
+# Matches an innermost IF...THEN...ELSE...END where none of the three parts
+# contain a nested IF, CASE, or END keyword — used to pre-convert these to
+# IF() function form before the CASE regex runs, preventing the CASE regex
+# from stopping prematurely at an inner IF's END.
+_RE_INNERMOST_IF = re.compile(
+    r'\bIF\s+((?:(?!\bIF\b|\bCASE\b|\bEND\b).)+?)'
+    r'\s+THEN\s+((?:(?!\bIF\b|\bCASE\b|\bEND\b).)*?)'
+    r'\s+ELSE\s+((?:(?!\bIF\b|\bCASE\b|\bEND\b).)*?)'
+    r'\s+END\b',
+    re.IGNORECASE | re.DOTALL,
+)
 _RE_FINDNTH = re.compile(r'\bFINDNTH\s*\(', re.IGNORECASE)
 _RE_DATE_LITERAL = re.compile(r'#(\d{4})-(\d{2})-(\d{2})#')
 _RE_COLUMN_RESOLVE = re.compile(r"(?<!')\[([^\]]+)\]")
@@ -562,6 +573,16 @@ def _convert_case_structure(text):
     """
     max_iter = 20
     for _ in range(max_iter):
+        # Pre-convert innermost IF...THEN...ELSE...END to IF() function form so
+        # the CASE regex (which stops at any END) doesn't truncate WHEN blocks
+        # that contain a nested IF...END expression.
+        for __ in range(20):
+            mi = _RE_INNERMOST_IF.search(text)
+            if not mi:
+                break
+            c, t, f = mi.group(1).strip(), mi.group(2).strip(), mi.group(3).strip()
+            text = text[:mi.start()] + f'IF({c}, {t}, {f})' + text[mi.end():]
+
         m = re.search(
             r'\bCASE\s+((?:(?!\bCASE\b|\bEND\b).)*?)\s+WHEN\s+((?:(?!\bCASE\b|\bEND\b).)*?)\s+END\b',
             text, re.IGNORECASE | re.DOTALL
