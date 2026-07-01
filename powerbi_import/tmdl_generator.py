@@ -3027,6 +3027,23 @@ def _build_table(table, connection, calculations, columns_metadata, dax_context=
         else:
             partition_mode = 'import'
 
+    # DirectQuery requires a real external datasource reference in the M expression.
+    # If the M query is a pure #table() fallback (no connector function), PBI Desktop
+    # will reject it with "has '0' datasource reference(s)". Downgrade to import.
+    _HAS_REAL_SOURCE = re.compile(
+        r'\b(Sql\.Database|Snowflake\.Databases|OData\.Feed|Web\.Contents|'
+        r'SharePoint\.|Excel\.Workbook|Csv\.Document|Json\.Document|'
+        r'Oracle\.Database|MySql\.Database|PostgreSQL\.Database|'
+        r'AzureStorage\.|Databricks\.|Lakehouse\.|Warehouse\.)\s*\(',
+        re.IGNORECASE,
+    )
+    # Strip M line comments before checking — sqlproxy queries embed commented-out
+    # connector templates (e.g. "// Source = Sql.Database(...)") that would otherwise
+    # fool the regex into thinking a real data source exists.
+    _m_query_uncommented = re.sub(r'//[^\n]*', '', m_query) if m_query else ''
+    if partition_mode == 'directQuery' and not _HAS_REAL_SOURCE.search(_m_query_uncommented):
+        partition_mode = 'import'
+
     result_table = {
         "name": table_name,
         "columns": [],
