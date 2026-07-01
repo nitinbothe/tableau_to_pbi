@@ -252,6 +252,20 @@ def _dax_to_m_expression(dax_expr, table_name=''):
     if re.search(r"'[^']+'\[", expr):
         return None
 
+    # ── Tableau IF…THEN…ELSE…END keyword form → M if…then…else ────────
+    # Catches `IF cond THEN val ELSE val2 END` (not a function call).
+    # Must be checked before the IF() function-call branch below.
+    _itee = re.match(
+        r'^\s*IF\s+(.+?)\s+THEN\s+(.+?)\s+ELSE\s+(.+?)\s+END\s*$',
+        expr, re.IGNORECASE | re.DOTALL,
+    )
+    if _itee:
+        cond = _dax_to_m_expression(_itee.group(1).strip(), table_name)
+        true_v = _dax_to_m_expression(_itee.group(2).strip(), table_name)
+        false_v = _dax_to_m_expression(_itee.group(3).strip(), table_name)
+        if cond is not None and true_v is not None and false_v is not None:
+            return f'if {cond} then {true_v} else {false_v}'
+
     # ── IF(cond, true_val [, false_val]) ────────────────────────────
     body = _extract_function_body(expr, 'IF')
     if body is not None:

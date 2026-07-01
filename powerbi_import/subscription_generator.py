@@ -323,7 +323,7 @@ def _build_digest_flow(email: str, subs: List[Dict]) -> Dict:
                     'type': 'ExportReport',
                     'report_name': name,
                     'format': 'PDF',
-                    'comment': f'// TODO: Set report ID for "{name}"',
+                    'report_id': f'{{{{REPLACE_WITH_PBI_REPORT_ID_FOR_{name}}}}}',
                 }
                 for name in report_names
             ] + [{
@@ -350,7 +350,7 @@ def _build_alert_flow(alert: Dict) -> Dict:
                 'condition': alert.get('condition', ''),
                 'threshold': alert.get('threshold', ''),
                 'view_name': alert.get('view_name', ''),
-                'comment': '// TODO: Configure PBI data alert trigger',
+                'trigger_id': '{{REPLACE_WITH_PBI_DATA_ALERT_ID}}',
             }],
             'actions': [{
                 'type': 'SendEmail',
@@ -363,7 +363,7 @@ def _build_alert_flow(alert: Dict) -> Dict:
                 ),
             }, {
                 'type': 'PostTeamsMessage',
-                'channel': '// TODO: Set Teams channel',
+                'channel': '{{REPLACE_WITH_TEAMS_CHANNEL_ID}}',
                 'message': f'⚠️ {alert.get("subject", "")} — threshold reached',
             }],
         },

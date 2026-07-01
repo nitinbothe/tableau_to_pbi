@@ -35,6 +35,32 @@ def map_tableau_to_m_type(datatype):
     return _M_TYPE_MAP.get((datatype or '').lower(), 'type text')
 
 
+def generate_regex_computed_column(field_name: str, pattern: str, operation: str = 'match') -> str:
+    """Return a Power Query M expression for a regex operation on a column.
+
+    Intended as a drop-in snippet for Table.AddColumn() steps when migrating
+    Tableau REGEXP_* calculated fields that have no DAX equivalent.
+
+    Args:
+        field_name: The source column name (unquoted).
+        pattern:    The regex pattern string (will be embedded in the M expression).
+        operation:  One of 'match' | 'extract' | 'replace'.
+
+    Returns:
+        A single M expression string suitable for the custom-column formula box.
+    """
+    safe_field = field_name.replace('"', '""')
+    if operation == 'extract':
+        return (
+            f'let groups = Text.RegexMatchGroups([{safe_field}], "{pattern}") '
+            f'in if groups = null then null else groups{{1}}'
+        )
+    if operation == 'replace':
+        return f'Text.RegexReplace([{safe_field}], "{pattern}", "")'
+    # default: match → returns true/false
+    return f'Text.RegexMatch([{safe_field}], "{pattern}")'
+
+
 def _file_basename(path):
     """Extract just the filename from a potentially full file path.
 

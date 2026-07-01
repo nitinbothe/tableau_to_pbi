@@ -84,7 +84,9 @@ def generate_rls_powershell(roles, output_path, dataset_name="MyDataset"):
                 email = member if '@' in member else f"{member}@yourdomain.com"
                 lines.append(f'    "{email}"')
         else:
-            lines.append(f'    "user@yourdomain.com"     # TODO: Add Azure AD members')
+            lines.append(f'    # UNRESOLVED: No Azure AD members found for role \'{role_name}\'')
+            lines.append(f'    # Add members below using UPN format: user@domain.com')
+            lines.append(f'    # Example: "john.smith@company.com"')
         lines.append(")")
         lines.append("")
         lines.append(f'foreach ($member in $Role_{safe_name}_Members) {{')

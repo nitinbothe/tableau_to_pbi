@@ -196,6 +196,19 @@ _SIMPLE_FUNCTION_MAP = [
 
     # COLLECT (spatial aggregate — no DAX equivalent)
     (r'\bCOLLECT\s*\(', '/* COLLECT: spatial aggregate — no DAX equivalent */ BLANK( /*'),
+
+    # Forecast / Statistical functions (no DAX equivalent)
+    (r'\bFORECAST\.LINEAR\s*\(',
+     '/* FORECAST.LINEAR: no DAX equivalent — use Analytics Pane forecast in PBI Desktop '
+     'or a Python/R visual */ BLANK( /*'),
+    (r'\bFORECAST_EXP_SMOOTHING\s*\(',
+     '/* FORECAST_EXP_SMOOTHING: no DAX equivalent — use Analytics Pane or Python/R visual */ BLANK( /*'),
+    (r'\bCHI_SQUARED_TEST\s*\(',
+     '/* CHI_SQUARED_TEST: no DAX equivalent — use a Python visual for statistical testing */ BLANK( /*'),
+    (r'\bPERCENTILE\.CONT\s*\(',
+     '/* PERCENTILE.CONT: use PERCENTILX.INC() for approximate continuous percentile */ BLANK( /*'),
+    (r'\bPERCENTILE\.DISC\s*\(',
+     '/* PERCENTILE.DISC: use PERCENTILX.EXC() for approximate discrete percentile */ BLANK( /*'),
 ]
 
 # Pre-compile all patterns for performance
@@ -1420,7 +1433,12 @@ def _convert_regexp_match(dax):
             return f'CONTAINSSTRING({field}, "{pat}")'
 
         # Fallback — complex regex, keep CONTAINSSTRING with comment
-        return f'/* REGEXP_MATCH: complex regex "{pat}" — verify manually */ CONTAINSSTRING({field}, "{pat}")'
+        return (
+            f'/* REGEXP_MATCH("{pat}"): complex regex has no full DAX equivalent. '
+            f'Power Query alternative: Text.RegexMatch([{field}], "{pat}") as a computed column. '
+            f'In PBI Desktop: Power Query Editor → Add Column → Custom Column. */ '
+            f'CONTAINSSTRING({field}, "{pat}")'
+        )
 
     return _transform_func_call(dax, 'REGEXP_MATCH', _xf)
 
@@ -1436,7 +1454,10 @@ def _convert_regexp_extract(dax):
     """
     def _xf(args, inner):
         if len(args) < 2:
-            return f'/* REGEXP_EXTRACT: no DAX regex — manual conversion needed */ BLANK()'
+            return (
+                '/* REGEXP_EXTRACT: missing arguments. '
+                'Power Query alternative: Text.RegexMatchGroups([field], "pattern") as a computed column. */ BLANK()'
+            )
         field = args[0].strip()
         raw_pat = args[1].strip()
         # Strip surrounding quotes
@@ -1491,7 +1512,11 @@ def _convert_regexp_extract(dax):
             )
 
         # Fallback
-        return f'/* REGEXP_EXTRACT("{pat}"): no DAX regex — manual conversion needed */ BLANK()'
+        return (
+            f'/* REGEXP_EXTRACT("{pat}"): no direct DAX equivalent. '
+            f'Power Query alternative: List.First(Text.RegexMatchGroups([{field}], "{pat}"), {{""}}){{1}} '
+            f'as a computed column in Power Query Editor. */ BLANK()'
+        )
 
     return _transform_func_call(dax, 'REGEXP_EXTRACT', _xf)
 
@@ -1574,7 +1599,11 @@ def _convert_regexp_extract_nth(dax):
                 return f'/* REGEXP_EXTRACT_NTH: alternation match */ {result}'
 
         # --- Fallback ---
-        return f'/* REGEXP_EXTRACT_NTH("{pat}", {index_str}): no DAX regex \u2014 manual conversion needed */ BLANK()'
+        return (
+            f'/* REGEXP_EXTRACT_NTH("{pat}", {index_str}): no direct DAX equivalent. '
+            f'Power Query alternative: Text.RegexMatchGroups([{field}], "{pat}"){{{{int({index_str}) - 1}}}}{{1}} '
+            f'as a computed column in Power Query Editor. */ BLANK()'
+        )
 
     return _transform_func_call(dax, 'REGEXP_EXTRACT_NTH', _xf)
 
@@ -1646,7 +1675,11 @@ def _convert_regexp_replace(dax):
                 return f'IF(RIGHT({field}, {len(body)}) = "{body}", LEFT({field}, LEN({field}) - {len(body)}) & {repl}, {field})'
 
         # Fallback — complex regex
-        return f'/* REGEXP_REPLACE("{pat}"): complex regex — verify manually */ SUBSTITUTE({field}, "{pat}", {repl})'
+        return (
+            f'/* REGEXP_REPLACE("{pat}"): complex regex has no full DAX equivalent. '
+            f'Power Query alternative: Text.RegexReplace([{field}], "{pat}", replacement) '
+            f'as a computed column in Power Query Editor. */ SUBSTITUTE({field}, "{pat}", {repl})'
+        )
 
     return _transform_func_call(dax, 'REGEXP_REPLACE', _xf)
 

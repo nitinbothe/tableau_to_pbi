@@ -37,6 +37,9 @@ V2_HOOKS = (
     'on_convert_dax',
     'on_generate_visual',
     'on_validate',
+    'on_optimize_dax',    # post-conversion DAX optimization pass
+    'on_configure_rls',   # customize RLS role DAX filter predicates
+    'on_deploy',          # called before/after each deployment artifact
 )
 
 
@@ -239,6 +242,41 @@ class MigrationPlugin:
     def on_validate(self, report):
         return None
 
+    def on_optimize_dax(self, name: str, dax: str):
+        """Post-conversion DAX optimization pass.
+
+        Called after all conversions complete. Return a modified DAX string
+        to replace the formula, or None to keep it unchanged.
+
+        Args:
+            name: The measure/column name.
+            dax:  The converted DAX formula string.
+        """
+        return None
+
+    def on_configure_rls(self, role_name: str, table: str, filter_dax: str):
+        """Customize an RLS role filter predicate.
+
+        Called for each table-level filter expression in each RLS role.
+        Return a replacement DAX filter string, or None to keep unchanged.
+
+        Args:
+            role_name:  The RLS role name (e.g. 'RegionManager').
+            table:      The table the filter applies to.
+            filter_dax: The auto-generated DAX filter expression.
+        """
+        return None
+
+    def on_deploy(self, phase: str, artifact_type: str, workspace_id: str):
+        """Called before and after each deployment artifact.
+
+        Args:
+            phase:         'pre' (before upload) or 'post' (after upload).
+            artifact_type: e.g. 'SemanticModel', 'Report', 'Dataflow'.
+            workspace_id:  Target Power BI workspace GUID.
+        """
+        return None
+
     # ── v1 compatibility adapters (do NOT override) ──
 
     def post_extraction(self, extracted_data):
@@ -356,6 +394,33 @@ class PluginSDK:
             except Exception as e:  # noqa: BLE001
                 logger.error("Plugin '%s' on_validate failed: %s", p.name, e)
         return issues
+
+    def dispatch_optimize_dax(self, name: str, dax: str) -> str:
+        for p in self._plugins:
+            try:
+                ret = p.on_optimize_dax(name, dax)
+                if ret is not None:
+                    dax = ret
+            except Exception as e:  # noqa: BLE001
+                logger.error("Plugin '%s' on_optimize_dax failed: %s", p.name, e)
+        return dax
+
+    def dispatch_configure_rls(self, role_name: str, table: str, filter_dax: str) -> str:
+        for p in self._plugins:
+            try:
+                ret = p.on_configure_rls(role_name, table, filter_dax)
+                if ret is not None:
+                    filter_dax = ret
+            except Exception as e:  # noqa: BLE001
+                logger.error("Plugin '%s' on_configure_rls failed: %s", p.name, e)
+        return filter_dax
+
+    def dispatch_deploy(self, phase: str, artifact_type: str, workspace_id: str) -> None:
+        for p in self._plugins:
+            try:
+                p.on_deploy(phase, artifact_type, workspace_id)
+            except Exception as e:  # noqa: BLE001
+                logger.error("Plugin '%s' on_deploy failed: %s", p.name, e)
 
     @property
     def plugins(self):

@@ -84,6 +84,7 @@ profile_results/
 # Environment
 .env
 .env.local
+.fabric_cache
 
 # Tableau temp
 ~*.twbr

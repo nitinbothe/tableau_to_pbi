@@ -414,3 +414,142 @@ class FabricDeployer:
             logger.error("Failed to endorse item %s: %s", item_id, e)
             return {'status': 'failed', 'error': str(e),
                     'item_id': item_id}
+
+    # ── Staged multi-environment deployment ──────────────────────────
+
+    @staticmethod
+    def load_environment_config(config_path: str, env_name: str) -> dict:
+        """Load a named environment's config from a JSON config file.
+
+        Config file format::
+
+            {
+              "environments": {
+                "dev":  {"workspace_id": "aaa-...", "tenant_id": "...",
+                         "client_id": "...", "client_secret_env": "DEV_SECRET"},
+                "uat":  {...},
+                "prod": {...}
+              }
+            }
+
+        ``client_secret_env`` is the name of an environment variable that holds
+        the service principal secret (avoids putting secrets in the config file).
+
+        Args:
+            config_path: Path to the environment config JSON file.
+            env_name:    Name of the target environment (e.g. 'dev', 'uat', 'prod').
+
+        Returns:
+            dict with keys: workspace_id, tenant_id, client_id, client_secret.
+
+        Raises:
+            FileNotFoundError: If config_path does not exist.
+            KeyError: If env_name is not in the config.
+            ValueError: If required keys are missing.
+        """
+        path = Path(config_path)
+        if not path.exists():
+            raise FileNotFoundError(f"Environment config not found: {config_path}")
+        with open(path, encoding='utf-8') as f:
+            config = json.load(f)
+
+        environments = config.get('environments', {})
+        if env_name not in environments:
+            available = ', '.join(sorted(environments.keys()))
+            raise KeyError(
+                f"Environment '{env_name}' not found in config. "
+                f"Available: {available}"
+            )
+
+        env = environments[env_name]
+        required = ('workspace_id', 'tenant_id', 'client_id')
+        missing = [k for k in required if not env.get(k)]
+        if missing:
+            raise ValueError(
+                f"Environment '{env_name}' is missing required keys: {missing}"
+            )
+
+        # Resolve client secret from env var
+        secret_env_var = env.get('client_secret_env', '')
+        client_secret = os.environ.get(secret_env_var, '') if secret_env_var else ''
+        if not client_secret:
+            client_secret = env.get('client_secret', '')
+
+        return {
+            'workspace_id': env['workspace_id'],
+            'tenant_id': env['tenant_id'],
+            'client_id': env['client_id'],
+            'client_secret': client_secret,
+        }
+
+    def deploy_to_environment(self, env_config: dict, project_dir: str,
+                              artifact_names: list = None, overwrite: bool = True,
+                              dry_run: bool = False) -> dict:
+        """Deploy artifacts to a named environment using per-environment credentials.
+
+        This method re-authenticates using the environment's service principal
+        before deploying, making it safe to call for DEV/UAT/PROD in sequence.
+
+        Args:
+            env_config:      Dict from :meth:`load_environment_config`.
+            project_dir:     Directory containing .json artifact files to deploy.
+            artifact_names:  Optional list of artifact names to deploy (all if None).
+            overwrite:       Whether to overwrite existing artifacts.
+            dry_run:         If True, log what would be deployed without calling API.
+
+        Returns:
+            dict with keys: environment, workspace_id, results (list), success (bool).
+        """
+        workspace_id = env_config['workspace_id']
+        results = []
+
+        # Re-authenticate with environment-specific credentials
+        if not dry_run:
+            try:
+                from .auth import FabricAuthenticator
+                from .client import FabricClient
+                authenticator = FabricAuthenticator(
+                    tenant_id=env_config['tenant_id'],
+                    client_id=env_config['client_id'],
+                    client_secret=env_config['client_secret'],
+                )
+                self.client = FabricClient(authenticator=authenticator)
+                logger.info("Re-authenticated for workspace %s", workspace_id)
+            except Exception as e:
+                logger.error("Authentication failed for environment: %s", e)
+                return {'workspace_id': workspace_id, 'results': [],
+                        'success': False, 'error': str(e)}
+
+        project_path = Path(project_dir)
+        artifact_files = sorted(project_path.glob('*.json'))
+        if artifact_names:
+            artifact_files = [
+                f for f in artifact_files
+                if f.stem in artifact_names
+            ]
+
+        for artifact_file in artifact_files:
+            if dry_run:
+                logger.info("[dry-run] Would deploy %s → workspace %s",
+                            artifact_file.name, workspace_id)
+                results.append({'file': str(artifact_file), 'status': 'dry-run'})
+                continue
+
+            result = self.deploy_from_file(
+                workspace_id, str(artifact_file),
+                ArtifactType.SEMANTIC_MODEL, overwrite=overwrite,
+            )
+            results.append({'file': str(artifact_file), 'result': result})
+            logger.info("Deployed %s: %s", artifact_file.name,
+                        result.get('status', 'unknown'))
+
+        success = all(
+            r.get('status') == 'dry-run' or
+            r.get('result', {}).get('status') not in ('failed', 'error')
+            for r in results
+        )
+        return {
+            'workspace_id': workspace_id,
+            'results': results,
+            'success': success,
+        }

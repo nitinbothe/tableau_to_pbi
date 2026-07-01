@@ -70,6 +70,42 @@ _UNSUPPORTED_CONNECTORS = frozenset({
     "Splunk", "Marketo", "ServiceNow",
 })
 
+# ── Per-connector migration guidance ────────────────────────────────
+
+_CONNECTOR_GUIDANCE = {
+    "Salesforce":       "Requires OAuth App registration in Salesforce + Power BI on-premises gateway. "
+                        "Generate credential template with --credential-template.",
+    "Snowflake":        "DirectQuery performance depends on warehouse size. "
+                        "Recommend Import mode for models >10M rows. Configure SSO or service account.",
+    "BigQuery":         "Requires Google Service Account JSON key file. "
+                        "Validate project billing is enabled and the dataset is accessible.",
+    "Oracle":           "Requires Oracle ODBC/OLE DB driver installed on the gateway machine.",
+    "Teradata":         "Requires Teradata ODBC driver on the gateway machine. "
+                        "DirectQuery supported via Teradata connector.",
+    "SAP HANA":         "Supports DirectQuery and Import. "
+                        "SAML-based SSO requires AAD federation setup.",
+    "SAP BW":           "Requires SAP BW Message Server credentials and SAP .NET Connector 3.0.",
+    "Redshift":         "Requires gateway with Redshift ODBC driver. "
+                        "Recommend Import mode; DirectQuery latency can be high.",
+    "Databricks":       "Use the native Power BI Databricks connector (partner connector). "
+                        "Requires PAT token or Azure AD service principal.",
+    "Spark":            "Connect via the Spark ODBC connector or use Databricks connector if on Azure.",
+    "Spark SQL":        "Connect via Spark ODBC. Consider migrating to Databricks for better PBI integration.",
+    "Google Analytics": "Use the built-in Google Analytics 4 connector. "
+                        "Legacy UA properties require the legacy connector.",
+    "Vertica":          "Requires Vertica ODBC driver on the gateway machine.",
+    "Impala":           "Connect via Impala ODBC driver through on-premises gateway.",
+    "Hadoop Hive":      "Connect via Hive ODBC driver through on-premises gateway. "
+                        "Consider migrating to Azure HDInsight or Databricks.",
+    "Presto":           "Requires Presto ODBC driver. Consider migrating to Trino or Starburst connector.",
+    "ServiceNow":       "No native Power BI connector. "
+                        "Use OData feed: https://{instance}.service-now.com/api/now/table/{table}",
+    "Splunk":           "No native Power BI connector. "
+                        "Export to CSV/JSON or use the Splunk REST API via Power Query Web connector.",
+    "Marketo":          "No native Power BI connector. "
+                        "Use the Marketo REST API via Power Query or an ETL tool to land data in SQL/ADLS.",
+}
+
 # ── Unsupported Tableau functions (no DAX / PBI equivalent) ─────────
 
 _UNSUPPORTED_FUNCTIONS = re.compile(
@@ -107,6 +143,17 @@ _TABLE_CALC_PATTERN = re.compile(
     r'|WINDOW_SUM|WINDOW_AVG|WINDOW_MAX|WINDOW_MIN|WINDOW_COUNT'
     r'|WINDOW_MEDIAN|WINDOW_STDEV|WINDOW_STDEVP|WINDOW_VAR|WINDOW_VARP'
     r'|WINDOW_PERCENTILE)\s*\(',
+    re.IGNORECASE,
+)
+
+_FORECAST_FUNCTIONS = re.compile(
+    r'\b(FORECAST\.LINEAR|FORECAST_EXP_SMOOTHING|CHI_SQUARED_TEST'
+    r'|PERCENTILE\.CONT|PERCENTILE\.DISC)\s*\(',
+    re.IGNORECASE,
+)
+
+_SPATIAL_FUNCTIONS = re.compile(
+    r'\b(MAKEPOINT|MAKELINE|BUFFER|AREA|INTERSECTION|DISTANCE|HEXBINX|HEXBINY)\s*\(',
     re.IGNORECASE,
 )
 
@@ -298,20 +345,27 @@ def _check_datasources(extracted: Dict) -> CategoryResult:
                 f"Fully supported in Power BI. Used by: {', '.join(ds_names)}.",
             ))
         elif conn_type in _PARTIALLY_SUPPORTED_CONNECTORS:
+            specific_guidance = _CONNECTOR_GUIDANCE.get(
+                conn_type,
+                "Configure an on-premises data gateway or use a certified Power BI connector for this data source.",
+            )
             cat.checks.append(CheckItem(
                 cat.name, f"Connector: {conn_type}", WARN,
                 f"Partially supported (may require a Power BI gateway or "
                 f"custom connector). Used by: {', '.join(ds_names)}.",
-                "Configure an on-premises data gateway or use a certified "
-                "Power BI connector for this data source.",
+                specific_guidance,
             ))
         elif conn_type in _UNSUPPORTED_CONNECTORS:
+            specific_guidance = _CONNECTOR_GUIDANCE.get(
+                conn_type,
+                "Consider migrating data to a supported source (e.g. Azure SQL, Excel, CSV) "
+                "or use a custom Power Query connector.",
+            )
             cat.checks.append(CheckItem(
                 cat.name, f"Connector: {conn_type}", FAIL,
                 f"Not natively supported in Power BI. "
                 f"Used by: {', '.join(ds_names)}.",
-                "Consider migrating data to a supported source (e.g. Azure SQL, "
-                "Excel, CSV) or use a custom Power Query connector.",
+                specific_guidance,
             ))
         elif conn_type == "sqlproxy":
             cat.checks.append(CheckItem(
@@ -478,9 +532,17 @@ def _check_calculations(extracted: Dict) -> CategoryResult:
     # Classify
     unsupported = []
     partial = []
+    regexp_calcs = []
     script_calcs = []
     lod_calcs = []
     table_calcs = []
+    forecast_calcs = []
+    spatial_calcs = []
+
+    _REGEXP_FUNCTIONS = re.compile(
+        r'\b(REGEXP_EXTRACT|REGEXP_EXTRACT_NTH|REGEXP_MATCH|REGEXP_REPLACE)\s*\(',
+        re.IGNORECASE,
+    )
 
     for calc in calculations:
         formula = calc.get("formula") or ""
@@ -492,10 +554,16 @@ def _check_calculations(extracted: Dict) -> CategoryResult:
             script_calcs.append(name)
         if _PARTIAL_FUNCTIONS.search(formula):
             partial.append(name)
+        if _REGEXP_FUNCTIONS.search(formula):
+            regexp_calcs.append(name)
         if _LOD_PATTERN.search(formula):
             lod_calcs.append(name)
         if _TABLE_CALC_PATTERN.search(formula):
             table_calcs.append(name)
+        if _FORECAST_FUNCTIONS.search(formula):
+            forecast_calcs.append(name)
+        if _SPATIAL_FUNCTIONS.search(formula):
+            spatial_calcs.append(name)
 
     # Results
     if unsupported:
@@ -519,17 +587,42 @@ def _check_calculations(extracted: Dict) -> CategoryResult:
         names_preview = ", ".join(script_calcs[:5])
         extra = f" (+{len(script_calcs) - 5} more)" if len(script_calcs) > 5 else ""
         cat.checks.append(CheckItem(
-            cat.name, "SCRIPT_* analytics extensions", WARN,
+            cat.name, "SCRIPT_* analytics extensions", FAIL,
             f"{len(script_calcs)} calculation(s) use R/Python analytics extensions: "
             f"{names_preview}{extra}.",
-            "SCRIPT_* functions are migrated to Power BI Python/R script visuals. "
-            "Requires Python or R runtime configured in PBI Desktop "
-            "(File → Options → Python/R scripting). Scripts may need manual adaptation.",
+            "Power BI requires Premium or Fabric capacity with Python/R runtime enabled. "
+            "Contact your Power BI admin to verify runtime availability before migrating. "
+            "Alternative: convert to Python visual or use Fabric Notebook.",
         ))
     else:
         cat.checks.append(CheckItem(
             cat.name, "SCRIPT_* analytics extensions", PASS,
             "No calculations use R/Python analytics extensions.",
+        ))
+
+    if forecast_calcs:
+        names_preview = ", ".join(forecast_calcs[:5])
+        extra = f" (+{len(forecast_calcs) - 5} more)" if len(forecast_calcs) > 5 else ""
+        cat.checks.append(CheckItem(
+            cat.name, "Forecast / Statistical Functions", WARN,
+            f"{len(forecast_calcs)} calculation(s) use Tableau forecast/statistical functions: "
+            f"{names_preview}{extra}.",
+            "FORECAST.LINEAR and FORECAST_EXP_SMOOTHING have no DAX equivalent. "
+            "Use the Power BI Analytics Pane (report view) to add trend/forecast lines, "
+            "or use a Python/R visual for programmatic forecasting. "
+            "CHI_SQUARED_TEST requires a Python visual.",
+        ))
+
+    if spatial_calcs:
+        names_preview = ", ".join(spatial_calcs[:5])
+        extra = f" (+{len(spatial_calcs) - 5} more)" if len(spatial_calcs) > 5 else ""
+        cat.checks.append(CheckItem(
+            cat.name, "Spatial / Geographic Functions", WARN,
+            f"{len(spatial_calcs)} calculation(s) use Tableau spatial functions: "
+            f"{names_preview}{extra}.",
+            "MAKEPOINT/MAKELINE → use lat/lng fields directly with Azure Maps or Filled Map visual. "
+            "HEXBINX/HEXBINY → Power BI map visuals support hex binning in settings. "
+            "BUFFER/AREA/INTERSECTION have no native PBI equivalent — consider Azure Maps custom layer.",
         ))
 
     if partial:
@@ -539,13 +632,26 @@ def _check_calculations(extracted: Dict) -> CategoryResult:
             cat.name, "Partially-supported functions", WARN,
             f"{len(partial)} calculation(s) use partially-supported functions: "
             f"{names_preview}{extra}.",
-            "REGEXP, RAWSQL, LOOKUP, PREVIOUS_VALUE, and statistical window "
+            "RAWSQL, LOOKUP, PREVIOUS_VALUE, and statistical window "
             "functions may require manual DAX conversion review.",
         ))
     else:
         cat.checks.append(CheckItem(
             cat.name, "Partially-supported functions", PASS,
             "No calculations use partially-supported functions.",
+        ))
+
+    if regexp_calcs:
+        names_preview = ", ".join(regexp_calcs[:5])
+        extra = f" (+{len(regexp_calcs) - 5} more)" if len(regexp_calcs) > 5 else ""
+        cat.checks.append(CheckItem(
+            cat.name, "Regex Functions → Power Query M", WARN,
+            f"{len(regexp_calcs)} calculation(s) use REGEXP_* functions "
+            f"which have no DAX equivalent: {names_preview}{extra}.",
+            "Convert these to Power Query computed columns using M text functions: "
+            "Text.RegexMatchGroups(), Text.RegexMatch(), Text.RegexReplace(). "
+            "In PBI Desktop: Power Query Editor → Add Column → Custom Column. "
+            "Generated DAX includes inline Power Query M snippets as comments.",
         ))
 
     if lod_calcs:

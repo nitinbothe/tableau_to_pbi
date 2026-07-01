@@ -61,6 +61,16 @@ _PROVIDERS = {
         'cost_per_1k_input': 0.0025,
         'cost_per_1k_output': 0.01,
     },
+    'ollama': {
+        # Uses Ollama's OpenAI-compatible endpoint (available since Ollama 0.1.24).
+        # Override the host via the endpoint parameter for non-default installs.
+        'url': 'http://localhost:11434/v1/chat/completions',
+        'default_model': 'llama3.2',
+        'auth_header': 'Authorization',
+        'auth_prefix': 'Bearer ',
+        'cost_per_1k_input': 0.0,
+        'cost_per_1k_output': 0.0,
+    },
 }
 
 _SYSTEM_PROMPT = """You are an expert in both Tableau calculated fields and Power BI DAX.
@@ -113,13 +123,14 @@ class LLMClient:
         """Initialize LLM client.
 
         Args:
-            provider: 'openai', 'anthropic', or 'azure_openai'
-            api_key: API key (or set LLM_API_KEY env var)
+            provider: 'openai', 'anthropic', 'azure_openai', or 'ollama'
+            api_key: API key (or set LLM_API_KEY env var). Not required for ollama.
             model: Model name override
-            endpoint: Custom API endpoint (required for azure_openai)
+            endpoint: Custom API endpoint (required for azure_openai;
+                      optional for ollama to override default localhost URL)
             max_calls: Maximum API calls allowed
             timeout: Request timeout in seconds
-            max_retries: Number of retries on rate-limit (429)
+            max_retries: Number of retries on rate-limit (429) or server errors (5xx)
             dry_run: If True, build prompts but don't call API
         """
         if provider not in _PROVIDERS:
@@ -142,6 +153,8 @@ class LLMClient:
 
         if provider == 'azure_openai' and not endpoint:
             raise ValueError("endpoint is required for azure_openai provider")
+        if provider == 'ollama' and not self.api_key:
+            self.api_key = 'ollama'  # Ollama ignores the auth header; set a dummy value
 
     @property
     def calls_remaining(self):
@@ -158,6 +171,8 @@ class LLMClient:
     def _build_url(self):
         if self.provider == 'azure_openai':
             return f"{self.endpoint.rstrip('/')}/openai/deployments/{self.model}/chat/completions?api-version=2024-02-01"
+        if self.provider == 'ollama' and self.endpoint:
+            return f"{self.endpoint.rstrip('/')}/v1/chat/completions"
         return _PROVIDERS[self.provider]['url']
 
     def _build_headers(self):
@@ -264,9 +279,13 @@ class LLMClient:
                 }
 
             except HTTPError as e:
-                if e.code == 429 and attempt < self.max_retries:
-                    retry_after = int(e.headers.get('Retry-After', 2 ** attempt))
-                    logger.warning("Rate limited (429), retrying in %ds", retry_after)
+                if (e.code == 429 or e.code >= 500) and attempt < self.max_retries:
+                    if e.code == 429:
+                        retry_after = min(int(e.headers.get('Retry-After', 2 ** attempt)), 60)
+                        logger.warning("Rate limited (429), retrying in %ds", retry_after)
+                    else:
+                        retry_after = min(2 ** attempt, 60)
+                        logger.warning("Server error (%d), retrying in %ds", e.code, retry_after)
                     time.sleep(retry_after)
                     continue
                 logger.error("LLM API error: %d %s", e.code, e.reason)

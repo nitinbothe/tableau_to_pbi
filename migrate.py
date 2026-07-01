@@ -2511,6 +2511,43 @@ def _add_deploy_args(parser):
         )
     )
 
+    # Staged multi-environment deployment
+    parser.add_argument(
+        '--deploy-env',
+        metavar='ENV_NAME',
+        default=None,
+        help=(
+            'Target environment name for staged deployment (e.g. dev, uat, prod). '
+            'Requires --deploy-config with an environment config JSON file. '
+            'Each environment has its own workspace ID and service principal credentials.'
+        )
+    )
+
+    parser.add_argument(
+        '--deploy-config',
+        metavar='JSON_FILE',
+        default=None,
+        help=(
+            'Path to a staged deployment config JSON file. '
+            'Format: {"environments": {"dev": {"workspace_id": "...", '
+            '"tenant_id": "...", "client_id": "...", "client_secret_env": "ENV_VAR"}, ...}}. '
+            'Use with --deploy-env to target a specific environment.'
+        )
+    )
+
+    # RLS user mapping
+    parser.add_argument(
+        '--user-map',
+        metavar='JSON_FILE',
+        default=None,
+        help=(
+            'Path to a JSON file mapping Tableau usernames to Azure AD UPNs for RLS. '
+            'Format: [{"tableau": "jsmith", "azure_upn": "john.smith@company.com"}, ...]. '
+            'When provided, RLS role memberships are auto-populated in the generated '
+            'TMDL and an rls_assignments.ps1 PowerShell script is generated.'
+        )
+    )
+
 
 def _add_server_args(parser):
     """Add Tableau Server extraction arguments."""
@@ -6395,6 +6432,113 @@ def _run_deploy_to_pbi_service(args, source_basename):
         logger.error("Deployment failed: %s", exc, exc_info=True)
 
 
+def _run_staged_environment_deploy(args, env_name, config_path, source_basename):
+    """Deploy to a named environment from a multi-environment config file."""
+    try:
+        print_header(f"STAGED DEPLOYMENT → {env_name.upper()}")
+        from powerbi_import.deploy.deployer import FabricDeployer
+
+        env_config = FabricDeployer.load_environment_config(config_path, env_name)
+        out_dir = args.output_dir or os.path.join('artifacts', 'powerbi_projects', 'migrated')
+        project_dir = os.path.join(out_dir, source_basename)
+        dry_run = getattr(args, 'dry_run', False)
+
+        print(f"  Environment: {env_name}")
+        print(f"  Workspace:   {env_config['workspace_id']}")
+        if dry_run:
+            print("  Mode:        dry-run (no API calls)")
+
+        deployer = FabricDeployer()
+        result = deployer.deploy_to_environment(
+            env_config=env_config,
+            project_dir=project_dir,
+            overwrite=True,
+            dry_run=dry_run,
+        )
+        if result.get('success'):
+            print(f"  ✓ Deployed {len(result.get('results', []))} artifact(s) to {env_name}")
+        else:
+            print(f"  ✗ Deployment to {env_name} failed — check logs for details")
+    except (FileNotFoundError, KeyError, ValueError) as exc:
+        logger.error("Staged deployment config error: %s", exc)
+    except Exception as exc:
+        logger.error("Staged deployment failed: %s", exc, exc_info=True)
+
+
+def _run_rls_user_map(args, user_map_path, source_basename):
+    """Auto-populate RLS role memberships from a Tableau→Azure AD user map."""
+    try:
+        print_header("RLS USER MAP")
+        from powerbi_import.permission_mapper import (
+            reconcile_rls_principals, generate_rls_powershell,
+        )
+        from powerbi_import.security_validator import validate_path
+
+        valid, err = validate_path(user_map_path, must_exist=True)
+        if not valid:
+            logger.error("--user-map validation failed: %s", err)
+            return
+
+        with open(user_map_path, 'r', encoding='utf-8') as f:
+            user_map = json.load(f)
+
+        # Build users list in the format permission_mapper expects
+        users = [
+            {'name': entry.get('tableau', ''), 'email': entry.get('azure_upn', '')}
+            for entry in user_map
+            if entry.get('tableau') and entry.get('azure_upn')
+        ]
+        print(f"  User map entries: {len(users)}")
+
+        # Load extracted user_filters (RLS source data)
+        extract_dir = _get_extract_dir()
+        user_filters_path = os.path.join(extract_dir, 'user_filters.json')
+        user_filters = []
+        if os.path.exists(user_filters_path):
+            with open(user_filters_path, 'r', encoding='utf-8') as f:
+                user_filters = json.load(f)
+
+        # Build a roles list from user_filters
+        roles = {}
+        for uf in user_filters:
+            role_name = uf.get('caption', uf.get('name', 'Default'))
+            if role_name not in roles:
+                roles[role_name] = {'name': role_name, 'members': [], 'tablePermissions': []}
+            members_raw = uf.get('members', [])
+            roles[role_name]['members'].extend(
+                m.get('value', '') for m in members_raw if isinstance(m, dict)
+            )
+
+        roles_list = list(roles.values())
+        reconciliation = reconcile_rls_principals(roles_list, users)
+
+        assigned = reconciliation.get('assignments', [])
+        unresolved = reconciliation.get('unresolved', [])
+        print(f"  Resolved:   {len(assigned)} principal(s)")
+        if unresolved:
+            print(f"  Unresolved: {len(unresolved)} (see rls_assignments.ps1 for details)")
+            for u in unresolved[:5]:
+                logger.warning("Unresolved RLS principal: %s → %s", u.get('tableau_name'), u.get('reason'))
+
+        # Generate PowerShell script with resolved memberships
+        out_dir = args.output_dir or os.path.join('artifacts', 'powerbi_projects', 'migrated')
+        ps_path = os.path.join(out_dir, source_basename, 'rls_assignments.ps1')
+
+        # Merge resolved assignments back into roles
+        for assignment in assigned:
+            role_name = assignment.get('role')
+            upn = assignment.get('azure_ad_upn', '')
+            if role_name in roles and upn:
+                if upn not in roles[role_name]['members']:
+                    roles[role_name]['members'].append(upn)
+
+        generate_rls_powershell(roles_list, ps_path, dataset_name=source_basename)
+        print(f"  RLS script: {ps_path}")
+
+    except Exception as exc:
+        logger.error("RLS user map processing failed: %s", exc, exc_info=True)
+
+
 def _run_schedule_migration(args, source_basename):
     """Extract Tableau refresh schedules and generate PBI refresh config."""
     try:
@@ -6677,6 +6821,17 @@ def _run_single_migration(args):
     # Step 5: Deploy to Power BI Service (optional)
     if getattr(args, 'deploy', None) and results.get('generation') and not args.dry_run:
         _run_deploy_to_pbi_service(args, source_basename)
+
+    # Step 5a-env: Staged environment deployment (--deploy-env + --deploy-config)
+    deploy_env = getattr(args, 'deploy_env', None)
+    deploy_config_path = getattr(args, 'deploy_config', None)
+    if deploy_env and deploy_config_path and results.get('generation'):
+        _run_staged_environment_deploy(args, deploy_env, deploy_config_path, source_basename)
+
+    # Step 5a-rls: RLS user map auto-population (--user-map)
+    user_map_path = getattr(args, 'user_map', None)
+    if user_map_path and results.get('generation'):
+        _run_rls_user_map(args, user_map_path, source_basename)
 
     # Step 5b: Migrate refresh schedules (optional, requires --server + --migrate-schedules)
     if getattr(args, 'migrate_schedules', False) and results.get('generation'):

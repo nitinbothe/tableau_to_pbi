@@ -1803,22 +1803,60 @@ _AGG_FUNC_MAP = {
 # can be attached to the generated visual.
 
 APPROXIMATION_MAP = {
-    "mekko":       ("stackedBarChart",                   "Mekko chart mapped to Stacked Bar — variable-width bars are not supported"),
-    "sankey":      ("sankeyDiagram",                     "Sankey diagram mapped to custom visual (ChicagoITSankey1.1.0) — install from AppSource"),
-    "chord":       ("chordChart",                        "Chord diagram mapped to custom visual (ChicagoITChord1.0.0) — install from AppSource"),
-    "network":     ("networkNavigator",                  "Network graph mapped to custom visual (NetworkNavigator1.0.0) — install from AppSource"),
-    "ganttbar":    ("ganttChart",                         "Gantt bar mapped to custom visual (GanttByMAQSoftware1.0.0) — install from AppSource"),
-    "bumpchart":   ("lineChart",                         "Bump chart mapped to Line Chart with auto-generated RANKX measure for ranking"),
-    "slopechart":  ("lineChart",                         "Slope chart mapped to Line Chart with markers — represents period comparison between two data points"),
-    "timeline":    ("lineChart",                         "Timeline mapped to Line Chart with shape markers — event milestones rendered as data point markers"),
-    "butterfly":   ("hundredPercentStackedBarChart",     "Butterfly chart mapped to 100% Stacked Bar — auto-generated NEGATE measure for symmetry"),
-    "violin":      ("boxAndWhisker",                     "Violin plot mapped to Box and Whisker — distribution shape lost, use custom visual from AppSource (ViolinPlot1.0.0)"),
-    "parallelcoordinates": ("lineChart",               "Parallel coordinates mapped to Line Chart — multi-axis layout lost, use custom visual from AppSource (ParallelCoordinates1.0.0)"),
-    "calendarheatmap": ("matrix",                       "Calendar heat map mapped to Matrix — auto-configured with background color conditional formatting gradient"),
-    "waffle":      ("multiRowCard",                      "Waffle chart mapped to Multi-Row Card with percentage computation — grid layout approximated as card display"),
-    "lollipop":    ("clusteredBarChart",                 "Lollipop chart mapped to Clustered Bar — thin bars with data labels styled as circle markers"),
-    "pareto":      ("lineClusteredColumnComboChart",     "Pareto mapped to Line+Column Combo — cumulative line may need adjustment"),
-    "dualaxis":    ("lineClusteredColumnComboChart",     "Dual axis mapped to Line+Column Combo"),
+    "mekko":       ("stackedBarChart",
+                    "Mekko chart mapped to Stacked Bar (variable-width bars not supported natively). "
+                    "For true Mekko: install 'Mekko Chart' by Akvelon from AppSource "
+                    "(Power BI Desktop → Visualizations pane → Get more visuals → search 'Mekko')."),
+    "sankey":      ("sankeyDiagram",
+                    "Sankey diagram mapped to custom visual. "
+                    "Install 'Sankey Diagram by ChicagoIT' from AppSource "
+                    "(search 'Sankey' in Get more visuals). Requires workspace admin to enable custom visuals."),
+    "chord":       ("chordChart",
+                    "Chord diagram mapped to custom visual. "
+                    "Install 'Chord Chart by ChicagoIT' from AppSource "
+                    "(search 'Chord' in Get more visuals)."),
+    "network":     ("networkNavigator",
+                    "Network graph mapped to custom visual. "
+                    "Install 'Network Navigator' from AppSource "
+                    "(search 'Network Navigator' in Get more visuals). Topology layout may need re-configuration."),
+    "ganttbar":    ("ganttChart",
+                    "Gantt bar mapped to custom visual. "
+                    "Install 'Gantt by MAQ Software' from AppSource "
+                    "(search 'Gantt' in Get more visuals). Timeline date ranges preserved in data roles."),
+    "bumpchart":   ("lineChart",
+                    "Bump chart mapped to Line Chart with auto-generated RANKX measure for ranking. "
+                    "Verify RANKX partition columns match Tableau's table calc dimensions."),
+    "slopechart":  ("lineChart",
+                    "Slope chart mapped to Line Chart with markers — period comparison between two data points. "
+                    "Set X axis to exactly 2 data points and enable data labels for slope effect."),
+    "timeline":    ("lineChart",
+                    "Timeline mapped to Line Chart with shape markers — event milestones as data point markers. "
+                    "For a dedicated timeline visual: install 'Timeline' by Microsoft from AppSource."),
+    "butterfly":   ("hundredPercentStackedBarChart",
+                    "Butterfly chart mapped to 100% Stacked Bar with auto-generated NEGATE measure for symmetry. "
+                    "Verify the NEGATE measure produces the correct negative axis values."),
+    "violin":      ("boxAndWhisker",
+                    "Violin plot mapped to Box and Whisker (distribution shape lost). "
+                    "For full violin distribution: install 'Violin Plot' by Daniel Marsh-Patrick from AppSource "
+                    "(search 'Violin' in Get more visuals)."),
+    "parallelcoordinates": ("lineChart",
+                    "Parallel coordinates mapped to Line Chart (multi-axis layout lost). "
+                    "For true parallel coordinates: install 'Parallel Coordinates' from AppSource "
+                    "(search 'Parallel Coordinates' in Get more visuals)."),
+    "calendarheatmap": ("matrix",
+                    "Calendar heat map mapped to Matrix with background color conditional formatting gradient. "
+                    "Configure conditional formatting on the Values field: Format → Background color → Gradient."),
+    "waffle":      ("multiRowCard",
+                    "Waffle chart mapped to Multi-Row Card with percentage computation (grid layout approximated). "
+                    "For true waffle grid: install 'Waffle Chart' by Microsoft from AppSource."),
+    "lollipop":    ("clusteredBarChart",
+                    "Lollipop chart mapped to Clustered Bar (circle markers replaced by bars). "
+                    "For lollipop style: install 'Lollipop Bar Chart' from AppSource "
+                    "(search 'Lollipop' in Get more visuals)."),
+    "pareto":      ("lineClusteredColumnComboChart",
+                    "Pareto mapped to Line+Column Combo — verify cumulative % line uses a running total DAX measure."),
+    "dualaxis":    ("lineClusteredColumnComboChart",
+                    "Dual axis mapped to Line+Column Combo — check secondary Y axis configuration in Format pane."),
 }
 
 
@@ -1892,7 +1930,7 @@ def get_custom_visual_guid_for_approx(source_type):
 
 VISUAL_FALLBACK_CASCADE = {
     # Complex visuals → simpler alternatives
-    'scatterChart':                      'tableEx',
+    'scatterChart':                      'clusteredColumnChart',
     'lineClusteredColumnComboChart':     'clusteredBarChart',
     'lineStackedColumnComboChart':       'stackedBarChart',
     'boxAndWhisker':                     'clusteredColumnChart',
