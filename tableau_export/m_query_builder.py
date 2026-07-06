@@ -1304,6 +1304,29 @@ _M_GENERATORS = {
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
+# Raw Tableau connection class names → display names used as _M_GENERATORS
+# keys. The datasource extractor normally normalizes these, but connections
+# built by other entry points (API callers, plugins, tests) may carry the raw
+# class, which would otherwise silently fall through to the #table() fallback.
+_TABLEAU_CLASS_ALIASES = {
+    'sqlserver': 'SQL Server',
+    'postgres': 'PostgreSQL',
+    'mysql': 'MySQL',
+    'oracle': 'Oracle',
+    'snowflake': 'Snowflake',
+    'redshift': 'Amazon Redshift',
+    'teradata': 'Teradata',
+    'bigquery': 'BigQuery',
+    'azure-sql-dw': 'Azure Synapse',
+    'excel-direct': 'Excel',
+    'textscan': 'CSV',
+    'googlesheets': 'Google Sheets',
+    'saphana': 'SAP HANA',
+    'vertica': 'Vertica',
+    'databricks': 'Databricks',
+}
+
+
 def generate_power_query_m(connection, table):
     """
     Generates a Power Query M query from a Tableau connection.
@@ -1317,6 +1340,9 @@ def generate_power_query_m(connection, table):
     """
     conn_type = connection.get('type', 'Unknown')
     details = connection.get('details', {})
+    if not details:
+        # Tolerate flat connection dicts (server/database at top level)
+        details = {k: v for k, v in connection.items() if k != 'type'}
     table_name = table.get('name', 'Table1')
     columns = table.get('columns', [])
 
@@ -1325,7 +1351,8 @@ def generate_power_query_m(connection, table):
         details = dict(details)
         details['_source_table'] = source_table
 
-    generator = _M_GENERATORS.get(conn_type)
+    generator = (_M_GENERATORS.get(conn_type)
+                 or _M_GENERATORS.get(_TABLEAU_CLASS_ALIASES.get(conn_type, '')))
     if generator:
         return generator(details, table_name, columns)
 

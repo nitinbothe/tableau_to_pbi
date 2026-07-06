@@ -198,7 +198,7 @@ class TestRegexpExtractNth(unittest.TestCase):
         """Complex regex patterns (like \\d+) properly fall back to BLANK()."""
         result = convert_tableau_formula_to_dax('REGEXP_EXTRACT_NTH([Text], "\\d+", 1)')
         self.assertIn('BLANK()', result)
-        self.assertIn('manual conversion needed', result)
+        self.assertIn('Power Query alternative', result)
 
     def test_regexp_extract_nth_delimiter_pattern(self):
         """Delimiter-based patterns use PATHITEM(SUBSTITUTE(...))."""

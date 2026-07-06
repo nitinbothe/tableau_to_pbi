@@ -225,7 +225,7 @@ class TestRegexpExtractNth(unittest.TestCase):
             table_name='T'
         )
         self.assertIn('BLANK()', result)
-        self.assertIn('manual conversion needed', result)
+        self.assertIn('Power Query alternative', result)
 
     def test_two_args_defaults_to_index_1(self):
         """REGEXP_EXTRACT_NTH with only 2 args should default to index 1."""

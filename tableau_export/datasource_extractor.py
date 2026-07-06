@@ -1379,7 +1379,7 @@ def extract_column_metadata(datasource_elem):
     for col_elem in datasource_elem.findall('.//column'):
         column = {
             'name': col_elem.get('name', ''),
-            'caption': col_elem.get('caption', ''),
+            'caption': col_elem.get('caption', '').strip(),
             'datatype': col_elem.get('datatype', 'string'),
             'role': col_elem.get('role', 'dimension'),
             'type': col_elem.get('type', 'nominal'),
@@ -1426,7 +1426,7 @@ def extract_calculations(datasource_elem):
                 continue
             calculation = {
                 'name': col_elem.get('name', ''),
-                'caption': col_elem.get('caption', col_elem.get('name', '')),
+                'caption': col_elem.get('caption', col_elem.get('name', '')).strip(),
                 'formula': calc_formula,
                 'class': calc_class,
                 'datatype': col_elem.get('datatype', 'real'),

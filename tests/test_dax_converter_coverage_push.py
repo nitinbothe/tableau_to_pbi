@@ -486,9 +486,10 @@ class TestRegexpMatch(unittest.TestCase):
         self.assertIn('"hello"', result)
 
     def test_complex_regex_fallback(self):
-        # Complex pattern → CONTAINSSTRING with warning
+        # Complex pattern → CONTAINSSTRING with Power Query guidance
         result = _convert_regexp_match('REGEXP_MATCH([X], "a.*b")')
-        self.assertIn('verify manually', result)
+        self.assertIn('Power Query alternative', result)
+        self.assertIn('CONTAINSSTRING', result)
 
     def test_backslash_d_shorthand(self):
         # \d → normalized to [0-9]
@@ -669,7 +670,8 @@ class TestRegexpReplace(unittest.TestCase):
 
     def test_complex_fallback(self):
         result = _convert_regexp_replace('REGEXP_REPLACE([X], "a.*b", "c")')
-        self.assertIn('verify manually', result)
+        self.assertIn('Power Query alternative', result)
+        self.assertIn('SUBSTITUTE', result)
 
     def test_fewer_than_3_args(self):
         result = _convert_regexp_replace('REGEXP_REPLACE([X], "pat")')

@@ -230,15 +230,14 @@ _RE_NEWLINES = re.compile(r'[\r\n]+\s*')
 _RE_PARAM_REF = re.compile(r'\[Parameters\]\.\[((?:[^\]]|\]\])*)\]')
 _RE_CALC_REF = re.compile(r'\[([^\]]+)\]')
 _RE_ELSEIF = re.compile(r'\bELSEIF\b', re.IGNORECASE)
-# Matches an innermost IF...THEN...ELSE...END where none of the three parts
-# contain a nested IF, CASE, or END keyword — used to pre-convert these to
-# IF() function form before the CASE regex runs, preventing the CASE regex
-# from stopping prematurely at an inner IF's END.
-_RE_INNERMOST_IF = re.compile(
-    r'\bIF\s+((?:(?!\bIF\b|\bCASE\b|\bEND\b).)+?)'
-    r'\s+THEN\s+((?:(?!\bIF\b|\bCASE\b|\bEND\b).)*?)'
-    r'\s+ELSE\s+((?:(?!\bIF\b|\bCASE\b|\bEND\b).)*?)'
-    r'\s+END\b',
+# Matches an innermost IF...END block whose body contains no nested keyword-form
+# IF (``IF `` with whitespace, so already-converted ``IF(...)`` calls don't
+# block), CASE, or END. The body may contain THEN/ELSEIF/ELSE, which
+# _convert_innermost_ifs() parses. Used to pre-convert nested IFs to IF()
+# function form before the CASE regex runs, preventing the CASE regex from
+# stopping prematurely at an inner IF's END.
+_RE_INNERMOST_IF_BLOCK = re.compile(
+    r'\bIF\s+((?:(?!\bIF\s|\bCASE\b|\bEND\b).)+?)\s+END\b',
     re.IGNORECASE | re.DOTALL,
 )
 _RE_FINDNTH = re.compile(r'\bFINDNTH\s*\(', re.IGNORECASE)
@@ -284,6 +283,35 @@ TABLEAU_TO_PBI_TYPE = {
 def map_tableau_to_powerbi_type(tableau_type):
     """Maps Tableau types to Power BI types."""
     return TABLEAU_TO_PBI_TYPE.get(tableau_type.lower(), 'String')
+
+
+def _strip_tableau_line_comments(formula):
+    """
+    Removes Tableau ``//`` line comments while respecting string literals,
+    so a ``//`` inside a quoted string (e.g. an ``https://`` URL) is kept.
+    The trailing newline of each comment line is preserved.
+    """
+    out = []
+    i, n = 0, len(formula)
+    quote = None
+    while i < n:
+        ch = formula[i]
+        if quote:
+            out.append(ch)
+            if ch == quote:
+                quote = None
+            i += 1
+        elif ch in ("'", '"'):
+            quote = ch
+            out.append(ch)
+            i += 1
+        elif ch == '/' and i + 1 < n and formula[i + 1] == '/':
+            while i < n and formula[i] not in '\r\n':
+                i += 1
+        else:
+            out.append(ch)
+            i += 1
+    return ''.join(out)
 
 
 # ── Main converter ────────────────────────────────────────────────────────────
@@ -333,7 +361,15 @@ def convert_tableau_formula_to_dax(formula, column_name='Measure', table_name='T
         compute_using = partition_fields
     
     dax = formula.strip()
-    
+
+    # === Phase 0a: Strip Tableau // line comments (string-aware) ===
+    # Must happen BEFORE structure conversion: _convert_if_structure/.strip()
+    # can pull following code onto the comment's line, and the final output is
+    # collapsed to a single line — a surviving // comment would swallow the
+    # rest of the expression (e.g. "... //Last Period" eating the closing
+    # IF arguments). The Phase 6 end-of-line regexes can't catch that case.
+    dax = _strip_tableau_line_comments(dax)
+
     # === Phase 0: Strip secondary-datasource prefixes ===
     # Tableau data blends use [federated.xxxID].[Column] references.
     # Published (sqlproxy) datasource cross-refs use [sqlproxy.xxxID].[Calculation_yyy].
@@ -564,6 +600,51 @@ def _resolve_references(dax, calc_map, param_map, is_calc_column, param_values):
 
 # ── Phase 2: IF and CASE structure conversion ────────────────────────────────
 
+def _convert_innermost_ifs(text):
+    """
+    Converts innermost IF...THEN...[ELSEIF...THEN...]...[ELSE...]...END blocks
+    (those containing no nested keyword-form IF, CASE, or END) to nested IF()
+    function calls. ELSEIF chains become right-nested IF()s:
+
+        IF c1 THEN v1 ELSEIF c2 THEN v2 ELSE v3 END
+        → IF(c1, v1, IF(c2, v2, v3))
+
+    Malformed blocks (a segment without THEN) are left unchanged for the
+    downstream converters to deal with.
+    """
+    max_iter = 30
+    for _ in range(max_iter):
+        m = _RE_INNERMOST_IF_BLOCK.search(text)
+        if not m:
+            break
+        body = m.group(1)
+        segments = re.split(r'\bELSEIF\b', body, flags=re.IGNORECASE)
+
+        else_val = None
+        else_match = re.search(r'\bELSE\b(.*)$', segments[-1],
+                               re.IGNORECASE | re.DOTALL)
+        if else_match:
+            else_val = else_match.group(1).strip()
+            segments[-1] = segments[-1][:else_match.start()]
+
+        pairs = []
+        for seg in segments:
+            then_match = re.search(r'\bTHEN\b', seg, re.IGNORECASE)
+            if not then_match:
+                pairs = None
+                break
+            pairs.append((seg[:then_match.start()].strip(),
+                          seg[then_match.end():].strip()))
+        if not pairs:
+            break
+
+        expr = else_val if else_val is not None else 'BLANK()'
+        for cond, val in reversed(pairs):
+            expr = f'IF({cond}, {val}, {expr})'
+        text = text[:m.start()] + expr + text[m.end():]
+    return text
+
+
 def _convert_case_structure(text):
     """
     Converts Tableau CASE/WHEN/THEN/ELSE/END structures to DAX SWITCH().
@@ -573,15 +654,13 @@ def _convert_case_structure(text):
     """
     max_iter = 20
     for _ in range(max_iter):
-        # Pre-convert innermost IF...THEN...ELSE...END to IF() function form so
-        # the CASE regex (which stops at any END) doesn't truncate WHEN blocks
-        # that contain a nested IF...END expression.
-        for __ in range(20):
-            mi = _RE_INNERMOST_IF.search(text)
-            if not mi:
-                break
-            c, t, f = mi.group(1).strip(), mi.group(2).strip(), mi.group(3).strip()
-            text = text[:mi.start()] + f'IF({c}, {t}, {f})' + text[mi.end():]
+        # Pre-convert innermost keyword-form IFs to IF() function form so the
+        # CASE regex (which stops at any END) doesn't truncate WHEN blocks that
+        # contain a nested IF...END expression. Only do this when a CASE is
+        # actually present: pure IF/ELSEIF formulas are handled (with more edge
+        # cases covered) by _convert_if_structure afterwards.
+        if re.search(r'\bCASE\b', text, re.IGNORECASE):
+            text = _convert_innermost_ifs(text)
 
         m = re.search(
             r'\bCASE\s+((?:(?!\bCASE\b|\bEND\b).)*?)\s+WHEN\s+((?:(?!\bCASE\b|\bEND\b).)*?)\s+END\b',

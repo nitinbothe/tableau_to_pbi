@@ -1,0 +1,1316 @@
+{
+  "filters": 768,
+  "measures": {
+    "[Accrued Promotions Dynamic (copy) (copy) (copy) (copy)_1915437262680150023]": {
+      "formula_hash": "09b1d91f9a1168ed"
+    },
+    "[Accrued Promotions Dynamic (copy) (copy) (copy)_1915437262680141830]": {
+      "formula_hash": "0a2dca7014e55d80"
+    },
+    "[Accrued Promotions Dynamic (copy) (copy)_1915437262680129541]": {
+      "formula_hash": "d1fdb76451ead4ed"
+    },
+    "[Accrued Promotions Dynamic (copy)_1915437262680121348]": {
+      "formula_hash": "b0d31c3e12891884"
+    },
+    "[Action Overdue Count (copy)_1566408247972749313]": {
+      "formula_hash": "092ea4e57753b451"
+    },
+    "[Active Sku (copy)_2453617393335779330]": {
+      "formula_hash": "af5f255de61ffc73"
+    },
+    "[Active Sku Count Distinct (% of Shipped)  (copy)_830351187332526087]": {
+      "formula_hash": "6efa0d578588a930"
+    },
+    "[Active Sku Count Distinct (copy)_2453617393336209413]": {
+      "formula_hash": "bf6d0aa02e415147"
+    },
+    "[Approved Sku (copy)_2453617393336127492]": {
+      "formula_hash": "1078771b6219d661"
+    },
+    "[Brand Strategy Strategic Score (User Input) (copy)_896779336082948096]": {
+      "formula_hash": "64550166db5e521b"
+    },
+    "[Calculation1]": {
+      "formula_hash": "38d890e97c22658b"
+    },
+    "[Calculation2]": {
+      "formula_hash": "a2acd7244d3853f5"
+    },
+    "[Calculation3]": {
+      "formula_hash": "bea8c4c5d25adff0"
+    },
+    "[Calculation4]": {
+      "formula_hash": "ef34207c2fbd6c31"
+    },
+    "[Calculation5]": {
+      "formula_hash": "ef34207c2fbd6c31"
+    },
+    "[Calculation6]": {
+      "formula_hash": "ef34207c2fbd6c31"
+    },
+    "[Calculation_0562971311652866]": {
+      "formula_hash": "4c51acfc5b5fdb00"
+    },
+    "[Calculation_0562971322314757]": {
+      "formula_hash": "6b86b273ff34fce1"
+    },
+    "[Calculation_1107604098975694849]": {
+      "formula_hash": "eb34458131a41942"
+    },
+    "[Calculation_1137158934586249217]": {
+      "formula_hash": "3820b268ebf11bb9"
+    },
+    "[Calculation_1166995317754617861]": {
+      "formula_hash": "c3d14235399215b8"
+    },
+    "[Calculation_1166995317980827657]": {
+      "formula_hash": "4b9316ebc2639c1c"
+    },
+    "[Calculation_1185009668048056321]": {
+      "formula_hash": "a3c05f9f5922f3a0"
+    },
+    "[Calculation_1185009668050173956]": {
+      "formula_hash": "913643abf6f13d89"
+    },
+    "[Calculation_1185009668050292741]": {
+      "formula_hash": "152e928b6954d01e"
+    },
+    "[Calculation_1185009668051111943]": {
+      "formula_hash": "0bf2d14880bb2249"
+    },
+    "[Calculation_1185009668051222536]": {
+      "formula_hash": "63e842a00a2d1191"
+    },
+    "[Calculation_1218223765435944961]": {
+      "formula_hash": "53343528479442da"
+    },
+    "[Calculation_1218223765437861894]": {
+      "formula_hash": "2510f6bbd26e311b"
+    },
+    "[Calculation_1229764196693819393]": {
+      "formula_hash": "da58e1b62dbcfa43"
+    },
+    "[Calculation_1263259699804188678]": {
+      "formula_hash": "3c9267aba2f3a65b"
+    },
+    "[Calculation_1374723854276128768]": {
+      "formula_hash": "b19ce605f3b63d2e"
+    },
+    "[Calculation_1402589822178197505]": {
+      "formula_hash": "390567a38b2b10f6"
+    },
+    "[Calculation_1455507168689950720]": {
+      "formula_hash": "dae3115767848ed7"
+    },
+    "[Calculation_1455507168692977668]": {
+      "formula_hash": "a6fa5f2b3412982a"
+    },
+    "[Calculation_1458884868449128448]": {
+      "formula_hash": "18eca6f3492f190b"
+    },
+    "[Calculation_1519683401107619840]": {
+      "formula_hash": "30c271678f13286b"
+    },
+    "[Calculation_1592866896456511499]": {
+      "formula_hash": "e7281535a23777a3"
+    },
+    "[Calculation_1609192505755521031]": {
+      "formula_hash": "1a3a7b02df4da137"
+    },
+    "[Calculation_161566642006315010]": {
+      "formula_hash": "5fa2ecf0c7b024f8"
+    },
+    "[Calculation_1629458651862880256]": {
+      "formula_hash": "4a2b5c347d73a59e"
+    },
+    "[Calculation_163255534747783168]": {
+      "formula_hash": "7720a9e5c197fe55"
+    },
+    "[Calculation_1713619718252990465]": {
+      "formula_hash": "eb34458131a41942"
+    },
+    "[Calculation_1713619718267396103]": {
+      "formula_hash": "c8ccebb621b11710"
+    },
+    "[Calculation_1724315757093208066]": {
+      "formula_hash": "946e9beb85b533cd"
+    },
+    "[Calculation_1724315757423894534]": {
+      "formula_hash": "ce191d910d433d69"
+    },
+    "[Calculation_1724315757546287115]": {
+      "formula_hash": "ffc2fe97ea85db0e"
+    },
+    "[Calculation_1791025342629031936]": {
+      "formula_hash": "d1b23003fed13e82"
+    },
+    "[Calculation_1827617057497243652]": {
+      "formula_hash": "73f3751b5d2ff04f"
+    },
+    "[Calculation_1827617057497288709]": {
+      "formula_hash": "ad4be9711338e0e1"
+    },
+    "[Calculation_1836624246132428800]": {
+      "formula_hash": "947a04771c5d58dd"
+    },
+    "[Calculation_1842535208632594441]": {
+      "formula_hash": "b06d4c086ff4368f"
+    },
+    "[Calculation_1842535208633765899]": {
+      "formula_hash": "c6a41c9db6a58e86"
+    },
+    "[Calculation_1842535208680976404]": {
+      "formula_hash": "b30a389ed242800d"
+    },
+    "[Calculation_1842535208688979991]": {
+      "formula_hash": "6def317fc370b8df"
+    },
+    "[Calculation_1842535208689770520]": {
+      "formula_hash": "1e39a5c66a1cb65b"
+    },
+    "[Calculation_1842535208690614297]": {
+      "formula_hash": "76459fde1375c30b"
+    },
+    "[Calculation_1842535208690774043]": {
+      "formula_hash": "04504ac018f3087b"
+    },
+    "[Calculation_1842535208691523613]": {
+      "formula_hash": "30df879b5d4f23bf"
+    },
+    "[Calculation_1867867963572867082]": {
+      "formula_hash": "d5704710c049d191"
+    },
+    "[Calculation_1867867963573207051]": {
+      "formula_hash": "ac3a99158043c48d"
+    },
+    "[Calculation_1867867963614871567]": {
+      "formula_hash": "ec9777ef1eb44d54"
+    },
+    "[Calculation_1867867963632750609]": {
+      "formula_hash": "03f13dec459606b5"
+    },
+    "[Calculation_1876593688603447297]": {
+      "formula_hash": "18f4d6747cfe0c02"
+    },
+    "[Calculation_1902207930537111552]": {
+      "formula_hash": "513edbacf8ad4f9b"
+    },
+    "[Calculation_1911496620063887360]": {
+      "formula_hash": "d261bb0df4b113fd"
+    },
+    "[Calculation_1990591094955442176]": {
+      "formula_hash": "2dec17c7121f45d9"
+    },
+    "[Calculation_1990591094955741185]": {
+      "formula_hash": "8024cc7c148cc30a"
+    },
+    "[Calculation_1990591094956556290]": {
+      "formula_hash": "f16089e0b77bb058"
+    },
+    "[Calculation_1990591095259488259]": {
+      "formula_hash": "59b153b3e93fdf49"
+    },
+    "[Calculation_1990591095259709444]": {
+      "formula_hash": "a128fc1934764dbb"
+    },
+    "[Calculation_2083759315008397318]": {
+      "formula_hash": "399f5087d8bc68ef"
+    },
+    "[Calculation_2083759315012911111]": {
+      "formula_hash": "b7c27b820ed33c0f"
+    },
+    "[Calculation_2143150508470255617]": {
+      "formula_hash": "283a86343b7cc387"
+    },
+    "[Calculation_2143432014230786048]": {
+      "formula_hash": "870d0863a7e4f499"
+    },
+    "[Calculation_2437854825355558912]": {
+      "formula_hash": "e46593b5612f6d97"
+    },
+    "[Calculation_2453617393338658823]": {
+      "formula_hash": "29f3c9263afded10"
+    },
+    "[Calculation_2484298209596985346]": {
+      "formula_hash": "a483720d7eade236"
+    },
+    "[Calculation_260645835160301569]": {
+      "formula_hash": "e05bdb120dc3799e"
+    },
+    "[Calculation_2629257803893125120]": {
+      "formula_hash": "b7450e73be4ea301"
+    },
+    "[Calculation_305963300816396288]": {
+      "formula_hash": "25ecfe1097e279e2"
+    },
+    "[Calculation_36310283372802048]": {
+      "formula_hash": "7a73c7278471d6be"
+    },
+    "[Calculation_36310283375198210]": {
+      "formula_hash": "cbfccae530b6a336"
+    },
+    "[Calculation_36310283376627716]": {
+      "formula_hash": "a2bf74d3e2006f74"
+    },
+    "[Calculation_36310283481686028]": {
+      "formula_hash": "9a2ffa5103097a19"
+    },
+    "[Calculation_36310283482484751]": {
+      "formula_hash": "809bdc034fa25a4a"
+    },
+    "[Calculation_36310283482632208]": {
+      "formula_hash": "57e2c741ff3fb089"
+    },
+    "[Calculation_36310283482726417]": {
+      "formula_hash": "2743bdeaefd368cb"
+    },
+    "[Calculation_36310283482828818]": {
+      "formula_hash": "99ef41ed54ad5915"
+    },
+    "[Calculation_36310283483004947]": {
+      "formula_hash": "736f598311e9fd5d"
+    },
+    "[Calculation_36310283483148308]": {
+      "formula_hash": "e2857fe53603aff8"
+    },
+    "[Calculation_36310283763019797]": {
+      "formula_hash": "65aadd08978effef"
+    },
+    "[Calculation_36310283836354584]": {
+      "formula_hash": "bccbbba11f6ea3b3"
+    },
+    "[Calculation_36310283836506137]": {
+      "formula_hash": "38278c5e086ffa88"
+    },
+    "[Calculation_36310283836911642]": {
+      "formula_hash": "9665803309eee477"
+    },
+    "[Calculation_36310283846668334]": {
+      "formula_hash": "88e72f99c2b9a34f"
+    },
+    "[Calculation_36310283847000111]": {
+      "formula_hash": "1c32d22394ff5cc9"
+    },
+    "[Calculation_36310283847209008]": {
+      "formula_hash": "38ffdf9e0fe2f4bf"
+    },
+    "[Calculation_36310283847311409]": {
+      "formula_hash": "ac3f41770e96a59a"
+    },
+    "[Calculation_3656993319129759745]": {
+      "formula_hash": "eb34458131a41942"
+    },
+    "[Calculation_3656993319134605314]": {
+      "formula_hash": "ad207b1696072e13"
+    },
+    "[Calculation_512565964223205377]": {
+      "formula_hash": "269f28fe83830771"
+    },
+    "[Calculation_830351187329429509]": {
+      "formula_hash": "9ccae948cdbc801f"
+    },
+    "[Calculation_830351187380162577]": {
+      "formula_hash": "47610eba2cc83d82"
+    },
+    "[Calculation_84161033784066048]": {
+      "formula_hash": "ced27a0f981f2f91"
+    },
+    "[Calculation_878764890548760576]": {
+      "formula_hash": "3fed60398e8b17ab"
+    },
+    "[Calculation_878764890597650443]": {
+      "formula_hash": "197fe0363085292a"
+    },
+    "[Calculation_878764890605133838]": {
+      "formula_hash": "a5801709a1e73d49"
+    },
+    "[Calculation_889742464176361472]": {
+      "formula_hash": "fea0a38d36db7b68"
+    },
+    "[Calculation_896779336111185924]": {
+      "formula_hash": "2d998daf77682a20"
+    },
+    "[Calculation_955326138284670987]": {
+      "formula_hash": "43746e3773bfcb01"
+    },
+    "[Calculation_955326138288152592]": {
+      "formula_hash": "d62f44d3aec8b450"
+    },
+    "[Calculation_955326138337964056]": {
+      "formula_hash": "5feceb66ffc86f38"
+    },
+    "[Calculation_955326138429718562]": {
+      "formula_hash": "a000bf931e29157e"
+    },
+    "[Calculation_986569810728165376]": {
+      "formula_hash": "33c78c374631797c"
+    },
+    "[Cogs Dynamic (copy)_373798820185128963]": {
+      "formula_hash": "915877421c90eae9"
+    },
+    "[Cogs Dynamic Ya (copy)_373798820185247748]": {
+      "formula_hash": "0415fdf373c83008"
+    },
+    "[Cogs per lb (copy)_1185009668050055171]": {
+      "formula_hash": "41fc5d8d019bc769"
+    },
+    "[Current Matrix Quadrant Consecutive Period Count 1 to 5 (copy)_260645835169140744]": {
+      "formula_hash": "e4519e382d51c587"
+    },
+    "[Discontinue Sku (copy)_1867867963562475528]": {
+      "formula_hash": "3f3dc5544196accd"
+    },
+    "[Discontinue Sku Count Distinct (copy)_1777795973585346561]": {
+      "formula_hash": "336caad53435039e"
+    },
+    "[Discontinue Sku Count Distinct (copy)_2453617393335898115]": {
+      "formula_hash": "ea7a18fb34d38ef8"
+    },
+    "[Fscl Yearqtr (copy)_1290281299725324291]": {
+      "formula_hash": "33a2c2aecb7703f0"
+    },
+    "[GM % of Net Sales Month  (copy)_1724315757448871943]": {
+      "formula_hash": "ce191d910d433d69"
+    },
+    "[Gross Margin % (copy)_1458884868466581508]": {
+      "formula_hash": "d4e7b150e74c4c5a"
+    },
+    "[Gross Margin % (copy)_1842535208691339292]": {
+      "formula_hash": "3771ac526ac9c6bf"
+    },
+    "[Gross Margin % (copy)_36310283841138726]": {
+      "formula_hash": "2406c44ddd6c939b"
+    },
+    "[Gross Margin % (copy)_955326138392772637]": {
+      "formula_hash": "f850fbbbdba528ce"
+    },
+    "[Gross Margin % Ya (copy)_36310283841138727]": {
+      "formula_hash": "c877fe08d3331e1b"
+    },
+    "[Gross Margin % ppt Chg (copy)_36310283841138725]": {
+      "formula_hash": "19c3254f0c0df5be"
+    },
+    "[Gross Margin % ppt Per SKU Chg (copy)_36310283841957928]": {
+      "formula_hash": "39bc18b3721d7783"
+    },
+    "[Gross Margin (Neg CYTD) (copy)_2143150508494499842]": {
+      "formula_hash": "cb25fc07d1f69c07"
+    },
+    "[Gross Margin (Neg CYTD) (copy)_2143432014258573327]": {
+      "formula_hash": "7e3780de7dc0b133"
+    },
+    "[Gross Margin (Neg LY) (copy)_285134200719626258]": {
+      "formula_hash": "4fcf8ef912ab0f5b"
+    },
+    "[Gross Margin (bin)]": {
+      "formula_hash": "50af7f7c73eb12fc"
+    },
+    "[Gross Margin (copy)_955326138312224787]": {
+      "formula_hash": "50af7f7c73eb12fc"
+    },
+    "[Gross Margin Dollar Dynamic (copy)_373798820190060550]": {
+      "formula_hash": "a8640634504cb217"
+    },
+    "[Gross Margin Dynamic (copy)_1867867963618410512]": {
+      "formula_hash": "244aa52e0a95b6d8"
+    },
+    "[Gross Margin Dynamic Ya (copy)_373798820185956357]": {
+      "formula_hash": "2b48015c29383dce"
+    },
+    "[Gross Margin Per SKU (copy)_1185009668048453634]": {
+      "formula_hash": "0d413e4e1ce1c526"
+    },
+    "[Gross Margin Per SKU (copy)_156781568446156800]": {
+      "formula_hash": "37e2588ede0cd1e2"
+    },
+    "[Gross Margin Per lb (copy)_1185009668051021830]": {
+      "formula_hash": "d5b72acf346f7171"
+    },
+    "[Gross Margin Running (Starting Point) (copy)_1814106248688607233]": {
+      "formula_hash": "5542500f61a339a5"
+    },
+    "[Gross Margin Running (bin)]": {
+      "formula_hash": "598a65224fcbbe90"
+    },
+    "[Gross Price per lb (copy)_36310283482312718]": {
+      "formula_hash": "bf27fbc5f72be2ec"
+    },
+    "[Gross Sales Per SKU (copy) (copy) (copy) (copy)_1915437262676652035]": {
+      "formula_hash": "5cef9257542c5242"
+    },
+    "[Gross Sales Per SKU (copy) (copy) (copy)_1915437262676643842]": {
+      "formula_hash": "193997e13c82f1ec"
+    },
+    "[Gross Sales Per SKU (copy) (copy)_1915437262676635649]": {
+      "formula_hash": "fee3a6616de94ab1"
+    },
+    "[Gross Sales Per SKU (copy)_1915437262676627456]": {
+      "formula_hash": "48c441e1001c87dd"
+    },
+    "[Inactive Sku (copy)_2453617393334362113]": {
+      "formula_hash": "b5f29c47ce3cc680"
+    },
+    "[Inactive Sku Count Distinct (copy)_2453617393334214656]": {
+      "formula_hash": "32c064094c19ca88"
+    },
+    "[Item Status Count (copy)_1458884868485967878]": {
+      "formula_hash": "7aa1af6502cea524"
+    },
+    "[MQ - Fix SKU Count  (copy)_955326138430390307]": {
+      "formula_hash": "70c072cc5f04d3ea"
+    },
+    "[MQ - Improve SKU Count (copy)_1592866896446300160]": {
+      "formula_hash": "95f32bfdb2f5297d"
+    },
+    "[MQ - Improve SKU Count (copy)_955326138430967844]": {
+      "formula_hash": "39be940618742c3b"
+    },
+    "[MQ - Improve SKU Count (shape) (copy)_1592866896450457603]": {
+      "formula_hash": "2dfe9c8321c946f6"
+    },
+    "[MQ - Invest SKU Count (copy)_955326138431070245]": {
+      "formula_hash": "30c8c7e8bbbf7d2e"
+    },
+    "[MQ - Invest SKU Count (shape) (copy)_1592866896450695172]": {
+      "formula_hash": "4efe39525fe5f78f"
+    },
+    "[MQ - Optimize SKU Count (shape) (copy)_1592866896450793477]": {
+      "formula_hash": "04e70bce439b277d"
+    },
+    "[Matrix Quadrant (copy)_1290281299405668352]": {
+      "formula_hash": "d9409aceed81b8b3"
+    },
+    "[Matrix Quadrant (copy)_1614259005009973248]": {
+      "formula_hash": "3f6cf6075fa94e9e"
+    },
+    "[Max_fscl_Year (copy)_1229764196697022466]": {
+      "formula_hash": "792fa86c74bc5d31"
+    },
+    "[Max_fscl_Yearper (copy)_1229764196687360000]": {
+      "formula_hash": "ef390b872bf04b3d"
+    },
+    "[Negative Gross Margin Flag (LOD) (copy)_2143432014259281936]": {
+      "formula_hash": "6cf21dc3ddceddea"
+    },
+    "[Negative Gross Margin Flag (copy)_1044272172919529477]": {
+      "formula_hash": "9567a335324daa11"
+    },
+    "[Negative Gross Margin Flag (copy)_2143150508465782784]": {
+      "formula_hash": "2e46afbe10c2c08e"
+    },
+    "[Negative Gross Margin L12P (copy)_2437854825356836865]": {
+      "formula_hash": "e0527ab79dda21bb"
+    },
+    "[Net Price (copy)_1458884868449341441]": {
+      "formula_hash": "11b46bf69e02957a"
+    },
+    "[Net Price per lb (copy)_36310283482312717]": {
+      "formula_hash": "c2155a619925d634"
+    },
+    "[Net Sales % Chg (copy) (copy) (copy)_2556355782161190916]": {
+      "formula_hash": "610c524340823448"
+    },
+    "[Net Sales % Chg (copy) (copy)_2556355782161129474]": {
+      "formula_hash": "9ccd2aeb59939fc0"
+    },
+    "[Net Sales % Chg (copy)_2556355782161076225]": {
+      "formula_hash": "f5f52b0e744b4137"
+    },
+    "[Net Sales (bin) 2]": {
+      "formula_hash": "e42b97bd8e164a20"
+    },
+    "[Net Sales (bin)]": {
+      "formula_hash": "e42b97bd8e164a20"
+    },
+    "[Net Sales Chg (copy) (copy) (copy)_2556355782161190917]": {
+      "formula_hash": "b97e5f858d97dbe2"
+    },
+    "[Net Sales Chg (copy) (copy)_2556355782161129475]": {
+      "formula_hash": "9ea99a40a9db1206"
+    },
+    "[Net Sales Chg (copy)_2556355782161076224]": {
+      "formula_hash": "43896d2e5aeada02"
+    },
+    "[Net Sales Chg (copy)_36310283481493515]": {
+      "formula_hash": "ebc6fce9af80e3ff"
+    },
+    "[Net Sales Dynamic (copy)_1867867963612823566]": {
+      "formula_hash": "c9584732aabe504a"
+    },
+    "[Net Sales Dynamic (copy)_2556355782168735750]": {
+      "formula_hash": "05d2281cdbf5b225"
+    },
+    "[Net Sales Dynamic (copy)_2556355782175948813]": {
+      "formula_hash": "149e08740a99e677"
+    },
+    "[Net Sales Dynamic Ya (copy)_2556355782168735751]": {
+      "formula_hash": "bd62a50ef3ebda02"
+    },
+    "[Net Sales Dynamic Ya (copy)_2556355782175948814]": {
+      "formula_hash": "4d2c58bb7580a3d6"
+    },
+    "[Net Sales Dynamic Ya (copy)_373798819806744578]": {
+      "formula_hash": "ba47c945224bd4f5"
+    },
+    "[Net Sales Per SKU % Chg (copy)_2556355782169518090]": {
+      "formula_hash": "4f0e717df3c76887"
+    },
+    "[Net Sales Per SKU % Chg (copy)_2556355782176079889]": {
+      "formula_hash": "479da63bc7f084e9"
+    },
+    "[Net Sales Per SKU % Chg (copy)_36310283837534237]": {
+      "formula_hash": "05691c05242ce297"
+    },
+    "[Net Sales Per SKU % Chg (copy)_36310283838939170]": {
+      "formula_hash": "3acbcee34d8ca8d0"
+    },
+    "[Net Sales Per SKU % Chg (copy)_36310283842687019]": {
+      "formula_hash": "a950613d9007d428"
+    },
+    "[Net Sales Per SKU % Chg Icon (copy)_2556355782169518091]": {
+      "formula_hash": "24609aa72aec4a5e"
+    },
+    "[Net Sales Per SKU % Chg Icon (copy)_2556355782176079890]": {
+      "formula_hash": "9de8232919919692"
+    },
+    "[Net Sales Per SKU % Chg Icon (copy)_36310283837534238]": {
+      "formula_hash": "e88797c9dbbb8875"
+    },
+    "[Net Sales Per SKU % Chg Icon (copy)_36310283838939171]": {
+      "formula_hash": "7d1edb1f9ed82ebf"
+    },
+    "[Net Sales Per SKU % Chg Icon (copy)_36310283842687020]": {
+      "formula_hash": "5d8d985aae4aeea9"
+    },
+    "[Net Sales Per SKU (copy)_2556355782169518088]": {
+      "formula_hash": "851915b9efd2866e"
+    },
+    "[Net Sales Per SKU (copy)_2556355782176079887]": {
+      "formula_hash": "58721f28b59fbeba"
+    },
+    "[Net Sales Per SKU (copy)_36310283764785174]": {
+      "formula_hash": "30430f1706bd3dbb"
+    },
+    "[Net Sales Per SKU (copy)_36310283837534235]": {
+      "formula_hash": "f6970d39beefb7af"
+    },
+    "[Net Sales Per SKU (copy)_36310283838939168]": {
+      "formula_hash": "a2e4b9b480e7123b"
+    },
+    "[Net Sales Per SKU (copy)_36310283842687017]": {
+      "formula_hash": "1614e83b6867d160"
+    },
+    "[Net Sales Per SKU Chg (copy)_2556355782169518089]": {
+      "formula_hash": "6677b065de5accfa"
+    },
+    "[Net Sales Per SKU Chg (copy)_2556355782176079888]": {
+      "formula_hash": "53bc472bf73f7028"
+    },
+    "[Net Sales Per SKU Chg (copy)_36310283837534236]": {
+      "formula_hash": "2a5dd87f21b28159"
+    },
+    "[Net Sales Per SKU Chg (copy)_36310283838939169]": {
+      "formula_hash": "e3037caee569b81e"
+    },
+    "[Net Sales Per SKU Chg (copy)_36310283842687018]": {
+      "formula_hash": "d5682113de132a2f"
+    },
+    "[Net Sales Per SKU Ya (copy)_2556355782169518092]": {
+      "formula_hash": "a0c80bebb0864911"
+    },
+    "[Net Sales Per SKU Ya (copy)_2556355782176079891]": {
+      "formula_hash": "7d622594a2766c44"
+    },
+    "[Net Sales Per SKU Ya (copy)_36310283837534239]": {
+      "formula_hash": "0593dd175a53a453"
+    },
+    "[Net Sales Per SKU Ya (copy)_36310283838939172]": {
+      "formula_hash": "4d946475e563bb96"
+    },
+    "[Net Sales Per SKU Ya (copy)_36310283842687021]": {
+      "formula_hash": "4fe681e9948dee1c"
+    },
+    "[Net Sales Running (bin)]": {
+      "formula_hash": "01a100dee85562ee"
+    },
+    "[No TPO Decision Sku Count Current (copy)_1867867963267174407]": {
+      "formula_hash": "6210efa437d96242"
+    },
+    "[Parameter 10]": {
+      "formula_hash": "6f5206a61a24a4ec"
+    },
+    "[Parameter 11]": {
+      "formula_hash": "ef2d127de37b942b"
+    },
+    "[Parameter 1]": {
+      "formula_hash": "f105690b1e26da53"
+    },
+    "[Parameter 2]": {
+      "formula_hash": "6b51d431df5d7f14"
+    },
+    "[Parameter 3 1]": {
+      "formula_hash": "1e9d7c27c8bbc8dd"
+    },
+    "[Parameter 3]": {
+      "formula_hash": "1e9d7c27c8bbc8dd"
+    },
+    "[Parameter 4]": {
+      "formula_hash": "f030108f5a0822ae"
+    },
+    "[Parameter 5]": {
+      "formula_hash": "3664c02c1f825b03"
+    },
+    "[Parameter 6]": {
+      "formula_hash": "0dc8d18267a856f8"
+    },
+    "[Parameter 7]": {
+      "formula_hash": "f839976b28a22de3"
+    },
+    "[Parameter 8 1]": {
+      "formula_hash": "b2b2f104d32c6389"
+    },
+    "[Parameter 8]": {
+      "formula_hash": "b2b2f104d32c6389"
+    },
+    "[Parameter 9]": {
+      "formula_hash": "1250ef39f441105f"
+    },
+    "[Product Manufacturing Manager Complexity Score (User Input) (copy)_896779336082960385]": {
+      "formula_hash": "b62e1849b509a3e6"
+    },
+    "[SKU Count (Starting Point) (copy)_1814106248684081152]": {
+      "formula_hash": "c157c0c35be27589"
+    },
+    "[SKU Count Diff (Fix or Rationalize) (copy)_339740358307438601]": {
+      "formula_hash": "d3f281c037cfce09"
+    },
+    "[SKU Count Diff (Optimize Margin) (copy)_339740358309634064]": {
+      "formula_hash": "3c3997bcd3c9b831"
+    },
+    "[SKU Count Diff (Optimize Margin) (copy)_339740358311157781]": {
+      "formula_hash": "5a4c2dfe1e797d9d"
+    },
+    "[SKU Count Diff (copy)_1842535208644669454]": {
+      "formula_hash": "d191d05b57dfb301"
+    },
+    "[SKU Count Diff (copy)_339740358304493572]": {
+      "formula_hash": "8302f339c748a77d"
+    },
+    "[SKU Count Diff Shape (Optimize Margin) (copy)_339740358310133778]": {
+      "formula_hash": "098155f07908b94c"
+    },
+    "[SKU Count Diff Shape (Optimize Margin) (copy)_339740358311497751]": {
+      "formula_hash": "295995af3f3c9ff6"
+    },
+    "[SKU Count Diff Shape (copy)_1842535208653389841]": {
+      "formula_hash": "b3e14f485824ba95"
+    },
+    "[SKU Count Diff Shape (copy)_339740358306332678]": {
+      "formula_hash": "b3e14f485824ba95"
+    },
+    "[SKU Count Diff Shape (copy)_339740358308954125]": {
+      "formula_hash": "90bc74ba278af179"
+    },
+    "[SKU Count Diff Text (Optimize Margin) (copy)_339740358309761041]": {
+      "formula_hash": "79e51474f0175fa0"
+    },
+    "[SKU Count Diff Text (Optimize Margin) (copy)_339740358311239702]": {
+      "formula_hash": "c37722d881ee057d"
+    },
+    "[SKU Count Diff Text (copy)_1842535208648245264]": {
+      "formula_hash": "309e2a638f5c7a5d"
+    },
+    "[SKU Count Diff Text (copy)_339740358305820677]": {
+      "formula_hash": "cb88961ba6e178bb"
+    },
+    "[SKU Count Diff Text (copy)_339740358307577867]": {
+      "formula_hash": "efc832d7a8957772"
+    },
+    "[SKU Count Distinct (All Inactive and Discontinued Fscl Period) (copy)_2143432014285492241]": {
+      "formula_hash": "16ca9ff312361605"
+    },
+    "[SKU Count Distinct (PMR TPO Decision Rationalize Inactive Fscl Period) (copy)_2143432014250860558]": {
+      "formula_hash": "b0aacb6b21db56d5"
+    },
+    "[SKU Count Distinct (Rationalized Fscl Period) (copy)_2143432014246903821]": {
+      "formula_hash": "90ffd321f34ccb36"
+    },
+    "[SKU Count Distinct (Rationalized Fscl Period)1 (copy)_1218223765437644805]": {
+      "formula_hash": "9c200b829912d0b4"
+    },
+    "[SKU Count Starting Point (copy)_285134200663638031]": {
+      "formula_hash": "66be148f8dbf371f"
+    },
+    "[SKU Count Starting Point Dynamic (copy)_285134200665636880]": {
+      "formula_hash": "568834a77e550993"
+    },
+    "[SKU Count Starting Point Dynamic (copy)_285134200670150673]": {
+      "formula_hash": "4fcf8ef912ab0f5b"
+    },
+    "[Sku Count Current (copy)_1842535208672927762]": {
+      "formula_hash": "8c2a8bf236c8f1b3"
+    },
+    "[Sku Count Last X Period (copy)_1842535208633540618]": {
+      "formula_hash": "8950cdf5cf12ee29"
+    },
+    "[Sku Count Last X Period Avg (copy)_1842535208641728525]": {
+      "formula_hash": "c9bddcb2a01998e2"
+    },
+    "[Sku Nbr (copy)_1106196669057581056]": {
+      "formula_hash": "6854c2f0b5dca8be"
+    },
+    "[Sku Nbr For Count Distinct (Active Sku - Shipped SKU) - measure (copy)_830351187371495434]": {
+      "formula_hash": "effd46ca49259621"
+    },
+    "[Sku Nbr For Count Distinct (Active Sku) (copy)_156781568506626052]": {
+      "formula_hash": "a4e626c7025874e6"
+    },
+    "[Sku Nbr For Count Distinct (Active Sku) (copy)_156781568506834949]": {
+      "formula_hash": "3f3dc5544196accd"
+    },
+    "[Sku Nbr For Count Distinct (Active Sku) (copy)_156781568507113480]": {
+      "formula_hash": "6210efa437d96242"
+    },
+    "[Sku Nbr For Count Distinct (Active Sku) - filter (copy)_156781568507113479]": {
+      "formula_hash": "b6b657759fb55c2a"
+    },
+    "[Sku Nbr For Count Distinct (Discontinue Sku) - filter (copy)_0562971208687616]": {
+      "formula_hash": "4cf04e20c8b982f3"
+    },
+    "[Sku Nbr For Count Distinct (Discontinue Sku) - filter (copy)_1023161547533860865]": {
+      "formula_hash": "71587101bd8b321d"
+    },
+    "[Sku Nbr For Count Distinct (Exclusion Sheet) (copy)_241787006894608397]": {
+      "formula_hash": "55b6ccb144b63011"
+    },
+    "[Sku Nbr For Count Distinct (Fix and Rationalize) (copy)_241787007217750036]": {
+      "formula_hash": "e12c060db2b17faf"
+    },
+    "[Sku Nbr For Count Distinct (Fix and Rationalize) - filter (copy)_1044272172791238659]": {
+      "formula_hash": "872d6f7829757d06"
+    },
+    "[Sku Nbr For Count Distinct (Fix and Rationalize) - filter (copy)_1044272172916928516]": {
+      "formula_hash": "25bb5d47b2ab1145"
+    },
+    "[Sku Nbr For Count Distinct (Inactive Sku) (copy)_156781568506916870]": {
+      "formula_hash": "a118daccbd85e50e"
+    },
+    "[Sku Nbr For Count Distinct (L12P) (copy)_241787006460702730]": {
+      "formula_hash": "b5f29c47ce3cc680"
+    },
+    "[Sku Nbr For Count Distinct (Negative GM L12P Curr) - filter (copy)_1535727483977850881]": {
+      "formula_hash": "5de58c2b343a29b5"
+    },
+    "[Sku Nbr For Count Distinct (Negative GM L12P) (copy)_1315051101200601088]": {
+      "formula_hash": "d5663c888955b08c"
+    },
+    "[Sku Nbr For Count Distinct (Negative GM) (copy)_241787006400577536]": {
+      "formula_hash": "5ed21f794bb8f0fd"
+    },
+    "[Sku Nbr For Count Distinct (Negative GM) (copy)_241787006821117964]": {
+      "formula_hash": "c797088e38c9b609"
+    },
+    "[Sku Nbr For Count Distinct (Negative GM) - filter (copy)_830351187380551699]": {
+      "formula_hash": "b601c3a9c9974a33"
+    },
+    "[Sku Nbr For Count Distinct (Negative GM) - measure (copy)_830351187380424722]": {
+      "formula_hash": "44f16e8f6d5df17d"
+    },
+    "[Sku Nbr For Count Distinct (Negative GM) - measure (copy)_830351187380678676]": {
+      "formula_hash": "c26c3d94666ed6b2"
+    },
+    "[Sku Nbr For Count Distinct (Negative Weight L12P) Filter (copy)_1315051101201203201]": {
+      "formula_hash": "5c605224f6254427"
+    },
+    "[Sku Nbr For Count Distinct (No L12P) (copy)_241787006459408391]": {
+      "formula_hash": "2d998daf77682a20"
+    },
+    "[Sku Nbr For Count Distinct (No TPO Decision) (copy)_2123447226819366914]": {
+      "formula_hash": "925f58608465e0ea"
+    },
+    "[Sku Nbr For Count Distinct (None TPO SKUs) (copy)_156781568504086529]": {
+      "formula_hash": "5d6d09ff6445a1e2"
+    },
+    "[Sku Nbr For Count Distinct (Optimize Margin) (copy)_1044272172790099968]": {
+      "formula_hash": "1d794ed709e99812"
+    },
+    "[Sku Nbr For Count Distinct (Optimize Margin) - filter (copy)_1044272172790968321]": {
+      "formula_hash": "1453558acaf7d95c"
+    },
+    "[Sku Nbr For Count Distinct (Optimize Margin) - filter (copy)_1044272172791111682]": {
+      "formula_hash": "38bcd2823ac11c8f"
+    },
+    "[Sku Nbr For Count Distinct (PMR Auto-Optimiz new to current period) - filter (copy)_1535727484022886404]": {
+      "formula_hash": "de216b33cb074a80"
+    },
+    "[Sku Nbr For Count Distinct (PMR Auto-Optimiz) (copy)_260645835152642048]": {
+      "formula_hash": "6404f0646d518ab8"
+    },
+    "[Sku Nbr For Count Distinct (PMR Auto-Optimiz) - filter (copy)_1023161547541573639]": {
+      "formula_hash": "3a5ffd94faf9138b"
+    },
+    "[Sku Nbr For Count Distinct (PMR Rationalize Active) - filter (copy)_1023161547541794824]": {
+      "formula_hash": "ffcc2beb3490f99b"
+    },
+    "[Sku Nbr For Count Distinct (PMR Rationalize Active) - filter (copy)_1535727484022575107]": {
+      "formula_hash": "702bcfed7a1cd330"
+    },
+    "[Sku Nbr For Count Distinct (PMR TPO Decision Rationalize) (copy)_1023161547539922950]": {
+      "formula_hash": "066297d624f06feb"
+    },
+    "[Sku Nbr For Count Distinct (PMR TPO Decision Rationalize) (copy)_2123447226866950148]": {
+      "formula_hash": "3316b1c7525afc7f"
+    },
+    "[Sku Nbr For Count Distinct (PMR Watch List new to current period) - filter (copy)_1535727484023631877]": {
+      "formula_hash": "8de50a6e62eee9ad"
+    },
+    "[Sku Nbr For Count Distinct (PMR Watch List) (copy)_2123447226864619523]": {
+      "formula_hash": "8589bb68ba6836fc"
+    },
+    "[Sku Nbr For Count Distinct (PMR Watch List) - filter (copy)_1023161547542007817]": {
+      "formula_hash": "e91b8534f141f8f1"
+    },
+    "[Sku Nbr For Count Distinct (TPO Decision W) (copy)_2064900438809198592]": {
+      "formula_hash": "6a29fc5043be872f"
+    },
+    "[Sku Nbr For Count Distinct (TPO SKUs vs Prior Period) (copy)_2143432014233997316]": {
+      "formula_hash": "9f8f1da120df8151"
+    },
+    "[Sku Nbr For Count Distinct (TPO SKUs) (copy)_1706864264913543169]": {
+      "formula_hash": "6ef5e83d6907e7a1"
+    },
+    "[Sku Nbr For Count Distinct (TPO SKUs) (copy)_241787006403395587]": {
+      "formula_hash": "2b28bf121ff76940"
+    },
+    "[Sku Nbr For Count Distinct (TPO SKUs) (copy)_241787007169826833]": {
+      "formula_hash": "69a4951d13c5236b"
+    },
+    "[Sku Nbr For Count Distinct (TPO SKUs) (copy)_305963300883222540]": {
+      "formula_hash": "25377d5e3ef38d8e"
+    },
+    "[Sku Nbr For Count Distinct (copy 2)_2083759314949603329]": {
+      "formula_hash": "1ab5a0f3bab80704"
+    },
+    "[Sku Nbr For Count Distinct (copy 3)_2083759314949615618]": {
+      "formula_hash": "00750d9d69dbc500"
+    },
+    "[Sku Nbr For Count Distinct (copy 4)_2083759314949623811]": {
+      "formula_hash": "4491af5f53584499"
+    },
+    "[Sku Nbr For Count Distinct (copy)_2083759314949595136]": {
+      "formula_hash": "ccc9c7f5b07f96d2"
+    },
+    "[Sku Nbr For Count Distinct (copy)_305963300851433473]": {
+      "formula_hash": "0ed70d177a904013"
+    },
+    "[Sku Nbr For Count Distinct (copy)_305963300854194178]": {
+      "formula_hash": "3aa3e864b4cc84a2"
+    },
+    "[Sku Nbr For Count Distinct (with Brand Strategy Score User Input) - filter (copy)_1023161547534585858]": {
+      "formula_hash": "8accaec6dca97079"
+    },
+    "[Sku Nbr For Count Distinct (with Manufacturing Complexity Score User Input) - filter (copy)_1023161547537887237]": {
+      "formula_hash": "5696c1ae118020d0"
+    },
+    "[Sku Nbr For Count Distinct (with Manufacturing Complexity Score User Input) - filter (copy)_1917126077803864066]": {
+      "formula_hash": "46b1942d32aab325"
+    },
+    "[TPO Decision Sku Count Current (copy)_1842535208674676755]": {
+      "formula_hash": "f2c776d512aaa424"
+    },
+    "[TPO L12P Negative Margin Goal (copy)_285134200658714627]": {
+      "formula_hash": "dadb6a40e3fabba8"
+    },
+    "[TPO L12P Negative Margin to Goal (copy)_0562971314294787]": {
+      "formula_hash": "cb0cfc2f3a910702"
+    },
+    "[TPO L12P Negative Margin to Goal (copy)_2143150508539486211]": {
+      "formula_hash": "f8da2b389376be47"
+    },
+    "[TPO SKU Count Goal (copy)_1876593688612245507]": {
+      "formula_hash": "fbcafa73f52a6b5d"
+    },
+    "[TPO SKU Count Goal (copy)_285134200658714626]": {
+      "formula_hash": "8fa6ff36480e95fe"
+    },
+    "[TPO SKU Count to Goal (copy)_1137158934578814976]": {
+      "formula_hash": "e795753e3ff62950"
+    },
+    "[Tpo Action Overdue Count (copy)_36310283465621510]": {
+      "formula_hash": "8cd31d17f6c2bc51"
+    },
+    "[Weight Dynamic (copy)_373798819805343744]": {
+      "formula_hash": "7f02342c784d2dc2"
+    },
+    "[Weight Dynamic Ya (copy)_373798819805462529]": {
+      "formula_hash": "cfde7414237caff4"
+    },
+    "[control - unit sign (copy)_878764890557722631]": {
+      "formula_hash": "e17d678de6bdef00"
+    },
+    "[dynamic bubble (% chg) (copy)_1867867963581112332]": {
+      "formula_hash": "82ecf5938772115b"
+    },
+    "[dynamic bubble (copy)_36310283480993802]": {
+      "formula_hash": "20e05685b661dfee"
+    },
+    "[dynamic product lod (copy)_1458884868539736092]": {
+      "formula_hash": "cfc4b7cca53ecc8a"
+    },
+    "[dynamic product lod (copy)_1592866897211355158]": {
+      "formula_hash": "7f223b022a28fd70"
+    },
+    "[dynamic product lod (copy)_2107403203973070849]": {
+      "formula_hash": "a89fe513864fc0f1"
+    },
+    "[dynamic product lod PMR (copy)_1917126077792645121]": {
+      "formula_hash": "d8cbdf0a8452f1da"
+    },
+    "[dynamic product lod PMR (copy)_260645835161677827]": {
+      "formula_hash": "676057c87601eec1"
+    },
+    "[dynamic product lod decision grid (copy)_1362338890847027201]": {
+      "formula_hash": "6bf2eb74e918d085"
+    },
+    "[mockup % shape (copy) (copy) (copy) (copy)_955326138428129313]": {
+      "formula_hash": "f850fbbbdba528ce"
+    },
+    "[mockup % shape (copy) (copy) (copy)_955326138427510816]": {
+      "formula_hash": "f850fbbbdba528ce"
+    },
+    "[mockup % shape (copy) (copy)_955326138426384415]": {
+      "formula_hash": "f850fbbbdba528ce"
+    },
+    "[mockup % shape (copy)_955326138407264286]": {
+      "formula_hash": "f850fbbbdba528ce"
+    },
+    "[mockup Item Status Count (copy)_1592866897150697486]": {
+      "formula_hash": "67ec1663ff3701ba"
+    },
+    "[mockup active sku count LY (copy)_1592866897175400466]": {
+      "formula_hash": "2c6f3abbd0c971b0"
+    },
+    "[mockup decision made sku count (copy)_1592866897173127185]": {
+      "formula_hash": "de79e1c8dc4faed9"
+    },
+    "[mockup rationalized sku count (copy) (copy) (copy) (copy) (copy)_1592866896451473418]": {
+      "formula_hash": "434ac9793fa1b592"
+    },
+    "[mockup rationalized sku count (copy) (copy) (copy) (copy)_1592866896451469321]": {
+      "formula_hash": "434ac9793fa1b592"
+    },
+    "[mockup rationalized sku count (copy) (copy) (copy)_1592866896451452936]": {
+      "formula_hash": "434ac9793fa1b592"
+    },
+    "[mockup rationalized sku count (copy) (copy)_1592866896451444743]": {
+      "formula_hash": "434ac9793fa1b592"
+    },
+    "[mockup rationalized sku count (copy)_1592866896449556482]": {
+      "formula_hash": "434ac9793fa1b592"
+    },
+    "[mockup rationalized sku count (copy)_1592866896451436550]": {
+      "formula_hash": "434ac9793fa1b592"
+    },
+    "[mockup rationalized sku count (copy)_1592866897150697487]": {
+      "formula_hash": "434ac9793fa1b592"
+    },
+    "[mockup sku not sold count (copy)_1592866897150697488]": {
+      "formula_hash": "23f82dac4762ed87"
+    },
+    "[p.KPI trend line (copy)_1166995317760540678]": {
+      "formula_hash": "28a67a0e4b0e42ac"
+    },
+    "[p.negative margin goal - FS (copy)_285134200661090311]": {
+      "formula_hash": "3af21ee06ca10522"
+    },
+    "[p.negative margin goal - FS (copy)_285134200661286924]": {
+      "formula_hash": "5995b473a33fdaf3"
+    },
+    "[p.negative margin goal - IN (copy)_285134200661090312]": {
+      "formula_hash": "b59453d04b08aafa"
+    },
+    "[p.negative margin goal - IN (copy)_285134200661286925]": {
+      "formula_hash": "7c7b3e743811f456"
+    },
+    "[p.negative margin goal - RT (copy) (copy)_285134200661000197]": {
+      "formula_hash": "33ed7f9fb5c16460"
+    },
+    "[p.negative margin goal - RT (copy)_285134200660992004]": {
+      "formula_hash": "b3fb2954ba65b265"
+    },
+    "[p.negative margin goal - RT (copy)_285134200661090310]": {
+      "formula_hash": "97a176a483697656"
+    },
+    "[p.negative margin goal - RT (copy)_285134200661286921]": {
+      "formula_hash": "152d7412c1e9b1dd"
+    },
+    "[p.negative margin starting - FS (copy)_285134200661286922]": {
+      "formula_hash": "ba6f5e758b10d7cb"
+    },
+    "[p.negative margin starting - IN (copy)_285134200661286923]": {
+      "formula_hash": "53ded020e160c31b"
+    },
+    "[p.negative margin starting - RT (copy)_285134200661286926]": {
+      "formula_hash": "356ea327ec885da9"
+    },
+    "[p.product LOD (copy)_1458884868538617882]": {
+      "formula_hash": "b1d3a8b25e0eb061"
+    },
+    "[p.product LOD (copy)_1592866897211236373]": {
+      "formula_hash": "f839976b28a22de3"
+    },
+    "[p.product LOD (copy)_1992279948210438146]": {
+      "formula_hash": "fcf199c43e9682f8"
+    },
+    "[p.product LOD (copy)_2107403203970969600]": {
+      "formula_hash": "3bae81624872fc8c"
+    },
+    "[p.product LOD PMR (copy)_1917126077791903744]": {
+      "formula_hash": "fcf199c43e9682f8"
+    },
+    "[p.product LOD PMR (copy)_260645835161403394]": {
+      "formula_hash": "0807ce842aee5194"
+    },
+    "[p.product LOD decision grid (copy)_1362338890839191552]": {
+      "formula_hash": "b1d3a8b25e0eb061"
+    },
+    "[postive chg (copy)_1458884868466905093]": {
+      "formula_hash": "44014d1327626f74"
+    },
+    "[sku_count_l12p (Fix and Rationalize) (copy)_339740358307262471]": {
+      "formula_hash": "19781ad2b0f3ff49"
+    },
+    "[sku_count_l12p (Optimize Margin) (copy)_339740358309449742]": {
+      "formula_hash": "15bd0f924af86ebd"
+    },
+    "[sku_count_l12p (Optimize Margin) (copy)_339740358311010323]": {
+      "formula_hash": "ced3ac7f0a7eea50"
+    },
+    "[sku_count_l12p_% (Fix or Rationalize) (copy 2)_1609192505748881410]": {
+      "formula_hash": "4abd006029e21147"
+    },
+    "[sku_count_l12p_% (Fix or Rationalize) (copy)_1609192505748865025]": {
+      "formula_hash": "dc300a719a8fe8b0"
+    },
+    "[sku_count_l12p_% (Fix or Rationalize) (copy)_1609192505753972740]": {
+      "formula_hash": "fb92844f62e9f783"
+    },
+    "[sku_count_l12p_% (Improve Sales & MRKTG.) (copy)_1609192505749061635]": {
+      "formula_hash": "12e02d622975518d"
+    },
+    "[sku_count_l12p_% (copy)_1609192505747525632]": {
+      "formula_hash": "5648572a11a802c8"
+    },
+    "[sku_count_l12p_%_ya (Fix or Rationalize) (copy)_1609192505755176966]": {
+      "formula_hash": "edb160ea627cb54a"
+    },
+    "[sku_count_l12p_%_ya (Fix or Rationalize) (copy)_1609192505769721866]": {
+      "formula_hash": "0dd59e03f605e4d2"
+    },
+    "[sku_count_l12p_%_ya (Invest & Defend) (copy)_1609192505773744140]": {
+      "formula_hash": "bce1edc2a9b20cd4"
+    },
+    "[sku_count_l12p_ppt_chg  (Fix or Rationalize) (copy)_1609192505758121992]": {
+      "formula_hash": "2cf8df0ee892daf2"
+    },
+    "[sku_count_l12p_ppt_chg  (Fix or Rationalize) (copy)_1609192505769885707]": {
+      "formula_hash": "c0277dbbd2230cc7"
+    },
+    "[sku_count_l12p_ppt_chg  (Invest & Defend) (copy)_1609192505773912077]": {
+      "formula_hash": "82b97aea2fb25446"
+    },
+    "[sku_count_l12p_wo_null (copy)_1609192505754198021]": {
+      "formula_hash": "d6988a54f0337ac4"
+    },
+    "[sku_count_l12p_ya (Fix and Rationalize) (copy)_339740358304387075]": {
+      "formula_hash": "b0022952c8c6f766"
+    },
+    "[sku_count_l12p_ya (Fix and Rationalize) (copy)_339740358307319816]": {
+      "formula_hash": "41709c0ac704abe9"
+    },
+    "[sku_count_l12p_ya (Optimize Margin) (copy)_339740358309502991]": {
+      "formula_hash": "0d708d94f2ac27b6"
+    },
+    "[sku_count_l12p_ya (Optimize Margin) (copy)_339740358311063572]": {
+      "formula_hash": "e3b3375fbaaf91ed"
+    },
+    "[sku_count_l12p_ya (copy)_339740358302212096]": {
+      "formula_hash": "1c0e55f4c0edcf55"
+    },
+    "[sku_count_tpo_flag (Fix or Rationalize) (copy)_305963300854964227]": {
+      "formula_hash": "f4d4ca4d19a7b1e5"
+    },
+    "[waterfall_label (copy)_878764890607079439]": {
+      "formula_hash": "81b0018ddbfde5b2"
+    },
+    "[waterfall_start (copy)_878764890599211020]": {
+      "formula_hash": "7b3033ada25f1ac2"
+    },
+    "[waterfall_start (copy)_878764890600136717]": {
+      "formula_hash": "4b8598564ae2ccd9"
+    }
+  },
+  "pages": {
+    "Chart - Decision Execution KPI Trend": {
+      "field_count": 66
+    },
+    "Chart - KPI Decision Type Trend": {
+      "field_count": 34
+    },
+    "Count of Bulk Insert": {
+      "field_count": 34
+    },
+    "Count of Bulk Insert (2)": {
+      "field_count": 34
+    },
+    "Fix or Rationalize": {
+      "field_count": 45
+    },
+    "Fix or Rationalize (%)": {
+      "field_count": 44
+    },
+    "Fix or Rationalize (GM% of Sales)": {
+      "field_count": 46
+    },
+    "Fix or Rationalize Icon": {
+      "field_count": 42
+    },
+    "Fix or Rationalize chg": {
+      "field_count": 41
+    },
+    "Header Decision Execustion": {
+      "field_count": 38
+    },
+    "Header Portfolio Matrix": {
+      "field_count": 36
+    },
+    "Improve": {
+      "field_count": 44
+    },
+    "Improve (%)": {
+      "field_count": 43
+    },
+    "Improve (GM% of Sales)": {
+      "field_count": 45
+    },
+    "Improve Icon": {
+      "field_count": 43
+    },
+    "Improve chg": {
+      "field_count": 47
+    },
+    "Input_Decision_Sheet": {
+      "field_count": 41
+    },
+    "Invest": {
+      "field_count": 43
+    },
+    "Invest (%)": {
+      "field_count": 43
+    },
+    "Invest (GM% of Sales)": {
+      "field_count": 44
+    },
+    "Invest Icon": {
+      "field_count": 45
+    },
+    "Invest chg": {
+      "field_count": 48
+    },
+    "KPI Rationalized SKU Decision Grid": {
+      "field_count": 32
+    },
+    "Matrix Q QuadramTrend": {
+      "field_count": 36
+    },
+    "Matrix Quadrant SKU List (FIN)": {
+      "field_count": 41
+    },
+    "Matrix Quadrant Trend Tooltip": {
+      "field_count": 38
+    },
+    "Optimize": {
+      "field_count": 44
+    },
+    "Optimize (%)": {
+      "field_count": 44
+    },
+    "Optimize (GM% of Sales)": {
+      "field_count": 44
+    },
+    "Optimize Icon": {
+      "field_count": 45
+    },
+    "Optimize chg": {
+      "field_count": 46
+    },
+    "Scatterplot": {
+      "field_count": 39
+    },
+    "Scatterplot (moving)": {
+      "field_count": 39
+    },
+    "TPO Data Export Header": {
+      "field_count": 31
+    },
+    "Tooltip (F&R): Matrix Quadrant SKU List (Matrix Q)": {
+      "field_count": 44
+    },
+    "Tooltip (I&D): Matrix Quadrant SKU List (Matrix Q)": {
+      "field_count": 46
+    },
+    "Tooltip (IS): Matrix Quadrant SKU List (Matrix Q)": {
+      "field_count": 46
+    },
+    "Tooltip (OM): Matrix Quadrant SKU List (Matrix Q)": {
+      "field_count": 46
+    },
+    "Tooltip: Matrix Quadrant (DECISION)": {
+      "field_count": 45
+    },
+    "Tooltip: Matrix Quadrant (F&R Matrix Q)": {
+      "field_count": 45
+    },
+    "Tooltip: Matrix Quadrant (I&D Matrix Q)": {
+      "field_count": 45
+    },
+    "Tooltip: Matrix Quadrant (IS Matrix Q)": {
+      "field_count": 45
+    },
+    "Tooltip: Matrix Quadrant (Matrix Q)": {
+      "field_count": 45
+    },
+    "Tooltip: Matrix Quadrant (OM Matrix Q)": {
+      "field_count": 45
+    },
+    "Tooltip: Matrix Quadrant SKU List (DECISION)": {
+      "field_count": 44
+    },
+    "chart: active vs. shipped": {
+      "field_count": 49
+    },
+    "chart:GM% by MQ": {
+      "field_count": 40
+    },
+    "tooltip - Discontinue SKU Chart": {
+      "field_count": 35
+    },
+    "tooltip - Net Sales Chart Decline": {
+      "field_count": 36
+    },
+    "tooltip - Net Sales Chart Grow": {
+      "field_count": 36
+    },
+    "tooltip trend chart": {
+      "field_count": 71
+    }
+  },
+  "relationships": 0,
+  "tables": {
+    "Total Portfolio Optimazation": {
+      "column_count": 173
+    }
+  },
+  "version": "1.0"
+}

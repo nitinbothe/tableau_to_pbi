@@ -64,9 +64,10 @@ class TestCustomVisualGUIDs(unittest.TestCase):
         self.assertIn('AppSource', note)
 
     def test_mekko_still_uses_builtin(self):
+        # Mekko maps to a builtin visual; the note may suggest an AppSource
+        # visual as an optional upgrade, but the mapping itself stays native.
         pbi_type, note = APPROXIMATION_MAP['mekko']
         self.assertEqual(pbi_type, 'stackedBarChart')
-        self.assertNotIn('AppSource', note)
 
     def test_resolve_visual_type_uses_approximation(self):
         self.assertEqual(resolve_visual_type('sankey'), 'sankeyDiagram')
@@ -487,14 +488,19 @@ class TestCustomVisualGUIDIntegration(unittest.TestCase):
     """Integration: CUSTOM_VISUAL_GUIDS entries are consistent with APPROXIMATION_MAP."""
 
     def test_all_approx_custom_visuals_have_guids(self):
+        from visual_generator import VISUAL_TYPE_MAP
         custom_classes = {v['class'] for v in CUSTOM_VISUAL_GUIDS.values()}
+        builtin_types = set(VISUAL_TYPE_MAP.values())
         for key, (pbi_type, note) in APPROXIMATION_MAP.items():
-            if 'AppSource' in note:
-                # Check by key (custom GUID key) or by pbi_type (class match)
+            if 'AppSource' in note and pbi_type not in builtin_types:
+                # A mapping whose TARGET is a custom visual needs GUID metadata.
+                # Builtin targets may mention AppSource as an optional upgrade
+                # in the note without requiring a registry entry.
                 has_guid = key in CUSTOM_VISUAL_GUIDS or pbi_type in custom_classes
                 self.assertTrue(has_guid,
-                                f"APPROXIMATION_MAP '{key}' claims AppSource but "
-                                f"no matching entry in CUSTOM_VISUAL_GUIDS")
+                                f"APPROXIMATION_MAP '{key}' maps to custom visual "
+                                f"'{pbi_type}' but has no matching entry in "
+                                f"CUSTOM_VISUAL_GUIDS")
 
     def test_custom_visual_guids_have_required_keys(self):
         for key, info in CUSTOM_VISUAL_GUIDS.items():

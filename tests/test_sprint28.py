@@ -660,16 +660,16 @@ class TestGenerateScriptVisual(unittest.TestCase):
 # =============================================================================
 
 class TestAssessmentScriptSeverity(unittest.TestCase):
-    """Test that SCRIPT_* functions produce WARN, not FAIL."""
+    """Test that SCRIPT_* functions produce FAIL — Premium/Fabric capacity
+    with a Python/R runtime is a hard prerequisite, so this must block."""
 
-    def test_script_only_is_warn(self):
-        from assessment import _check_calculations, WARN, PASS
+    def test_script_only_is_fail(self):
+        from assessment import _check_calculations, FAIL
         ext = {'calculations': [
             {'name': 'Py', 'caption': 'Py', 'formula': 'SCRIPT_REAL("return 1", [X])'},
         ]}
         cat = _check_calculations(ext)
-        # Should be WARN (not FAIL) for SCRIPT_*
-        self.assertEqual(cat.worst_severity, WARN)
+        self.assertEqual(cat.worst_severity, FAIL)
 
     def test_script_check_has_guidance(self):
         from assessment import _check_calculations
@@ -699,7 +699,7 @@ class TestAssessmentScriptSeverity(unittest.TestCase):
         self.assertTrue(all(c.severity == PASS for c in script_checks))
 
     def test_all_four_script_types(self):
-        from assessment import _check_calculations, WARN
+        from assessment import _check_calculations, FAIL
         ext = {'calculations': [
             {'name': 'B', 'caption': 'B', 'formula': 'SCRIPT_BOOL("1", [X])'},
             {'name': 'I', 'caption': 'I', 'formula': 'SCRIPT_INT("1", [X])'},
@@ -707,7 +707,7 @@ class TestAssessmentScriptSeverity(unittest.TestCase):
             {'name': 'S', 'caption': 'S', 'formula': 'SCRIPT_STR("1", [X])'},
         ]}
         cat = _check_calculations(ext)
-        script_checks = [c for c in cat.checks if 'SCRIPT' in c.name and c.severity == WARN]
+        script_checks = [c for c in cat.checks if 'SCRIPT' in c.name and c.severity == FAIL]
         self.assertEqual(len(script_checks), 1)
         # The detail should mention the count
         self.assertIn('4', script_checks[0].detail)

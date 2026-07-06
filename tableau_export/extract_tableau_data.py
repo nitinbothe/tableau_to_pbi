@@ -522,6 +522,10 @@ class TableauExtractor:
                     # Tableau), sanitize: strip brackets for a cleaner name
                     if '[' in raw_caption and ']' in raw_caption:
                         raw_caption = raw_caption.replace('[', '').replace(']', '')
+                    # Trim caption whitespace: the TMDL writer trims names on
+                    # output, so an untrimmed caption here would make visual
+                    # field references point at a nonexistent measure.
+                    raw_caption = raw_caption.strip()
                     calc_entry = {
                         'name': cname,
                         'caption': raw_caption,

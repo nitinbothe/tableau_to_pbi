@@ -1810,7 +1810,8 @@ APPROXIMATION_MAP = {
     "sankey":      ("sankeyDiagram",
                     "Sankey diagram mapped to custom visual. "
                     "Install 'Sankey Diagram by ChicagoIT' from AppSource "
-                    "(search 'Sankey' in Get more visuals). Requires workspace admin to enable custom visuals."),
+                    "(search 'Sankey' in Get more visuals; visual ID ChicagoITSankey1.1.0). "
+                    "Requires workspace admin to enable custom visuals."),
     "chord":       ("chordChart",
                     "Chord diagram mapped to custom visual. "
                     "Install 'Chord Chart by ChicagoIT' from AppSource "
@@ -1844,8 +1845,9 @@ APPROXIMATION_MAP = {
                     "For true parallel coordinates: install 'Parallel Coordinates' from AppSource "
                     "(search 'Parallel Coordinates' in Get more visuals)."),
     "calendarheatmap": ("matrix",
-                    "Calendar heat map mapped to Matrix with background color conditional formatting gradient. "
-                    "Configure conditional formatting on the Values field: Format → Background color → Gradient."),
+                    "Calendar heat map mapped to Matrix — background color gradient auto-configured "
+                    "from the Tableau palette. Add DayOfWeek/WeekNumber columns as Rows/Columns "
+                    "in the matrix for calendar layout."),
     "waffle":      ("multiRowCard",
                     "Waffle chart mapped to Multi-Row Card with percentage computation (grid layout approximated). "
                     "For true waffle grid: install 'Waffle Chart' by Microsoft from AppSource."),
